@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presentation Skill — Claude Code</title>
+  <meta name="description" content="Create beautiful animated HTML presentations with Claude Code. Apple design, GSAP animations, YouTube embeds, and responsive layouts.">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font:    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      --bg:      #000;
+      --surface: #111114;
+      --surface2: #1a1a1f;
+      --label-1: #fff;
+      --label-2: rgba(255,255,255,0.55);
+      --label-3: rgba(255,255,255,0.28);
+      --accent:  #0A84FF;
+      --accent2: #5E5CE6;
+      --sep:     rgba(255,255,255,0.08);
+      --r:       16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--label-1);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 clamp(20px, 5vw, 60px);
+    }
+
+    section {
+      padding: clamp(60px, 10vw, 120px) 0;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(0,0,0,0.72);
+      border-bottom: 1px solid var(--sep);
+    }
+
+    .nav-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 clamp(20px, 5vw, 60px);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--label-1);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-logo span { font-size: 20px; }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      color: var(--label-2);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--label-1); }
+
+    /* ── Hero ── */
+    .hero {
+      padding-top: calc(52px + clamp(60px, 12vw, 140px));
+      padding-bottom: clamp(60px, 10vw, 120px);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 500px;
+      background: radial-gradient(ellipse, rgba(10,132,255,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(10,132,255,0.12);
+      border: 1px solid rgba(10,132,255,0.25);
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 7vw, 96px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2.2vw, 22px);
+      color: var(--label-2);
+      max-width: 600px;
+      margin: 0 auto 44px;
+      line-height: 1.55;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 100px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #1d94ff;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(10,132,255,0.35);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--label-1);
+      border: 1px solid var(--sep);
+    }
+
+    .btn-secondary:hover {
+      background: #222228;
+      transform: translateY(-1px);
+    }
+
+    /* ── Demo preview ── */
+    .demo-frame {
+      margin-top: clamp(48px, 8vw, 96px);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--sep);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+      aspect-ratio: 16 / 9;
+      background: #0a0a14;
+      position: relative;
+    }
+
+    .demo-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* ── Section headings ── */
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .section-heading {
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      font-size: clamp(15px, 1.6vw, 19px);
+      color: var(--label-2);
+      line-height: 1.6;
+      max-width: 560px;
+    }
+
+    /* ── Features grid ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 52px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--sep);
+      border-radius: var(--r);
+      padding: clamp(20px, 2.5vw, 32px);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(255,255,255,0.16);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .feature-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: var(--label-2);
+      line-height: 1.6;
+    }
+
+    /* ── Slide types ── */
+    .slide-types {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 52px;
+    }
+
+    .slide-type-card {
+      background: var(--surface);
+      border: 1px solid var(--sep);
+      border-radius: var(--r);
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide-type-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .slide-type-card:hover::before { opacity: 1; }
+
+    .slide-type-name {
+      font-size: 13px;
+      font-weight: 600;
+      font-family: "SF Mono", "Fira Code", monospace;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .slide-type-desc {
+      font-size: 13px;
+      color: var(--label-2);
+      line-height: 1.55;
+    }
+
+    /* ── Prompts section ── */
+    .prompts-intro {
+      display: flex;
+      gap: 60px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 52px;
+    }
+
+    .prompts-intro > div:first-child {
+      flex: 0 0 380px;
+    }
+
+    .prompts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+    }
+
+    .prompt-card {
+      background: var(--surface);
+      border: 1px solid var(--sep);
+      border-radius: var(--r);
+      padding: 20px 22px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .prompt-card:hover {
+      border-color: rgba(10,132,255,0.35);
+      background: rgba(10,132,255,0.05);
+    }
+
+    .prompt-category {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .prompt-text {
+      font-size: 14px;
+      color: var(--label-1);
+      line-height: 1.55;
+      font-style: italic;
+    }
+
+    .prompt-text::before { content: '\201C'; }
+    .prompt-text::after  { content: '\201D'; }
+
+    .prompt-copy {
+      position: absolute;
+      top: 14px; right: 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--sep);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--label-3);
+      opacity: 0;
+      transition: opacity 0.2s;
+      cursor: pointer;
+    }
+
+    .prompt-card:hover .prompt-copy { opacity: 1; }
+
+    /* ── Install section ── */
+    .install-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 52px;
+    }
+
+    .install-step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(10,132,255,0.15);
+      border: 1px solid rgba(10,132,255,0.3);
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-body h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .step-body p {
+      font-size: 13px;
+      color: var(--label-2);
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: "SF Mono", "Fira Code", "Menlo", monospace;
+      font-size: 0.875em;
+      background: rgba(255,255,255,0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--sep);
+      padding: 40px 0;
+      text-align: center;
+    }
+
+    footer p {
+      font-size: 13px;
+      color: var(--label-3);
+      line-height: 1.8;
+    }
+
+    footer a {
+      color: var(--label-2);
+      text-decoration: none;
+    }
+
+    footer a:hover { color: var(--label-1); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .prompts-intro > div:first-child { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <span>🎞️</span>
+      Presentation Skill
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#slides">Slide types</a></li>
+      <li><a href="#prompts">Example prompts</a></li>
+      <li><a href="#install">Install</a></li>
+      <li><a href="https://github.com/jayvee6/presentation-skill" target="_blank">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">Claude Code Skill</div>
+    <h1>Presentations that<br><span class="gradient">look native</span></h1>
+    <p class="hero-sub">
+      Ask Claude to make a presentation and get a beautiful, animated, self-contained HTML slide deck — Apple design, GSAP animations, YouTube embeds, fully responsive.
+    </p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="/tmp/future-of-ai.html" target="_blank">▶&nbsp; View demo deck</a>
+      <a class="btn btn-secondary" href="https://github.com/jayvee6/presentation-skill" target="_blank">⭐&nbsp; Star on GitHub</a>
+    </div>
+
+    <!-- Embedded demo -->
+    <div class="demo-frame">
+      <iframe src="/tmp/future-of-ai.html" title="Demo presentation"></iframe>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="container">
+    <p class="section-label">Why it's different</p>
+    <h2 class="section-heading">Built for beauty,<br>not just functionality</h2>
+    <p class="section-sub">Every output looks like it was designed in Keynote, not generated by code.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">✨</span>
+        <h3 class="feature-title">GSAP animations</h3>
+        <p class="feature-desc">Industry-standard animation engine with Apple's expo-out easing curve. Headlines drop in, bullets stagger, quote watermarks scale up behind text.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎨</span>
+        <h3 class="feature-title">Apple design system</h3>
+        <p class="feature-desc">SF Pro typeface, exact Apple color tokens, Liquid Glass-inspired fills, and the same typography scale used across iOS and macOS.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📺</span>
+        <h3 class="feature-title">Video & YouTube embeds</h3>
+        <p class="feature-desc">Drop any YouTube URL into a media slide. The skill auto-converts it to an embed. Also supports local video files and images.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📱</span>
+        <h3 class="feature-title">Fully responsive</h3>
+        <p class="feature-desc">Maintains 16:9 aspect ratio at any window size. All spacing uses <code>clamp()</code> and percentage-based values so nothing ever breaks.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🌗</span>
+        <h3 class="feature-title">Dark and light themes</h3>
+        <p class="feature-desc">Dark by default. Set <code>"theme": "light"</code> in your spec for a clean, bright Apple-style look. Both themes use the same token system.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⌨️</span>
+        <h3 class="feature-title">Keyboard navigation</h3>
+        <p class="feature-desc">Arrow keys, spacebar, swipe on mobile, click left/right half of slide. Press <code>F</code> to go fullscreen. Works in any browser.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📦</span>
+        <h3 class="feature-title">Zero dependencies</h3>
+        <p class="feature-desc">Each deck is a single self-contained HTML file. Share it, email it, or host it anywhere — no build tools, no Node, no servers.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">✍️</span>
+        <h3 class="feature-title">Apple Style Guide writing</h3>
+        <p class="feature-desc">Sentence case headings, active voice, no filler words, serial comma. Claude writes copy that matches Apple's style guide by default.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide types -->
+<section id="slides" style="background: var(--surface); border-top: 1px solid var(--sep); border-bottom: 1px solid var(--sep);">
+  <div class="container">
+    <p class="section-label">Slide types</p>
+    <h2 class="section-heading">Six layouts, infinite combinations</h2>
+    <p class="section-sub">Claude picks the right layout for each piece of content automatically.</p>
+
+    <div class="slide-types">
+      <div class="slide-type-card">
+        <p class="slide-type-name">title</p>
+        <p class="slide-type-desc">Opening slide or section break. Centered headline with optional eyebrow label, subheading, and icon.</p>
+      </div>
+      <div class="slide-type-card">
+        <p class="slide-type-name">content</p>
+        <p class="slide-type-desc">The workhorse. Headline with bullet points that stagger in one by one. Optional footnote.</p>
+      </div>
+      <div class="slide-type-card">
+        <p class="slide-type-name">quote</p>
+        <p class="slide-type-desc">Full-bleed quote with a decorative watermark <em>"</em> behind the text, eyebrow label, and attribution.</p>
+      </div>
+      <div class="slide-type-card">
+        <p class="slide-type-name">two-column</p>
+        <p class="slide-type-desc">Side-by-side comparison cards. Each column has a title and bullet list. Columns animate in from opposite sides.</p>
+      </div>
+      <div class="slide-type-card">
+        <p class="slide-type-name">media</p>
+        <p class="slide-type-desc">YouTube embed, video file, or image. Auto-detects the media type from the URL. 16:9 frame with caption.</p>
+      </div>
+      <div class="slide-type-card">
+        <p class="slide-type-name">closing</p>
+        <p class="slide-type-desc">Strong final statement with a call to action and contact info. Headline scales in with spring easing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Example prompts -->
+<section id="prompts">
+  <div class="container">
+    <p class="section-label">Example prompts</p>
+    <h2 class="section-heading">Just ask naturally</h2>
+    <p class="section-sub" style="margin-bottom: 0">The skill triggers on any presentation-related request. Click a card to copy the prompt.</p>
+
+    <br><br>
+
+    <div class="prompts-grid">
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Education</p>
+        <p class="prompt-text">Make me a 6-slide presentation about the history of the internet</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Business</p>
+        <p class="prompt-text">Create a pitch deck for a SaaS startup selling AI writing tools to marketing teams</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Content conversion</p>
+        <p class="prompt-text">Turn this outline into slides: [paste your bullet points]</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Video demo</p>
+        <p class="prompt-text">Build a 4-slide product demo deck and embed this YouTube video on slide 3: [URL]</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Lecture</p>
+        <p class="prompt-text">I need a 10-slide lecture on machine learning for a non-technical audience</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Meeting prep</p>
+        <p class="prompt-text">Make slides for my quarterly review — cover Q1 metrics, blockers, and Q2 goals</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Comparison</p>
+        <p class="prompt-text">Create a deck comparing React vs Vue vs Svelte for a team choosing a frontend framework</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Keynote-style</p>
+        <p class="prompt-text">Build a light-theme 8-slide presentation about the future of spatial computing</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+      <div class="prompt-card" onclick="copyPrompt(this)">
+        <p class="prompt-category">Social proof</p>
+        <p class="prompt-text">I need a deck on why our company should adopt AI. Include a few industry quotes.</p>
+        <span class="prompt-copy">Copy</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Install -->
+<section id="install" style="background: var(--surface); border-top: 1px solid var(--sep);">
+  <div class="container">
+    <p class="section-label">Get started</p>
+    <h2 class="section-heading">Install in 60 seconds</h2>
+    <p class="section-sub">Requires Claude Code with the anthropic-skills plugin.</p>
+
+    <div class="install-steps">
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Clone the repo</h3>
+          <p>Clone or download this repository to your local machine.</p>
+        </div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Copy to skills directory</h3>
+          <p>Copy the <code>presentation/</code> folder into your Claude Code skills directory.</p>
+        </div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Ask Claude</h3>
+          <p>Open Claude Code and say <em>"make me a presentation about X"</em>. The skill triggers automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 48px; display: flex; gap: 12px; flex-wrap: wrap;">
+      <a class="btn btn-primary" href="https://github.com/jayvee6/presentation-skill" target="_blank">View on GitHub</a>
+      <a class="btn btn-secondary" href="/tmp/future-of-ai.html" target="_blank">▶&nbsp; Open demo deck</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <p>
+      Built with <a href="https://claude.ai/code">Claude Code</a> ·
+      <a href="https://github.com/jayvee6/presentation-skill">GitHub</a> ·
+      Animations by <a href="https://gsap.com" target="_blank">GSAP</a>
+    </p>
+    <p style="margin-top: 8px; font-size: 12px;">Apple design tokens · SF Pro typography · GSAP 3.12</p>
+  </div>
+</footer>
+
+<script>
+  function copyPrompt(card) {
+    const text = card.querySelector('.prompt-text').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = card.querySelector('.prompt-copy');
+      btn.textContent = 'Copied!';
+      btn.style.opacity = '1';
+      btn.style.color = 'var(--accent)';
+      btn.style.borderColor = 'rgba(10,132,255,0.4)';
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.style.color = '';
+        btn.style.borderColor = '';
+      }, 1500);
+    });
+  }
+</script>
+
+</body>
+</html>

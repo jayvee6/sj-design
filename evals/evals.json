@@ -1,0 +1,52 @@
+{
+  "evals": [
+    {
+      "id": "history-of-internet",
+      "prompt": "Make me a 6-slide presentation about the history of the internet",
+      "criteria": [
+        "Produces exactly 6 slides",
+        "Includes a title slide",
+        "Uses sentence case headings throughout",
+        "Content slide bullets are concise (one idea per line)",
+        "Includes a closing slide",
+        "Output file is a valid self-contained HTML file",
+        "HTML file opens without errors and shows animations"
+      ]
+    },
+    {
+      "id": "saas-pitch-deck",
+      "prompt": "Create a pitch deck for a SaaS startup selling AI writing tools to marketing teams",
+      "criteria": [
+        "Has a compelling title slide naming the product",
+        "Includes a problem or market opportunity slide",
+        "Uses at least one two-column slide for comparison or features",
+        "Includes a quote or social proof slide",
+        "Ends with a clear call-to-action closing slide",
+        "All text follows Apple Style Guide (active voice, no filler words)",
+        "Theme is dark by default"
+      ]
+    },
+    {
+      "id": "outline-to-slides",
+      "prompt": "Turn this outline into slides:\n- Introduction to machine learning\n- Supervised vs unsupervised learning\n- Real-world applications: healthcare, finance, retail\n- Challenges: data quality, bias, compute cost\n- Getting started: tools and resources\n- Q&A",
+      "criteria": [
+        "Maps each outline item to an appropriate slide",
+        "Does not invent facts beyond the outline",
+        "Uses appropriate slide types (content for lists, two-column for comparisons)",
+        "Adds an eyebrow label to section slides",
+        "Q&A becomes a closing slide, not a content slide",
+        "Output is a valid buildable JSON spec that the script accepts"
+      ]
+    },
+    {
+      "id": "youtube-embed",
+      "prompt": "Make a 3-slide product demo presentation. Include a YouTube video on the second slide using https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "criteria": [
+        "Second slide is type 'media'",
+        "YouTube URL is correctly converted to embed format",
+        "Slide renders with an iframe element",
+        "Other two slides are title and closing"
+      ]
+    }
+  ]
+}
