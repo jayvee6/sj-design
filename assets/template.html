@@ -387,6 +387,8 @@
   let animating = false;
 
   // ── Animate a slide's children in ───────────────────────────────
+  // Uses fromTo() exclusively so start AND end states are unambiguous —
+  // gsap.from() alone breaks when elements were previously set to opacity:0.
   function animateIn(slide) {
     const type = (Array.from(slide.classList)
       .find(c => c.startsWith('slide-') && c !== 'slide-inner') || '')
@@ -412,64 +414,68 @@
     const contact   = get('.contact');
     const note      = get('.slide-note');
 
-    // Reset everything to invisible before animating
-    const all = [icon, eyebrow, headline, sub, bq, cite,
-                 frame, caption, cta, contact, note,
-                 ...bullets, ...cols].filter(Boolean);
-    gsap.set(all, { clearProps: 'all' });
-    gsap.set(all, { opacity: 0 });
-    if (watermark) gsap.set(watermark, { opacity: 0, scale: 1.4 });
-
     const S = 0.09; // stagger per item
+
+    // Helper: fromTo with visible end state
+    const ft = (el, from, opts, pos) => {
+      if (!el) return;
+      tl.fromTo(el, from, { ...from, y: 0, x: 0, scale: 1, opacity: 1, ...opts }, pos);
+    };
 
     switch (type) {
 
       case 'title':
-        if (icon)     tl.from(icon,     { y: -16, opacity: 0, duration: DUR * 0.75, ease: EASE_OUT }, 0);
-        if (eyebrow)  tl.from(eyebrow,  { y: -12, opacity: 0, duration: DUR * 0.7,  ease: EASE_OUT }, 0.05);
-        if (headline) tl.from(headline, { y:  44, opacity: 0, duration: DUR,        ease: EASE_OUT }, icon || eyebrow ? 0.12 : 0);
-        if (sub)      tl.from(sub,      { y:  20, opacity: 0, duration: DUR,        ease: EASE_OUT }, 0.28);
+        ft(icon,     { y: -16, opacity: 0 }, { duration: DUR * 0.75, ease: EASE_OUT }, 0);
+        ft(eyebrow,  { y: -12, opacity: 0 }, { duration: DUR * 0.7,  ease: EASE_OUT }, 0.05);
+        ft(headline, { y:  44, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, icon || eyebrow ? 0.12 : 0);
+        ft(sub,      { y:  20, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.28);
         break;
 
       case 'content':
-        if (eyebrow)  tl.from(eyebrow,  { x: -18, opacity: 0, duration: DUR * 0.65, ease: EASE_OUT }, 0);
-        if (headline) tl.from(headline, { x: -28, opacity: 0, duration: DUR,        ease: EASE_OUT }, 0.06);
+        ft(eyebrow,  { x: -18, opacity: 0 }, { duration: DUR * 0.65, ease: EASE_OUT }, 0);
+        ft(headline, { x: -28, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.06);
         bullets.forEach((li, i) => {
-          tl.from(li, { x: -18, opacity: 0, duration: DUR * 0.85, ease: EASE_OUT }, 0.22 + i * S);
+          ft(li, { x: -18, opacity: 0 }, { duration: DUR * 0.85, ease: EASE_OUT }, 0.22 + i * S);
         });
-        if (note) tl.from(note, { opacity: 0, duration: DUR * 0.55, ease: EASE_SOFT },
-                          0.22 + bullets.length * S + 0.1);
+        ft(note, { opacity: 0 }, { duration: DUR * 0.55, ease: EASE_SOFT }, 0.22 + bullets.length * S + 0.1);
         break;
 
       case 'quote':
-        if (watermark) tl.to(watermark, { opacity: 0.065, scale: 1, duration: 0.95, ease: EASE_OUT }, 0);
-        if (icon)     tl.from(icon,     { scale: 0.7, opacity: 0, duration: DUR * 0.75, ease: EASE_SPRING }, 0.1);
-        if (eyebrow)  tl.from(eyebrow,  { y: -10, opacity: 0, duration: DUR * 0.65, ease: EASE_OUT }, 0.18);
-        if (bq)       tl.from(bq,       { y:  32, opacity: 0, duration: DUR * 1.05, ease: EASE_OUT }, 0.22);
-        if (cite)     tl.from(cite,     { y:  12, opacity: 0, duration: DUR * 0.7,  ease: EASE_SOFT }, 0.52);
+        if (watermark) tl.fromTo(watermark,
+          { opacity: 0, scale: 1.4 },
+          { opacity: 0.065, scale: 1, duration: 0.95, ease: EASE_OUT }, 0);
+        ft(icon,    { scale: 0.7, opacity: 0 }, { duration: DUR * 0.75, ease: EASE_SPRING }, 0.1);
+        ft(eyebrow, { y: -10, opacity: 0 },     { duration: DUR * 0.65, ease: EASE_OUT },    0.18);
+        ft(bq,      { y:  32, opacity: 0 },     { duration: DUR * 1.05, ease: EASE_OUT },    0.22);
+        ft(cite,    { y:  12, opacity: 0 },     { duration: DUR * 0.7,  ease: EASE_SOFT },   0.52);
         break;
 
       case 'two-column':
-        if (eyebrow)     tl.from(eyebrow,  { y: -14, opacity: 0, duration: DUR * 0.65, ease: EASE_OUT }, 0);
-        if (headline)    tl.from(headline, { y:  22, opacity: 0, duration: DUR,        ease: EASE_OUT }, 0.06);
-        if (cols[0])     tl.from(cols[0],  { x: -38, opacity: 0, duration: DUR,        ease: EASE_OUT }, 0.22);
-        if (cols[1])     tl.from(cols[1],  { x:  38, opacity: 0, duration: DUR,        ease: EASE_OUT }, 0.32);
+        ft(eyebrow,  { y: -14, opacity: 0 }, { duration: DUR * 0.65, ease: EASE_OUT }, 0);
+        ft(headline, { y:  22, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.06);
+        ft(cols[0],  { x: -38, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.22);
+        ft(cols[1],  { x:  38, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.32);
         break;
 
       case 'media':
-        if (headline) tl.from(headline, { y: -18, opacity: 0, duration: DUR * 0.75, ease: EASE_OUT }, 0);
-        if (frame)    tl.from(frame,    { scale: 0.94, opacity: 0, duration: DUR * 1.05, ease: EASE_OUT }, headline ? 0.1 : 0);
-        if (caption)  tl.from(caption,  { opacity: 0, duration: DUR * 0.6, ease: EASE_SOFT }, 0.45);
+        ft(headline, { y: -18, opacity: 0   }, { duration: DUR * 0.75, ease: EASE_OUT  }, 0);
+        ft(frame,    { scale: 0.94, opacity: 0 }, { duration: DUR * 1.05, ease: EASE_OUT }, headline ? 0.1 : 0);
+        ft(caption,  { opacity: 0 },          { duration: DUR * 0.6,  ease: EASE_SOFT }, 0.45);
         break;
 
       case 'closing':
-        if (headline) tl.from(headline, { scale: 0.88, opacity: 0, duration: DUR * 1.1, ease: EASE_SPRING }, 0);
-        if (cta)      tl.from(cta,      { y:  20, opacity: 0, duration: DUR,           ease: EASE_OUT }, 0.28);
-        if (contact)  tl.from(contact,  { opacity: 0, duration: DUR * 0.75,            ease: EASE_SOFT }, 0.46);
+        ft(headline, { scale: 0.88, opacity: 0 }, { duration: DUR * 1.1, ease: EASE_SPRING }, 0);
+        ft(cta,      { y:  20, opacity: 0 },      { duration: DUR,       ease: EASE_OUT },    0.28);
+        ft(contact,  { opacity: 0 },              { duration: DUR * 0.75, ease: EASE_SOFT },  0.46);
         break;
 
-      default:
-        tl.from(all, { opacity: 0, y: 12, stagger: S, duration: DUR, ease: EASE_OUT }, 0);
+      default: {
+        const all = [icon, eyebrow, headline, sub, bq, cite,
+                     frame, caption, cta, contact, note,
+                     ...bullets, ...cols].filter(Boolean);
+        all.forEach((el, i) => ft(el, { y: 12, opacity: 0 },
+          { duration: DUR, ease: EASE_OUT }, i * S));
+      }
     }
 
     return tl;
