@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{{THEME}}">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{TITLE}}</title>
+  <title>The Future of AI</title>
 
   <!-- GSAP — industry-standard animation engine -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -381,13 +381,66 @@
 <div class="orb" style="width:45vw;height:45vw;bottom:-10vh;right:-8vw;background:radial-gradient(circle,rgba(88,86,214,0.14),transparent 70%)"></div>
 
 <div id="deck">
-{{SLIDES}}
+<div class="slide slide-title active" data-index="0">
+  <div class="slide-inner slide-inner--center">
+    
+    <p class="eyebrow">A Claude Presentation</p>
+    <h1 class="headline">The future of AI</h1>
+    <p class="subheading">How artificial intelligence is reshaping every industry</p>
+  </div>
+</div>
+<div class="slide slide-content" data-index="1">
+  <div class="slide-inner">
+    <p class="eyebrow">The shift</p>
+    <h2 class="headline">We're at an inflection point</h2>
+    <ul class="bullets"><li>AI crossed human-level performance on reasoning benchmarks in 2024</li><li>100M+ people use AI daily — up from 1M in 2020</li><li>Every major company now has an AI strategy</li><li>Cost of inference dropped 99% in three years</li></ul>
+    
+  </div>
+</div>
+<div class="slide slide-quote" data-index="2">
+  <div class="slide-inner slide-inner--center slide-inner--quote">
+    <span class="quote-watermark">&ldquo;</span>
+    <p class="slide-icon">💬</p>
+    <p class="eyebrow">Industry consensus</p>
+    <blockquote>AI will be more transformative than electricity or fire.</blockquote>
+    <cite>&#8212;&nbsp;Sundar Pichai, Google CEO</cite>
+  </div>
+</div>
+<div class="slide slide-two-column" data-index="3">
+  <div class="slide-inner">
+    <p class="eyebrow">Impact</p>
+    <h2 class="headline">Where AI is winning</h2>
+    <div class="two-col"><div class="col"><h3 class="col-title">Already here</h3><ul class="bullets"><li>Drug discovery</li><li>Code generation</li><li>Customer support</li><li>Image synthesis</li></ul></div><div class="col"><h3 class="col-title">Coming fast</h3><ul class="bullets"><li>Autonomous agents</li><li>Scientific research</li><li>Personalized education</li><li>Physical robotics</li></ul></div></div>
+  </div>
+</div>
+<div class="slide slide-media" data-index="4">
+  <div class="slide-inner slide-inner--center slide-inner--media">
+    <h2 class="headline media-heading">See it in action</h2>
+    <div class="media-frame"><iframe src="https://www.youtube.com/embed/--khbXchTeE?rel=0&modestbranding=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+    <p class="media-caption">Claude — Anthropic's AI assistant</p>
+  </div>
+</div>
+<div class="slide slide-content" data-index="5">
+  <div class="slide-inner">
+    <p class="eyebrow">Risks</p>
+    <h2 class="headline">What we need to get right</h2>
+    <ul class="bullets"><li>Alignment: AI that reliably does what we intend</li><li>Safety: preventing catastrophic misuse</li><li>Access: ensuring benefits are broadly shared</li><li>Governance: building trust through transparency</li></ul>
+    <p class="slide-note">Source: Anthropic 2024 Safety Report</p>
+  </div>
+</div>
+<div class="slide slide-closing" data-index="6">
+  <div class="slide-inner slide-inner--center">
+    <h1 class="headline closing-headline">The best time to engage is now</h1>
+    <p class="cta">Start building with Claude</p>
+    <p class="contact">anthropic.com</p>
+  </div>
+</div>
 </div>
 
 <div id="progress"></div>
 
 <div id="hud">
-  <span class="hud-label" id="counter">1 / {{SLIDE_COUNT}}</span>
+  <span class="hud-label" id="counter">1 / 7</span>
   <span class="hud-label" id="hint">← → navigate &nbsp;·&nbsp; F fullscreen</span>
 </div>
 
@@ -396,7 +449,7 @@
   'use strict';
 
   // ── Constants ────────────────────────────────────────────────────
-  const TOTAL   = {{SLIDE_COUNT}};
+  const TOTAL   = 7;
   const slides  = Array.from(document.querySelectorAll('.slide'));
 
   // Apple expo-out easing — same curve iOS/macOS use for most transitions
