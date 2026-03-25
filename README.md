@@ -2,8 +2,6 @@
 
 A Claude Code skill that generates beautiful, animated HTML slide decks from natural language prompts.
 
-**[→ View demo & docs](https://jayvee6.github.io/presentation-skill)**
-
 ---
 
 ## What it does
@@ -48,7 +46,8 @@ presentation-skill/
 │   └── template.html           # GSAP template with Apple design tokens
 ├── evals/
 │   └── evals.json              # Eval test cases
-└── index.html            # This landing page (GitHub Pages)
+└── demo/
+    └── future-of-ai.html # Example output
 ```
 
 ## Slide spec format
