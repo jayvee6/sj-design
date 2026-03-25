@@ -349,6 +349,27 @@
       letter-spacing:  0.06em;
       font-variant-numeric: tabular-nums;
     }
+
+    /* ─── Pre-hide animatable children ──────────────────────────── */
+    /* Set opacity:0 before JS loads so there's no flash of content  */
+    /* before GSAP's fromTo() takes over. GSAP overrides via inline  */
+    /* styles, so these rules have no effect during/after animation. */
+    .slide .eyebrow,
+    .slide .slide-icon,
+    .slide .headline,
+    .slide .subheading,
+    .slide .bullets li,
+    .slide blockquote,
+    .slide cite,
+    .slide .quote-watermark,
+    .slide .col,
+    .slide .media-frame,
+    .slide .media-caption,
+    .slide .cta,
+    .slide .contact,
+    .slide .slide-note {
+      opacity: 0;
+    }
   </style>
 </head>
 
@@ -481,6 +502,19 @@
     return tl;
   }
 
+  // ── Reset slide children to hidden before entering ──────────────
+  // Called before a slide becomes active to prevent flashing of
+  // previously-animated content (which has GSAP inline opacity:1).
+  const CHILD_SEL = '.eyebrow, .slide-icon, .headline, .subheading, ' +
+    '.bullets li, blockquote, cite, .col, .media-frame, ' +
+    '.media-caption, .cta, .contact, .slide-note';
+
+  function resetSlide(slide) {
+    gsap.set(slide.querySelectorAll(CHILD_SEL), { opacity: 0 });
+    const wm = slide.querySelector('.quote-watermark');
+    if (wm) gsap.set(wm, { opacity: 0, scale: 1.4 });
+  }
+
   // ── Navigate to a slide ──────────────────────────────────────────
   function goTo(next, dir) {
     if (next < 0 || next >= TOTAL || animating) return;
@@ -489,6 +523,9 @@
     const from = slides[current];
     const to   = slides[next];
     const dx   = dir * 36;
+
+    // Hide incoming slide's children BEFORE it becomes visible
+    resetSlide(to);
 
     // Outgoing slide
     gsap.to(from, {
@@ -514,7 +551,7 @@
       onComplete() { animating = false; }
     });
 
-    // Stagger-in content after slide starts arriving
+    // Animate content in after slide starts arriving
     setTimeout(() => animateIn(to), 100);
 
     current = next;
