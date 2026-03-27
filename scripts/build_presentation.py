@@ -116,7 +116,8 @@ def _render_quote(slide: dict) -> str:
     eyebrow = _eyebrow(slide)
     if not eyebrow and slide.get("heading"):
         eyebrow = f'<p class="eyebrow">{_esc(slide["heading"])}</p>'
-    attr = f'<cite>&#8212;&nbsp;{_esc(slide["attribution"])}</cite>' if slide.get("attribution") else ""
+    attr   = f'<cite>&#8212;&nbsp;{_esc(slide["attribution"])}</cite>' if slide.get("attribution") else ""
+    credit = f'<p class="quote-credit">{_esc(slide["credit"])}</p>' if slide.get("credit") else ""
     return f"""
   <div class="slide-inner slide-inner--center slide-inner--quote">
     <span class="quote-watermark">&ldquo;</span>
@@ -124,6 +125,7 @@ def _render_quote(slide: dict) -> str:
     {eyebrow}
     <blockquote>{_esc(slide.get("quote", ""))}</blockquote>
     {attr}
+    {credit}
   </div>"""
 
 

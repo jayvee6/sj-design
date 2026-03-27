@@ -246,6 +246,17 @@
       letter-spacing: 0.01em;
     }
 
+    .quote-credit {
+      font-size:      clamp(10px, 0.95vw, 14px);
+      font-style:     normal;
+      color:          var(--label-2);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-top:     clamp(4px, 0.6vw, 8px);
+      position:       relative;
+      z-index:        1;
+    }
+
     /* ─── Two-column ─────────────────────────────────────────────── */
     .two-col {
       display:               grid;
@@ -302,12 +313,13 @@
 
     /* ─── Ken Burns Gallery ──────────────────────────────────────── */
     .slide-gallery .slide-inner {
-      gap: clamp(8px, 1.2vw, 18px);
+      gap:     clamp(6px, 0.9vw, 14px);
+      padding: clamp(10px, 1.5vh, 24px) clamp(10px, 1.8vw, 28px);
     }
 
     .gallery-frame {
       width:         100%;
-      max-width:     min(960px, 94vw);
+      max-width:     min(1260px, 97vw);
       aspect-ratio:  16 / 9;
       border-radius: clamp(8px, 1vw, 14px);
       overflow:      hidden;
@@ -483,6 +495,24 @@
       z-index:    200;
     }
 
+    /* ─── Emoji Rain ─────────────────────────────────────────────── */
+    #emoji-rain {
+      position:       fixed;
+      inset:          0;
+      pointer-events: none;
+      z-index:        999;
+      overflow:       hidden;
+    }
+
+    .emoji-particle {
+      position:    absolute;
+      top:         -80px;
+      font-size:   clamp(24px, 3.5vw, 52px);
+      line-height: 1;
+      user-select: none;
+      will-change: transform, opacity;
+    }
+
     /* ─── HUD (counter + hints) ──────────────────────────────────── */
     #hud {
       position:              fixed;
@@ -619,6 +649,7 @@
 </div>
 
 <div id="progress"></div>
+<div id="emoji-rain"></div>
 
 <div id="hud">
   <div id="nav-jumps">
@@ -691,6 +722,55 @@
     slide.querySelectorAll('.gallery-dot').forEach(d => d.classList.remove('kb-dot-active'));
   }
 
+  // ── Emoji Rain ──────────────────────────────────────────────────
+  const RAIN_EMOJIS = ['🌉','🔑','💰','📈','🏡','🎉','✨','🎊','💫','🥂','🏠','💎'];
+  let _rainInterval = null;
+
+  function _spawnEmoji() {
+    const rain = document.getElementById('emoji-rain');
+    const el   = document.createElement('span');
+    el.className   = 'emoji-particle';
+    el.textContent = RAIN_EMOJIS[Math.floor(Math.random() * RAIN_EMOJIS.length)];
+
+    const startX  = Math.random() * 105 - 2;   // vw: slight bleed on edges
+    const drift   = (Math.random() - 0.5) * 140; // px horizontal drift
+    const rot     = (Math.random() - 0.5) * 540; // degrees of spin
+    const dur     = 2.8 + Math.random() * 2.4;   // 2.8–5.2s fall
+    const delay   = Math.random() * 0.3;
+
+    gsap.set(el, { left: startX + 'vw', top: '-80px', opacity: 0, rotation: 0, scale: 0.6 + Math.random() * 0.8 });
+    rain.appendChild(el);
+
+    gsap.timeline({ onComplete: () => el.remove() })
+      .to(el, { opacity: 1, scale: 1, duration: 0.35, ease: 'power2.out', delay })
+      .to(el, {
+        y:        window.innerHeight + 140,
+        x:        drift,
+        rotation: rot,
+        duration: dur,
+        ease:     'none',
+      }, '<0.1')
+      .to(el, { opacity: 0, duration: 0.6, ease: 'power1.in' }, `-=0.7`);
+  }
+
+  function startEmojiRain() {
+    if (_rainInterval) return;
+    // Burst: spawn a bunch immediately for instant wow
+    for (let i = 0; i < 18; i++) {
+      setTimeout(_spawnEmoji, i * 60);
+    }
+    // Then keep a steady rain going
+    _rainInterval = setInterval(_spawnEmoji, 180);
+  }
+
+  function stopEmojiRain() {
+    if (_rainInterval) { clearInterval(_rainInterval); _rainInterval = null; }
+    // Fade out any lingering particles
+    document.querySelectorAll('.emoji-particle').forEach(el => {
+      gsap.to(el, { opacity: 0, duration: 0.4, onComplete: () => el.remove() });
+    });
+  }
+
   // ── Animate a slide's children in ───────────────────────────────
   // Uses fromTo() exclusively so start AND end states are unambiguous —
   // gsap.from() alone breaks when elements were previously set to opacity:0.
@@ -754,6 +834,7 @@
         ft(eyebrow, { y: -10, opacity: 0 },     { duration: DUR * 0.65, ease: EASE_OUT },    0.18);
         ft(bq,      { y:  32, opacity: 0 },     { duration: DUR * 1.05, ease: EASE_OUT },    0.22);
         ft(cite,    { y:  12, opacity: 0 },     { duration: DUR * 0.7,  ease: EASE_SOFT },   0.52);
+        ft(get('.quote-credit'), { y: 8, opacity: 0 }, { duration: DUR * 0.6, ease: EASE_SOFT }, 0.66);
         break;
 
       case 'two-column':
@@ -818,6 +899,7 @@
         ft(headline, { scale: 0.88, opacity: 0 }, { duration: DUR * 1.1, ease: EASE_SPRING }, 0);
         ft(cta,      { y:  20, opacity: 0 },      { duration: DUR,       ease: EASE_OUT },    0.28);
         ft(contact,  { opacity: 0 },              { duration: DUR * 0.75, ease: EASE_SOFT },  0.46);
+        tl.call(() => startEmojiRain(), [], 0.5);
         break;
 
       default: {
@@ -836,11 +918,12 @@
   // Called before a slide becomes active to prevent flashing of
   // previously-animated content (which has GSAP inline opacity:1).
   const CHILD_SEL = '.eyebrow, .slide-icon, .headline, .subheading, ' +
-    '.bullets li, blockquote, cite, .col, .stat-card, .media-frame, .gallery-frame, ' +
+    '.bullets li, blockquote, cite, .quote-credit, .col, .stat-card, .media-frame, .gallery-frame, ' +
     '.media-caption, .cta, .contact, .slide-note';
 
   function resetSlide(slide) {
     _stopGallery(slide);
+    stopEmojiRain();
     gsap.set(slide.querySelectorAll(CHILD_SEL), { opacity: 0 });
     const wm = slide.querySelector('.quote-watermark');
     if (wm) gsap.set(wm, { opacity: 0, scale: 1.4 });
