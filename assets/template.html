@@ -724,6 +724,7 @@
   <div id="nav-jumps">
     <button class="ts-btn" id="btn-first" title="Jump to first slide">⏮</button>
     <button class="ts-btn" id="btn-last"  title="Jump to last slide">⏭</button>
+    <button class="ts-btn" id="btn-emoji-toggle" title="Toggle emoji rain">😅</button>
   </div>
   <span class="hud-label" id="counter">1 / {{SLIDE_COUNT}}</span>
   <div id="hud-right">
@@ -793,8 +794,9 @@
 
   // ── Emoji Rain ──────────────────────────────────────────────────
   const RAIN_EMOJIS = ['🌉','🔑','💰','📈','🏡','🎉','✨','🎊','💫','🥂','🏠','💎'];
-  let _rainInterval  = null;
-  let _rainBackEl    = null;   // .emoji-rain-back inside closing slide
+  let _rainInterval      = null;
+  let _rainBackEl        = null;   // .emoji-rain-back inside closing slide
+  let _emojiRainEnabled  = false;  // off by default — toggle with 😅 button
 
   function _spawnEmoji(isBack) {
     // Back-layer goes inside the slide (behind text); front goes on fixed overlay
@@ -1050,7 +1052,7 @@
         ft(headline, { scale: 0.88, opacity: 0 }, { duration: DUR * 1.1, ease: EASE_SPRING }, 0);
         ft(cta,      { y:  20, opacity: 0 },      { duration: DUR,       ease: EASE_OUT },    0.28);
         ft(contact,  { opacity: 0 },              { duration: DUR * 0.75, ease: EASE_SOFT },  0.46);
-        tl.call(() => startEmojiRain(slide), [], 0.5);
+        tl.call(() => { if (_emojiRainEnabled) startEmojiRain(slide); }, [], 0.5);
         break;
 
       default: {
@@ -1206,6 +1208,18 @@
   document.getElementById('btn-last').addEventListener('click', e => {
     e.stopPropagation();
     if (current !== TOTAL - 1) goTo(TOTAL - 1, 1);
+  });
+
+  // ── Emoji rain toggle ─────────────────────────────────────────────
+  document.getElementById('btn-emoji-toggle').addEventListener('click', e => {
+    e.stopPropagation();
+    _emojiRainEnabled = !_emojiRainEnabled;
+    document.getElementById('btn-emoji-toggle').classList.toggle('ts-active', _emojiRainEnabled);
+    // If we're currently on the closing slide, start/stop immediately
+    const activeSlide = slides[current];
+    if (activeSlide && activeSlide.dataset.type === 'closing') {
+      _emojiRainEnabled ? startEmojiRain(activeSlide) : stopEmojiRain();
+    }
   });
 
   // ── Text size control ────────────────────────────────────────────
