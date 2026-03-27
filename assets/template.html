@@ -66,14 +66,36 @@
       user-select: none;
     }
 
-    /* ─── Ambient glow orbs ──────────────────────────────────────── */
-    .orb {
+    /* ─── Perlin gobo layer ──────────────────────────────────────── */
+    #gobo-layer {
       position: fixed;
-      border-radius: 50%;
+      inset: 0;
       pointer-events: none;
-      filter: blur(120px);
-      opacity: 0.25;
+      z-index: 0;
+      overflow: visible;
     }
+
+    /* ─── Starfield ──────────────────────────────────────────────── */
+    #starfield {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* ─── Bokeh ──────────────────────────────────────────────────── */
+    #bokeh-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    /* Hide starfield + bokeh in light theme — they look best on dark */
+    [data-theme="light"] #starfield,
+    [data-theme="light"] #bokeh-layer { opacity: 0.3; }
 
     /* ─── Deck ───────────────────────────────────────────────────── */
     #deck {
@@ -708,9 +730,10 @@
 
 <body>
 
-<!-- Ambient orbs -->
-<div class="orb" style="width:55vw;height:55vw;top:-15vh;left:-10vw;background:radial-gradient(circle,rgba(10,132,255,0.18),transparent 70%)"></div>
-<div class="orb" style="width:45vw;height:45vw;bottom:-10vh;right:-8vw;background:radial-gradient(circle,rgba(88,86,214,0.14),transparent 70%)"></div>
+<!-- Perlin atmosphere layers (gobo blobs → starfield → bokeh) -->
+<div id="gobo-layer"  aria-hidden="true"></div>
+<div id="starfield"   aria-hidden="true"></div>
+<div id="bokeh-layer" aria-hidden="true"></div>
 
 <div id="deck">
 {{SLIDES}}
@@ -754,6 +777,179 @@
 
   let current   = 0;
   let animating = false;
+
+  // ── Perlin noise (smoothstep 2-D gradient noise) ─────────────────
+  // Used to drive gobo blobs, bokeh drift, and star shimmer.
+  // Self-contained: builds its own permutation table so each page
+  // load produces a unique animation without any external dependency.
+  const _p = new Uint8Array(512);
+  (function () {
+    const t = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) t[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [t[i], t[j]] = [t[j], t[i]];
+    }
+    _p.set(t); _p.set(t, 256);
+  }());
+  function _fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function _lerp(a, b, t) { return a + t * (b - a); }
+  function _grad(h, x, y) {
+    const v = h & 3;
+    return v === 0 ? x + y : v === 1 ? -x + y : v === 2 ? x - y : -x - y;
+  }
+  function pnoise(x, y) {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    x -= Math.floor(x); y -= Math.floor(y);
+    const u = _fade(x), v = _fade(y);
+    const a = _p[X] + Y, b = _p[X + 1] + Y;
+    return _lerp(
+      _lerp(_grad(_p[a],     x,     y),   _grad(_p[b],     x - 1, y),   u),
+      _lerp(_grad(_p[a + 1], x,     y - 1), _grad(_p[b + 1], x - 1, y - 1), u), v);
+  }
+
+  // ── Perlin gobo blobs ────────────────────────────────────────────
+  // Slow-drifting radial blobs driven by 2-D Perlin noise — each blob
+  // wanders a different path, creating an ever-changing ambient glow.
+  function initGobos() {
+    const layer = document.getElementById('gobo-layer');
+    if (!layer) return;
+
+    // Accent colors pulled from the design token palette
+    const CFG = [
+      { color: 'rgba(10,132,255,0.20)',  sz: 58, blur: 130, range: 22 },  // blue
+      { color: 'rgba(88,86,214,0.16)',   sz: 48, blur: 110, range: 18 },  // purple
+      { color: 'rgba(0,199,190,0.12)',   sz: 42, blur: 100, range: 24 },  // teal
+      { color: 'rgba(255,159,10,0.10)',  sz: 36, blur:  90, range: 20 },  // amber (accent variety)
+    ];
+
+    const blobs = CFG.map(({ color, sz, blur, range }, i) => {
+      const el = document.createElement('div');
+      Object.assign(el.style, {
+        position:      'fixed',
+        width:         sz  + 'vw',
+        height:        sz  + 'vw',
+        borderRadius:  '50%',
+        background:    `radial-gradient(circle, ${color}, transparent 70%)`,
+        filter:        `blur(${blur}px)`,
+        pointerEvents: 'none',
+        willChange:    'transform',
+        top:           '0',
+        left:          '0',
+      });
+      layer.appendChild(el);
+      return {
+        el,
+        ox: Math.random() * 100,          // unique noise offset X
+        oy: Math.random() * 100,          // unique noise offset Y
+        cx: 15 + Math.random() * 70,      // centre %, keeps blobs on-screen
+        cy: 15 + Math.random() * 70,
+        range,
+      };
+    });
+
+    gsap.ticker.add(time => {
+      const t = time * 0.038;
+      blobs.forEach(({ el, ox, oy, cx, cy, range }) => {
+        const px = cx + pnoise(t + ox, oy)          * range;
+        const py = cy + pnoise(ox,     t + oy * 1.3) * range;
+        // Use transform (not left/top) for GPU compositing
+        gsap.set(el, { x: px + 'vw', y: py + 'vh', xPercent: -50, yPercent: -50 });
+      });
+    });
+  }
+
+  // ── Starfield ────────────────────────────────────────────────────
+  // Tiny white dots that twinkle independently — pure CSS + GSAP, no
+  // canvas, so they respect the presentation's stacking context and
+  // stay invisible in light theme via the CSS opacity:0.3 override.
+  function initStarfield() {
+    const layer = document.getElementById('starfield');
+    if (!layer) return;
+
+    const COUNT = 95;
+    for (let i = 0; i < COUNT; i++) {
+      const el  = document.createElement('div');
+      const sz  = 1 + Math.random() * 2.2;
+      const x   = Math.random() * 100;
+      const y   = Math.random() * 100;
+      const op  = 0.18 + Math.random() * 0.52;
+
+      Object.assign(el.style, {
+        position:      'absolute',
+        width:         sz + 'px',
+        height:        sz + 'px',
+        borderRadius:  '50%',
+        background:    '#ffffff',
+        left:          x + '%',
+        top:           y + '%',
+        opacity:       op,
+      });
+      layer.appendChild(el);
+
+      // Each star twinkles at its own random cadence
+      gsap.to(el, {
+        opacity:  op * (0.15 + Math.random() * 0.65),
+        duration: 1.8 + Math.random() * 4.5,
+        repeat:   -1,
+        yoyo:     true,
+        ease:     'sine.inOut',
+        delay:    Math.random() * 6,
+      });
+    }
+  }
+
+  // ── Bokeh ────────────────────────────────────────────────────────
+  // Large, heavily blurred glowing discs that drift slowly — mimics
+  // out-of-focus light sources (city lights, stage rigs, etc.).
+  // Keeps opacity low so slides stay legible at all sizes.
+  function initBokeh() {
+    const layer = document.getElementById('bokeh-layer');
+    if (!layer) return;
+
+    const COLORS = [
+      'rgba(10,132,255,0.85)',   // accent blue
+      'rgba(88,86,214,0.75)',    // purple
+      'rgba(0,199,190,0.65)',    // teal
+      'rgba(255,255,255,0.55)',  // white highlight
+      'rgba(255,159,10,0.55)',   // amber
+    ];
+
+    for (let i = 0; i < 15; i++) {
+      const color  = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const sz     = 48 + Math.random() * 110;  // px
+      const blurPx = 14 + Math.random() * 28;
+      const op     = 0.04 + Math.random() * 0.07;
+      const el     = document.createElement('div');
+
+      Object.assign(el.style, {
+        position:      'absolute',
+        width:         sz + 'px',
+        height:        sz + 'px',
+        borderRadius:  '50%',
+        background:    `radial-gradient(circle, ${color}, transparent 68%)`,
+        filter:        `blur(${blurPx}px)`,
+        left:          Math.random() * 100 + '%',
+        top:           Math.random() * 100 + '%',
+        opacity:       op,
+        pointerEvents: 'none',
+        willChange:    'transform, opacity',
+      });
+      layer.appendChild(el);
+
+      // Slow parallax drift + gentle opacity breathe
+      gsap.to(el, {
+        x:        (Math.random() - 0.5) * 220,
+        y:        (Math.random() - 0.5) * 180,
+        opacity:  op * (0.35 + Math.random() * 1.1),
+        duration: 9 + Math.random() * 16,
+        repeat:   -1,
+        yoyo:     true,
+        ease:     'sine.inOut',
+        delay:    Math.random() * 9,
+      });
+    }
+  }
 
   // ── Ken Burns Gallery ────────────────────────────────────────────
   const _kbTimers = new Map();
@@ -856,6 +1052,8 @@
   // Three depth layers drift right-to-left (ocean fog direction).
   // Each layer has different blur, bokeh glow, opacity, and speed —
   // together they create a parallax atmosphere over all slides.
+  // Perlin noise drives each cloud's Y so they curl and breathe
+  // organically rather than sliding in a straight line.
   const FOG_LAYERS = [
     // [ cssClass, minOp, maxOp, minDur, maxDur, weight ]
     ['fog-deep', 0.06, 0.11,  90, 150, 6],  // Karl — enormous, glacial, dominant
@@ -864,6 +1062,9 @@
   ];
   // Weighted layer picker
   const _fogLayerPool = FOG_LAYERS.flatMap(([cls,,,,,w]) => Array(w).fill(cls));
+
+  // Active fog particles tracked for Perlin Y drive
+  const _fogActive = [];
 
   function _spawnFogCloud() {
     const fog = document.getElementById('sf-fog');
@@ -875,24 +1076,37 @@
     const [cls, minOp, maxOp, minDur, maxDur] = cfg;
 
     el.className   = 'fog-particle ' + cls;
-    // 🌫️ for wispy, ☁️ for billowy — random mix
     el.textContent = '☁️';
 
     const fromRight = Math.random() > 0.18;          // mostly right→left like real SF fog
     const startX    = fromRight ?  108 : -40;        // vw
     const endX      = fromRight ? -42  :  110;       // vw
     const y         = Math.random() * 92;            // vh — fill whole screen
-    const vertDrift = (Math.random() - 0.5) * 90;   // px vertical wander
     const dur       = minDur + Math.random() * (maxDur - minDur);
     const op        = minOp  + Math.random() * (maxOp  - minOp);
     const fadeT     = dur * 0.14;
 
+    // Perlin offsets — each cloud wanders a unique path
+    const ox       = Math.random() * 100;
+    const oy       = Math.random() * 100;
+    // Deeper layers wander less (heavier mass), near wisps wander more
+    const yRange   = cls === 'fog-deep' ? 38 : cls === 'fog-mid' ? 60 : 88;
+    const tSpeed   = cls === 'fog-deep' ? 0.012 : cls === 'fog-mid' ? 0.018 : 0.026;
+
     gsap.set(el, { left: startX + 'vw', top: y + 'vh', opacity: 0 });
     fog.appendChild(el);
 
-    gsap.timeline({ onComplete: () => el.remove() })
+    const entry = { el, ox, oy, yRange, tSpeed, alive: true };
+    _fogActive.push(entry);
+
+    gsap.timeline({
+      onComplete: () => {
+        entry.alive = false;
+        el.remove();
+      }
+    })
       .to(el, { opacity: op, duration: fadeT, ease: 'power1.in' })
-      .to(el, { left: endX + 'vw', y: vertDrift, duration: dur, ease: 'none' }, 0)
+      .to(el, { left: endX + 'vw', duration: dur, ease: 'none' }, 0)
       .to(el, { opacity: 0, duration: fadeT, ease: 'power1.out' }, `-=${fadeT}`);
   }
 
@@ -908,20 +1122,48 @@
         const [cls, minOp, maxOp, minDur, maxDur] = cfg;
         el.className   = 'fog-particle ' + cls;
         el.textContent = '☁️';
-        const x   = Math.random() * 100;
-        const y   = Math.random() * 92;
-        const dur = minDur + Math.random() * (maxDur - minDur);
-        const op  = (minOp + Math.random() * (maxOp - minOp)) * 0.75; // slightly dimmer seeds
+        const x      = Math.random() * 100;
+        const y      = Math.random() * 92;
+        const dur    = minDur + Math.random() * (maxDur - minDur);
+        const op     = (minOp + Math.random() * (maxOp - minOp)) * 0.75;
+        const ox     = Math.random() * 100;
+        const oy     = Math.random() * 100;
+        const yRange = cls === 'fog-deep' ? 38 : cls === 'fog-mid' ? 60 : 88;
+        const tSpeed = cls === 'fog-deep' ? 0.012 : cls === 'fog-mid' ? 0.018 : 0.026;
+
         gsap.set(el, { left: x + 'vw', top: y + 'vh', opacity: op });
         fog.appendChild(el);
-        // drift from current x toward left
+
+        const entry = { el, ox, oy, yRange, tSpeed, alive: true };
+        _fogActive.push(entry);
+
         const endX = x - 55 - Math.random() * 55;
-        gsap.to(el, { left: endX + 'vw', y: (Math.random()-0.5)*80, opacity: 0,
-                      duration: dur, ease: 'none', onComplete: () => el.remove() });
+        gsap.to(el, {
+          left: endX + 'vw', opacity: 0, duration: dur, ease: 'none',
+          onComplete: () => { entry.alive = false; el.remove(); }
+        });
       }, i * 200);
     }
+
     // Steady new clouds every 6s — unhurried, like real marine layer
     setInterval(_spawnFogCloud, 6000);
+
+    // Perlin Y drive for all active fog clouds — runs every frame.
+    // X is owned by the GSAP tween (left CSS), Y is owned by transform —
+    // no conflict. Culls dead entries to keep the array lean.
+    gsap.ticker.add(time => {
+      // Cull dead entries periodically
+      if (_fogActive.length > 30) {
+        for (let i = _fogActive.length - 1; i >= 0; i--) {
+          if (!_fogActive[i].alive) _fogActive.splice(i, 1);
+        }
+      }
+      const t = time;
+      _fogActive.forEach(({ el, ox, oy, yRange, tSpeed, alive }) => {
+        if (!alive) return;
+        gsap.set(el, { y: pnoise(t * tSpeed + ox, oy) * yRange });
+      });
+    });
   }
 
   // ── Animate a slide's children in ───────────────────────────────
@@ -1198,6 +1440,12 @@
                        // loses a specificity battle or paints late.
   animateIn(first);
   updateHUD();
+
+  // Perlin atmosphere — runs throughout the entire presentation
+  initGobos();      // slow-drifting radial blobs (Perlin-driven)
+  initStarfield();  // twinkling star field
+  initBokeh();      // blurred bokeh discs
+
   _startFog();    // SF fog — ambient across all slides
 
   // ── Jump buttons ─────────────────────────────────────────────────
