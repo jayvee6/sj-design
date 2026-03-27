@@ -504,13 +504,37 @@
       overflow:       hidden;
     }
 
+    /* Back-layer lives inside the closing slide so it respects the
+       slide's GSAP-created stacking context and sits behind the text */
+    .emoji-rain-back {
+      position:       absolute;
+      inset:          0;
+      overflow:       hidden;
+      pointer-events: none;
+      z-index:        0;
+    }
+
+    /* Slide-inner must sit above the back rain layer */
+    .slide-closing .slide-inner {
+      position: relative;
+      z-index:  1;
+    }
+
     .emoji-particle {
       position:    absolute;
       top:         -80px;
-      font-size:   clamp(24px, 3.5vw, 52px);
       line-height: 1;
       user-select: none;
       will-change: transform, opacity;
+    }
+
+    .emoji-particle.ep-front {
+      font-size: clamp(24px, 3.5vw, 52px);
+    }
+
+    .emoji-particle.ep-back {
+      font-size: clamp(14px, 2vw, 32px);
+      filter:    blur(1.2px);
     }
 
     /* ─── HUD (counter + hints) ──────────────────────────────────── */
@@ -724,48 +748,58 @@
 
   // ── Emoji Rain ──────────────────────────────────────────────────
   const RAIN_EMOJIS = ['🌉','🔑','💰','📈','🏡','🎉','✨','🎊','💫','🥂','🏠','💎'];
-  let _rainInterval = null;
+  let _rainInterval  = null;
+  let _rainBackEl    = null;   // .emoji-rain-back inside closing slide
 
-  function _spawnEmoji() {
-    const rain = document.getElementById('emoji-rain');
-    const el   = document.createElement('span');
-    el.className   = 'emoji-particle';
+  function _spawnEmoji(isBack) {
+    // Back-layer goes inside the slide (behind text); front goes on fixed overlay
+    const container = isBack
+      ? _rainBackEl
+      : document.getElementById('emoji-rain');
+    if (!container) return;
+
+    const el = document.createElement('span');
+    el.className   = 'emoji-particle ' + (isBack ? 'ep-back' : 'ep-front');
     el.textContent = RAIN_EMOJIS[Math.floor(Math.random() * RAIN_EMOJIS.length)];
 
-    const startX  = Math.random() * 105 - 2;   // vw: slight bleed on edges
-    const drift   = (Math.random() - 0.5) * 140; // px horizontal drift
-    const rot     = (Math.random() - 0.5) * 540; // degrees of spin
-    const dur     = 2.8 + Math.random() * 2.4;   // 2.8–5.2s fall
-    const delay   = Math.random() * 0.3;
+    const startX = Math.random() * 105 - 2;
+    const drift  = (Math.random() - 0.5) * (isBack ? 80 : 140);
+    const rot    = (Math.random() - 0.5) * 540;
+    // Back emojis fall slower + start more transparent → feel farther away
+    const dur    = isBack
+      ? 4.0 + Math.random() * 2.8
+      : 2.8 + Math.random() * 2.4;
+    const maxOp  = isBack ? 0.38 : 1;
+    const scale  = isBack
+      ? 0.4 + Math.random() * 0.45
+      : 0.7 + Math.random() * 0.7;
+    const delay  = Math.random() * 0.3;
+    const fallH  = isBack ? container.offsetHeight + 120 : window.innerHeight + 140;
 
-    gsap.set(el, { left: startX + 'vw', top: '-80px', opacity: 0, rotation: 0, scale: 0.6 + Math.random() * 0.8 });
-    rain.appendChild(el);
+    gsap.set(el, { left: startX + 'vw', top: '-80px', opacity: 0, rotation: 0, scale });
+    container.appendChild(el);
 
     gsap.timeline({ onComplete: () => el.remove() })
-      .to(el, { opacity: 1, scale: 1, duration: 0.35, ease: 'power2.out', delay })
-      .to(el, {
-        y:        window.innerHeight + 140,
-        x:        drift,
-        rotation: rot,
-        duration: dur,
-        ease:     'none',
-      }, '<0.1')
-      .to(el, { opacity: 0, duration: 0.6, ease: 'power1.in' }, `-=0.7`);
+      .to(el, { opacity: maxOp, duration: 0.35, ease: 'power2.out', delay })
+      .to(el, { y: fallH, x: drift, rotation: rot, duration: dur, ease: 'none' }, '<0.1')
+      .to(el, { opacity: 0, duration: 0.7, ease: 'power1.in' }, `-=0.85`);
   }
 
-  function startEmojiRain() {
+  function startEmojiRain(slide) {
     if (_rainInterval) return;
-    // Burst: spawn a bunch immediately for instant wow
-    for (let i = 0; i < 18; i++) {
-      setTimeout(_spawnEmoji, i * 60);
+    _rainBackEl = slide ? slide.querySelector('.emoji-rain-back') : null;
+
+    // Initial burst — mix of front and back for instant depth
+    for (let i = 0; i < 22; i++) {
+      setTimeout(() => _spawnEmoji(i % 3 === 0), i * 55);
     }
-    // Then keep a steady rain going
-    _rainInterval = setInterval(_spawnEmoji, 180);
+    // Steady rain: ~60% front, 40% back
+    _rainInterval = setInterval(() => _spawnEmoji(Math.random() < 0.4), 180);
   }
 
   function stopEmojiRain() {
     if (_rainInterval) { clearInterval(_rainInterval); _rainInterval = null; }
-    // Fade out any lingering particles
+    _rainBackEl = null;
     document.querySelectorAll('.emoji-particle').forEach(el => {
       gsap.to(el, { opacity: 0, duration: 0.4, onComplete: () => el.remove() });
     });
@@ -899,7 +933,7 @@
         ft(headline, { scale: 0.88, opacity: 0 }, { duration: DUR * 1.1, ease: EASE_SPRING }, 0);
         ft(cta,      { y:  20, opacity: 0 },      { duration: DUR,       ease: EASE_OUT },    0.28);
         ft(contact,  { opacity: 0 },              { duration: DUR * 0.75, ease: EASE_SOFT },  0.46);
-        tl.call(() => startEmojiRain(), [], 0.5);
+        tl.call(() => startEmojiRain(slide), [], 0.5);
         break;
 
       default: {

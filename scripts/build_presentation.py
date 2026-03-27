@@ -262,6 +262,7 @@ def _render_closing(slide: dict) -> str:
     cta = f'<p class="cta">{_esc(slide["cta"])}</p>' if slide.get("cta") else ""
     contact = f'<p class="contact">{_esc(slide["contact"])}</p>' if slide.get("contact") else ""
     return f"""
+  <div class="emoji-rain-back"></div>
   <div class="slide-inner slide-inner--center">
     <h1 class="headline closing-headline">{_esc(slide.get("heading", ""))}</h1>
     {cta}
