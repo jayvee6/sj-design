@@ -485,16 +485,24 @@
 
     /* ─── HUD (counter + hints) ──────────────────────────────────── */
     #hud {
-      position:    fixed;
-      bottom:      clamp(10px, 1.2vw, 18px);
-      left:        0;
-      right:       0;
-      display:     flex;
-      align-items: center;
-      justify-content: space-between;
-      padding:     0 clamp(16px, 2vw, 28px);
-      pointer-events: none;
-      z-index:     200;
+      position:              fixed;
+      bottom:                clamp(10px, 1.2vw, 18px);
+      left:                  0;
+      right:                 0;
+      display:               grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:           center;
+      padding:               0 clamp(16px, 2vw, 28px);
+      pointer-events:        none;
+      z-index:               200;
+    }
+
+    #hud-right {
+      display:         flex;
+      align-items:     center;
+      justify-content: flex-end;
+      gap:             clamp(8px, 1.2vw, 16px);
+      pointer-events:  all;
     }
 
     .hud-label {
@@ -535,6 +543,11 @@
       display:        flex;
       gap:            3px;
       pointer-events: all;
+      justify-content: flex-start;
+    }
+
+    #counter {
+      text-align: center;
     }
 
     /* Text size pill buttons */
@@ -613,13 +626,15 @@
     <button class="ts-btn" id="btn-last"  title="Jump to last slide">⏭</button>
   </div>
   <span class="hud-label" id="counter">1 / {{SLIDE_COUNT}}</span>
-  <div id="text-sizer">
-    <button class="ts-btn" data-ts="sm">A−</button>
-    <button class="ts-btn ts-active" data-ts="md">A</button>
-    <button class="ts-btn" data-ts="lg">A+</button>
-    <button class="ts-btn" data-ts="xl">A++</button>
+  <div id="hud-right">
+    <span class="hud-label" id="hint">← → &nbsp;·&nbsp; F fullscreen</span>
+    <div id="text-sizer">
+      <button class="ts-btn" data-ts="sm">A−</button>
+      <button class="ts-btn ts-active" data-ts="md">A</button>
+      <button class="ts-btn" data-ts="lg">A+</button>
+      <button class="ts-btn" data-ts="xl">A++</button>
+    </div>
   </div>
-  <span class="hud-label" id="hint">← → navigate &nbsp;·&nbsp; F fullscreen</span>
 </div>
 
 <script>
