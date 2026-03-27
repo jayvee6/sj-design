@@ -173,9 +173,9 @@
 
     .bullets li {
       font-size:   clamp(17px, 2.3vw, 34px);
-      font-weight: 400;
+      font-weight: 500;
       line-height: 1.5;
-      color:       var(--label-2);
+      color:       var(--label-1);
       padding-left: clamp(18px, 1.8vw, 28px);
       position:    relative;
     }
@@ -269,15 +269,20 @@
       flex-direction: column;
       gap:            clamp(6px, 0.8vw, 12px);
       padding:        clamp(14px, 1.8vw, 28px);
-      background:     var(--fill-1);
+      background:     rgba(255,255,255,0.07);
       border-radius:  clamp(10px, 1.2vw, 18px);
-      border:         1px solid var(--sep);
+      border:         1px solid rgba(255,255,255,0.18);
+      box-shadow:     0 4px 24px rgba(0,0,0,0.4);
     }
 
     .col-title {
-      font-size:   clamp(13px, 1.4vw, 20px);
-      font-weight: 600;
-      color:       var(--label-1);
+      font-size:      clamp(13px, 1.4vw, 20px);
+      font-weight:    700;
+      color:          var(--label-1);
+      letter-spacing: 0.01em;
+      padding-bottom: clamp(4px, 0.5vw, 8px);
+      border-bottom:  1px solid rgba(255,255,255,0.10);
+      margin-bottom:  clamp(2px, 0.3vw, 4px);
     }
 
     .col-text {
@@ -537,6 +542,45 @@
       filter:    blur(1.2px);
     }
 
+    /* ─── SF Fog ─────────────────────────────────────────────────── */
+    #sf-fog {
+      position:       fixed;
+      inset:          0;
+      pointer-events: none;
+      z-index:        8;   /* above slides, well below HUD (200) */
+      overflow:       hidden;
+    }
+
+    .fog-particle {
+      position:    absolute;
+      line-height: 1;
+      user-select: none;
+      will-change: transform, opacity;
+    }
+
+    /* Deep background — Karl in all his glory. Huge, fully dissolved into bokeh */
+    .fog-deep {
+      font-size:   clamp(220px, 38vw, 520px);
+      filter:      blur(32px);
+      text-shadow: 0 0 80px  rgba(180, 210, 255, 0.50),
+                   0 0 160px rgba(160, 190, 240, 0.28);
+    }
+
+    /* Mid layer — still massive, softer bokeh */
+    .fog-mid {
+      font-size:   clamp(160px, 26vw, 360px);
+      filter:      blur(16px);
+      text-shadow: 0 0 50px rgba(190, 215, 255, 0.38),
+                   0 0 100px rgba(170, 200, 245, 0.18);
+    }
+
+    /* Near layer — large and lazy, just slightly in focus */
+    .fog-near {
+      font-size:   clamp(100px, 17vw, 240px);
+      filter:      blur(6px);
+      text-shadow: 0 0 28px rgba(200, 220, 255, 0.28);
+    }
+
     /* ─── HUD (counter + hints) ──────────────────────────────────── */
     #hud {
       position:              fixed;
@@ -673,6 +717,7 @@
 </div>
 
 <div id="progress"></div>
+<div id="sf-fog"></div>
 <div id="emoji-rain"></div>
 
 <div id="hud">
@@ -803,6 +848,78 @@
     document.querySelectorAll('.emoji-particle').forEach(el => {
       gsap.to(el, { opacity: 0, duration: 0.4, onComplete: () => el.remove() });
     });
+  }
+
+  // ── SF Fog ──────────────────────────────────────────────────────
+  // Three depth layers drift right-to-left (ocean fog direction).
+  // Each layer has different blur, bokeh glow, opacity, and speed —
+  // together they create a parallax atmosphere over all slides.
+  const FOG_LAYERS = [
+    // [ cssClass, minOp, maxOp, minDur, maxDur, weight ]
+    ['fog-deep', 0.06, 0.11,  90, 150, 6],  // Karl — enormous, glacial, dominant
+    ['fog-mid',  0.08, 0.13,  70, 110, 3],  // supporting mass
+    ['fog-near', 0.09, 0.15,  55,  85, 1],  // rare, nearly as slow
+  ];
+  // Weighted layer picker
+  const _fogLayerPool = FOG_LAYERS.flatMap(([cls,,,,,w]) => Array(w).fill(cls));
+
+  function _spawnFogCloud() {
+    const fog = document.getElementById('sf-fog');
+    const el  = document.createElement('span');
+
+    // Pick depth layer
+    const layerCls = _fogLayerPool[Math.floor(Math.random() * _fogLayerPool.length)];
+    const cfg = FOG_LAYERS.find(l => l[0] === layerCls);
+    const [cls, minOp, maxOp, minDur, maxDur] = cfg;
+
+    el.className   = 'fog-particle ' + cls;
+    // 🌫️ for wispy, ☁️ for billowy — random mix
+    el.textContent = '☁️';
+
+    const fromRight = Math.random() > 0.18;          // mostly right→left like real SF fog
+    const startX    = fromRight ?  108 : -40;        // vw
+    const endX      = fromRight ? -42  :  110;       // vw
+    const y         = Math.random() * 92;            // vh — fill whole screen
+    const vertDrift = (Math.random() - 0.5) * 90;   // px vertical wander
+    const dur       = minDur + Math.random() * (maxDur - minDur);
+    const op        = minOp  + Math.random() * (maxOp  - minOp);
+    const fadeT     = dur * 0.14;
+
+    gsap.set(el, { left: startX + 'vw', top: y + 'vh', opacity: 0 });
+    fog.appendChild(el);
+
+    gsap.timeline({ onComplete: () => el.remove() })
+      .to(el, { opacity: op, duration: fadeT, ease: 'power1.in' })
+      .to(el, { left: endX + 'vw', y: vertDrift, duration: dur, ease: 'none' }, 0)
+      .to(el, { opacity: 0, duration: fadeT, ease: 'power1.out' }, `-=${fadeT}`);
+  }
+
+  function _startFog() {
+    // Seed: immediately place clouds at random x positions so there's no
+    // awkward empty-screen moment at the start
+    for (let i = 0; i < 6; i++) {
+      setTimeout(() => {
+        const fog = document.getElementById('sf-fog');
+        const el  = document.createElement('span');
+        const layerCls = _fogLayerPool[Math.floor(Math.random() * _fogLayerPool.length)];
+        const cfg = FOG_LAYERS.find(l => l[0] === layerCls);
+        const [cls, minOp, maxOp, minDur, maxDur] = cfg;
+        el.className   = 'fog-particle ' + cls;
+        el.textContent = '☁️';
+        const x   = Math.random() * 100;
+        const y   = Math.random() * 92;
+        const dur = minDur + Math.random() * (maxDur - minDur);
+        const op  = (minOp + Math.random() * (maxOp - minOp)) * 0.75; // slightly dimmer seeds
+        gsap.set(el, { left: x + 'vw', top: y + 'vh', opacity: op });
+        fog.appendChild(el);
+        // drift from current x toward left
+        const endX = x - 55 - Math.random() * 55;
+        gsap.to(el, { left: endX + 'vw', y: (Math.random()-0.5)*80, opacity: 0,
+                      duration: dur, ease: 'none', onComplete: () => el.remove() });
+      }, i * 200);
+    }
+    // Steady new clouds every 6s — unhurried, like real marine layer
+    setInterval(_spawnFogCloud, 6000);
   }
 
   // ── Animate a slide's children in ───────────────────────────────
@@ -1079,6 +1196,7 @@
                        // loses a specificity battle or paints late.
   animateIn(first);
   updateHUD();
+  _startFog();    // SF fog — ambient across all slides
 
   // ── Jump buttons ─────────────────────────────────────────────────
   document.getElementById('btn-first').addEventListener('click', e => {
