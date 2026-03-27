@@ -833,7 +833,7 @@
   }
 
   function startEmojiRain(slide) {
-    if (_rainInterval) return;
+    stopEmojiRain(); // always clear first — prevents stuck state from stale intervals
     _rainBackEl = slide ? slide.querySelector('.emoji-rain-back') : null;
 
     // Initial burst — mix of front and back for instant depth
@@ -1052,7 +1052,7 @@
         ft(headline, { scale: 0.88, opacity: 0 }, { duration: DUR * 1.1, ease: EASE_SPRING }, 0);
         ft(cta,      { y:  20, opacity: 0 },      { duration: DUR,       ease: EASE_OUT },    0.28);
         ft(contact,  { opacity: 0 },              { duration: DUR * 0.75, ease: EASE_SOFT },  0.46);
-        tl.call(() => { if (_emojiRainEnabled) startEmojiRain(slide); }, [], 0.5);
+        tl.call(() => { if (_emojiRainEnabled && slides[current] === slide) startEmojiRain(slide); }, [], 0.5);
         break;
 
       default: {
