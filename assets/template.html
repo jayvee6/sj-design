@@ -104,10 +104,10 @@
     /* ─── Slide inner containers ─────────────────────────────────── */
     .slide-inner {
       width: 100%;
-      max-width: 960px;
+      max-width: 1100px;
       display: flex;
       flex-direction: column;
-      gap: clamp(10px, 1.8vw, 24px);
+      gap: clamp(12px, 2vw, 28px);
     }
 
     .slide-inner--center {
@@ -157,7 +157,7 @@
 
     /* ─── Subheading ─────────────────────────────────────────────── */
     .subheading {
-      font-size:   clamp(14px, 1.8vw, 28px);
+      font-size:   clamp(17px, 2.2vw, 32px);
       font-weight: 400;
       line-height: 1.45;
       color:       var(--label-2);
@@ -168,11 +168,11 @@
       list-style:    none;
       display:       flex;
       flex-direction: column;
-      gap:           clamp(6px, 1vw, 14px);
+      gap:           clamp(10px, 1.4vw, 20px);
     }
 
     .bullets li {
-      font-size:   clamp(13px, 1.65vw, 24px);
+      font-size:   clamp(17px, 2.3vw, 34px);
       font-weight: 400;
       line-height: 1.5;
       color:       var(--label-2);
@@ -300,6 +300,93 @@
       border:      none;
     }
 
+    /* ─── Ken Burns Gallery ──────────────────────────────────────── */
+    .slide-gallery .slide-inner {
+      gap: clamp(8px, 1.2vw, 18px);
+    }
+
+    .gallery-frame {
+      width:         100%;
+      max-width:     min(960px, 94vw);
+      aspect-ratio:  16 / 9;
+      border-radius: clamp(8px, 1vw, 14px);
+      overflow:      hidden;
+      background:    #000;
+      box-shadow:    var(--glass-shd);
+      position:      relative;
+    }
+
+    .gallery-kb {
+      position: relative;
+      width:    100%;
+      height:   100%;
+    }
+
+    .kb-slide {
+      position: absolute;
+      inset:    0;
+      opacity:  0; /* GSAP controls crossfade — no CSS transition */
+    }
+
+    .kb-slide img {
+      width:        100%;
+      height:       100%;
+      object-fit:   cover;
+      will-change:  transform;
+      display:      block;
+    }
+
+    /* All photos animate continuously — opacity controls visibility.
+       Negative delays start each photo mid-cycle so they're already
+       in motion when they cross-fade in. No snap-back on transition. */
+    .kb-slide:nth-child(1) img { animation: kb-1 7s ease-in-out infinite alternate; animation-delay:  -0s; }
+    .kb-slide:nth-child(2) img { animation: kb-2 7s ease-in-out infinite alternate; animation-delay: -2s; }
+    .kb-slide:nth-child(3) img { animation: kb-3 7s ease-in-out infinite alternate; animation-delay: -4s; }
+    .kb-slide:nth-child(4) img { animation: kb-4 7s ease-in-out infinite alternate; animation-delay: -1s; }
+    .kb-slide:nth-child(5) img { animation: kb-1 7s ease-in-out infinite alternate; animation-delay: -3s; }
+    .kb-slide:nth-child(6) img { animation: kb-2 7s ease-in-out infinite alternate; animation-delay: -5s; }
+    .kb-slide:nth-child(7) img { animation: kb-3 7s ease-in-out infinite alternate; animation-delay: -2s; }
+    .kb-slide:nth-child(8) img { animation: kb-4 7s ease-in-out infinite alternate; animation-delay: -6s; }
+    .kb-slide:nth-child(9) img { animation: kb-1 7s ease-in-out infinite alternate; animation-delay: -3s; }
+
+    @keyframes kb-1 {
+      0%   { transform: scale(1.00) translate( 0%,   0%); }
+      100% { transform: scale(1.18) translate(-3%,  -2%); }
+    }
+    @keyframes kb-2 {
+      0%   { transform: scale(1.18) translate(-3%,   2%); }
+      100% { transform: scale(1.00) translate( 3%,  -1%); }
+    }
+    @keyframes kb-3 {
+      0%   { transform: scale(1.00) translate( 3%,   1%); }
+      100% { transform: scale(1.16) translate(-2%,  -3%); }
+    }
+    @keyframes kb-4 {
+      0%   { transform: scale(1.12) translate(-1%,   2%); }
+      100% { transform: scale(1.00) translate( 2%,  -2%); }
+    }
+
+    /* Dot indicators */
+    .gallery-dots {
+      display:         flex;
+      gap:             clamp(4px, 0.5vw, 8px);
+      justify-content: center;
+      margin-top:      clamp(4px, 0.6vw, 10px);
+    }
+
+    .gallery-dot {
+      width:         5px;
+      height:        5px;
+      border-radius: 50%;
+      background:    rgba(255,255,255,0.22);
+      transition:    background 0.4s ease, transform 0.4s ease;
+    }
+
+    .gallery-dot.kb-dot-active {
+      background: rgba(255,255,255,0.88);
+      transform:  scale(1.4);
+    }
+
     .media-caption {
       font-size: clamp(10px, 0.95vw, 14px);
       color:     var(--label-3);
@@ -315,6 +402,72 @@
     .contact {
       font-size: clamp(11px, 1vw, 16px);
       color:     var(--label-3);
+    }
+
+    /* ─── Stats bento ────────────────────────────────────────────── */
+    .slide-stats .slide-inner {
+      gap: clamp(10px, 1.4vw, 20px);
+      justify-content: flex-start;
+      padding-top: clamp(20px, 4vh, 52px);
+    }
+
+    .stats-grid {
+      display:               grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows:        minmax(clamp(80px, 11vh, 140px), auto);
+      gap:                   clamp(8px, 1.1vw, 16px);
+      width:                 100%;
+    }
+
+    .stat-card {
+      display:        flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap:             clamp(3px, 0.4vw, 6px);
+      padding:         clamp(14px, 1.8vw, 26px);
+      background:      var(--fill-1);
+      border:          1px solid var(--sep);
+      border-radius:   clamp(10px, 1.3vw, 20px);
+      position:        relative;
+      overflow:        hidden;
+    }
+
+    /* Featured: spans 2 columns, taller, accent glow */
+    .stat-card.stat-featured {
+      grid-column:  span 2;
+      background:   linear-gradient(135deg,
+                      rgba(0, 136, 255, 0.12) 0%,
+                      rgba(0, 136, 255, 0.04) 60%,
+                      var(--fill-1) 100%);
+      border-color: rgba(0, 136, 255, 0.3);
+      box-shadow:   0 0 40px rgba(0, 136, 255, 0.08),
+                    inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .stat-label {
+      font-size:      clamp(10px, 1vw, 14px);
+      font-weight:    500;
+      color:          var(--label-3);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size:      clamp(28px, 4.8vw, 72px);
+      font-weight:    700;
+      color:          var(--accent);
+      letter-spacing: -0.03em;
+      line-height:    1;
+    }
+
+    .stat-card.stat-featured .stat-value {
+      font-size: clamp(36px, 6.5vw, 96px);
+    }
+
+    .stat-sublabel {
+      font-size:   clamp(10px, 0.9vw, 13px);
+      color:       var(--label-3);
+      font-weight: 400;
     }
 
     /* ─── Progress bar ───────────────────────────────────────────── */
@@ -351,6 +504,65 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* ─── Text size presets ──────────────────────────────────────── */
+    /* ts-md is the default — no overrides needed                   */
+    .ts-sm .headline              { font-size: clamp(22px, 3.8vw, 56px); }
+    .ts-sm .slide-title .headline { font-size: clamp(26px, 5vw, 72px); }
+    .ts-sm .closing-headline      { font-size: clamp(26px, 4.5vw, 66px); }
+    .ts-sm .subheading            { font-size: clamp(13px, 1.6vw, 24px); }
+    .ts-sm .bullets li            { font-size: clamp(14px, 1.9vw, 28px); }
+    .ts-sm blockquote             { font-size: clamp(16px, 2.6vw, 40px); }
+    .ts-sm .col-title             { font-size: clamp(11px, 1.1vw, 16px); }
+
+    .ts-lg .headline              { font-size: clamp(30px, 5.4vw, 80px); }
+    .ts-lg .slide-title .headline { font-size: clamp(38px, 7.2vw, 104px); }
+    .ts-lg .closing-headline      { font-size: clamp(38px, 6.5vw, 94px); }
+    .ts-lg .subheading            { font-size: clamp(19px, 2.6vw, 36px); }
+    .ts-lg .bullets li            { font-size: clamp(20px, 2.7vw, 40px); }
+    .ts-lg blockquote             { font-size: clamp(24px, 3.8vw, 56px); }
+    .ts-lg .col-title             { font-size: clamp(15px, 1.6vw, 23px); }
+
+    .ts-xl .headline              { font-size: clamp(34px, 6.2vw, 92px); }
+    .ts-xl .slide-title .headline { font-size: clamp(42px, 8.2vw, 118px); }
+    .ts-xl .closing-headline      { font-size: clamp(42px, 7.4vw, 108px); }
+    .ts-xl .subheading            { font-size: clamp(22px, 3vw, 42px); }
+    .ts-xl .bullets li            { font-size: clamp(23px, 3.1vw, 46px); }
+    .ts-xl blockquote             { font-size: clamp(28px, 4.4vw, 64px); }
+    .ts-xl .col-title             { font-size: clamp(17px, 1.8vw, 26px); }
+
+    /* Text size pill buttons */
+    #text-sizer {
+      display:  flex;
+      gap:      3px;
+      pointer-events: all;
+    }
+
+    .ts-btn {
+      background:    rgba(255,255,255,0.07);
+      border:        1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      color:         var(--label-3);
+      font-family:   inherit;
+      font-size:     10px;
+      font-weight:   600;
+      letter-spacing: 0.02em;
+      padding:       4px 9px;
+      cursor:        pointer;
+      transition:    background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+      line-height:   1;
+    }
+
+    .ts-btn:hover {
+      background:   rgba(255,255,255,0.13);
+      color:        var(--label-2);
+    }
+
+    .ts-btn.ts-active {
+      background:   rgba(0,136,255,0.18);
+      border-color: rgba(0,136,255,0.4);
+      color:        var(--accent);
+    }
+
     /* ─── Pre-hide animatable children ──────────────────────────── */
     /* Set opacity:0 before JS loads so there's no flash of content  */
     /* before GSAP's fromTo() takes over. GSAP overrides via inline  */
@@ -364,7 +576,9 @@
     .slide cite,
     .slide .quote-watermark,
     .slide .col,
+    .slide .stat-card,
     .slide .media-frame,
+    .slide .gallery-frame,
     .slide .media-caption,
     .slide .cta,
     .slide .contact,
@@ -388,6 +602,12 @@
 
 <div id="hud">
   <span class="hud-label" id="counter">1 / {{SLIDE_COUNT}}</span>
+  <div id="text-sizer">
+    <button class="ts-btn" data-ts="sm">A−</button>
+    <button class="ts-btn ts-active" data-ts="md">A</button>
+    <button class="ts-btn" data-ts="lg">A+</button>
+    <button class="ts-btn" data-ts="xl">A++</button>
+  </div>
   <span class="hud-label" id="hint">← → navigate &nbsp;·&nbsp; F fullscreen</span>
 </div>
 
@@ -407,6 +627,43 @@
 
   let current   = 0;
   let animating = false;
+
+  // ── Ken Burns Gallery ────────────────────────────────────────────
+  const _kbTimers = new Map();
+
+  function _startGallery(slide) {
+    const gallery = slide.querySelector('.gallery-kb');
+    if (!gallery) return;
+    const kbSlides = Array.from(gallery.querySelectorAll('.kb-slide'));
+    const dots     = Array.from(slide.querySelectorAll('.gallery-dot'));
+    if (!kbSlides.length) return;
+
+    let idx = 0;
+    // Fade first photo in via GSAP
+    gsap.to(kbSlides[0], { opacity: 1, duration: 0.8, ease: 'power2.inOut' });
+    if (dots[0]) dots[0].classList.add('kb-dot-active');
+
+    const timer = setInterval(() => {
+      const prev = idx;
+      idx = (idx + 1) % kbSlides.length;
+      // Simultaneous GSAP crossfade — no snap, no hitch
+      gsap.to(kbSlides[prev], { opacity: 0, duration: 1.2, ease: 'power2.inOut' });
+      gsap.to(kbSlides[idx],  { opacity: 1, duration: 1.2, ease: 'power2.inOut' });
+      if (dots[prev]) dots[prev].classList.remove('kb-dot-active');
+      if (dots[idx])  dots[idx].classList.add('kb-dot-active');
+    }, 3800);
+
+    _kbTimers.set(slide, timer);
+  }
+
+  function _stopGallery(slide) {
+    const t = _kbTimers.get(slide);
+    if (t) { clearInterval(t); _kbTimers.delete(slide); }
+    const gallery = slide.querySelector('.gallery-kb');
+    if (!gallery) return;
+    gsap.set(gallery.querySelectorAll('.kb-slide'), { opacity: 0 });
+    slide.querySelectorAll('.gallery-dot').forEach(d => d.classList.remove('kb-dot-active'));
+  }
 
   // ── Animate a slide's children in ───────────────────────────────
   // Uses fromTo() exclusively so start AND end states are unambiguous —
@@ -431,6 +688,7 @@
     const watermark = get('.quote-watermark');
     const cols      = getA('.col');
     const frame     = get('.media-frame');
+    const gframe    = get('.gallery-frame');
     const caption   = get('.media-caption');
     const cta       = get('.cta');
     const contact   = get('.contact');
@@ -482,6 +740,48 @@
           { duration: DUR * 0.65, ease: EASE_OUT }, 0.42 + i * 0.07));
         break;
 
+      case 'stats': {
+        ft(eyebrow,  { y: -14, opacity: 0 }, { duration: DUR * 0.65, ease: EASE_OUT  }, 0);
+        ft(headline, { y:  22, opacity: 0 }, { duration: DUR,        ease: EASE_OUT  }, 0.06);
+        const statCards = getA('.stat-card');
+        statCards.forEach((card, i) => {
+          ft(card, { y: 24, scale: 0.94, opacity: 0 },
+            { duration: DUR * 1.0, ease: EASE_SPRING }, 0.18 + i * 0.09);
+        });
+        // Count-up animation on .stat-value elements after cards appear
+        tl.call(() => {
+          slide.querySelectorAll('.stat-value[data-target]').forEach(el => {
+            const raw    = el.dataset.target;        // e.g. "$12,000" "+$234K" "68%"
+            const prefix = raw.match(/^[^0-9]*/)[0];
+            const suffix = raw.match(/[^0-9.]*$/)[0];
+            const num    = parseFloat(raw.replace(/[^0-9.]/g, '')) || 0;
+            const isInt  = Number.isInteger(num);
+            gsap.fromTo({ v: 0 }, { v: 0 }, {
+              v: num,
+              duration: 1.1,
+              ease: 'power2.out',
+              onUpdate: function () {
+                const val = this.targets()[0].v;
+                const fmt = isInt
+                  ? Math.round(val).toLocaleString()
+                  : val.toFixed(1);
+                el.textContent = prefix + fmt + suffix;
+              }
+            });
+          });
+        }, [], 0.3);
+        break;
+      }
+
+      case 'gallery':
+        ft(eyebrow,  { y: -14, opacity: 0 },       { duration: DUR * 0.65, ease: EASE_OUT  }, 0);
+        ft(headline, { y:  18, opacity: 0 },        { duration: DUR,        ease: EASE_OUT  }, 0.06);
+        ft(gframe,   { scale: 0.96, opacity: 0 },   { duration: DUR * 1.1,  ease: EASE_OUT  }, 0.14);
+        ft(caption,  { opacity: 0 },                { duration: DUR * 0.6,  ease: EASE_SOFT }, 0.52);
+        // Start Ken Burns after frame has animated in
+        tl.call(() => _startGallery(slide), [], 0.42);
+        break;
+
       case 'media':
         ft(headline, { y: -18, opacity: 0   }, { duration: DUR * 0.75, ease: EASE_OUT  }, 0);
         ft(frame,    { scale: 0.94, opacity: 0 }, { duration: DUR * 1.05, ease: EASE_OUT }, headline ? 0.1 : 0);
@@ -510,10 +810,11 @@
   // Called before a slide becomes active to prevent flashing of
   // previously-animated content (which has GSAP inline opacity:1).
   const CHILD_SEL = '.eyebrow, .slide-icon, .headline, .subheading, ' +
-    '.bullets li, blockquote, cite, .col, .media-frame, ' +
+    '.bullets li, blockquote, cite, .col, .stat-card, .media-frame, .gallery-frame, ' +
     '.media-caption, .cta, .contact, .slide-note';
 
   function resetSlide(slide) {
+    _stopGallery(slide);
     gsap.set(slide.querySelectorAll(CHILD_SEL), { opacity: 0 });
     const wm = slide.querySelector('.quote-watermark');
     if (wm) gsap.set(wm, { opacity: 0, scale: 1.4 });
@@ -528,8 +829,8 @@
     const to   = slides[next];
     const dx   = dir * 36;
 
-    // Hide incoming slide's children BEFORE it becomes visible
-    resetSlide(to);
+    _stopGallery(from);      // stop Ken Burns on outgoing slide
+    resetSlide(to);          // hide incoming slide's children before visible
 
     // Outgoing slide
     gsap.to(from, {
@@ -635,6 +936,31 @@
                        // loses a specificity battle or paints late.
   animateIn(first);
   updateHUD();
+
+  // ── Text size control ────────────────────────────────────────────
+  const TS_CLASSES = ['ts-sm', 'ts-md', 'ts-lg', 'ts-xl'];
+
+  function applyTextSize(size) {
+    TS_CLASSES.forEach(c => document.documentElement.classList.remove(c));
+    if (size !== 'md') document.documentElement.classList.add(`ts-${size}`);
+    document.querySelectorAll('.ts-btn').forEach(b => {
+      b.classList.toggle('ts-active', b.dataset.ts === size);
+    });
+    try { localStorage.setItem('pres-ts', size); } catch(e) {}
+  }
+
+  document.querySelectorAll('.ts-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      applyTextSize(btn.dataset.ts);
+    });
+  });
+
+  // Restore saved preference
+  try {
+    const saved = localStorage.getItem('pres-ts');
+    if (saved && TS_CLASSES.includes(`ts-${saved}`)) applyTextSize(saved);
+  } catch(e) {}
 
   // Fade hint out after 4 s of inactivity
   setTimeout(() => {

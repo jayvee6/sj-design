@@ -9,7 +9,9 @@ Usage:
   echo '{"title":"Demo","slides":[...]}' | python3 build_presentation.py
 """
 
+import base64
 import json
+import mimetypes
 import sys
 import re
 import argparse
@@ -68,7 +70,9 @@ def render_slide(slide: dict, index: int) -> str:
         "content": _render_content,
         "quote": _render_quote,
         "two-column": _render_two_column,
+        "stats": _render_stats,
         "media": _render_media,
+        "gallery": _render_gallery,
         "closing": _render_closing,
     }
     renderer = dispatch.get(slide_type, _render_content)
@@ -143,14 +147,34 @@ def _render_two_column(slide: dict) -> str:
   </div>"""
 
 
+def _local_to_data_uri(src: str) -> str:
+    """If src is a local file path that exists, return a base64 data URI. Otherwise return src unchanged."""
+    p = Path(src)
+    if not p.is_absolute():
+        p = Path(src).expanduser()
+    if p.exists() and p.is_file():
+        mime = mimetypes.guess_type(str(p))[0] or "image/webp"
+        # .webp files not always detected by mimetypes
+        if str(p).endswith(".webp"):
+            mime = "image/webp"
+        data = base64.b64encode(p.read_bytes()).decode()
+        print(f"  Embedded {p.name} ({p.stat().st_size // 1024}KB) as base64", file=sys.stderr)
+        return f"data:{mime};base64,{data}"
+    return src
+
+
 def _render_media(slide: dict) -> str:
     src = slide.get("src", "")
+    # Auto-embed local file paths as base64 data URIs
+    if src and not src.startswith(("http://", "https://", "data:")):
+        src = _local_to_data_uri(src)
+
     media_type = slide.get("media_type", "auto")
     if media_type == "auto":
-        media_type = detect_media_type(src)
+        media_type = detect_media_type(slide.get("src", src))
 
     if media_type == "youtube":
-        embed = youtube_to_embed(src)
+        embed = youtube_to_embed(slide.get("src", src))
         media_html = (
             f'<iframe src="{embed}" frameborder="0" '
             f'allow="accelerometer; autoplay; clipboard-write; encrypted-media; '
@@ -168,6 +192,66 @@ def _render_media(slide: dict) -> str:
   <div class="slide-inner slide-inner--center slide-inner--media">
     {heading}
     <div class="media-frame">{media_html}</div>
+    {caption}
+  </div>"""
+
+
+def _render_stats(slide: dict) -> str:
+    """Bento-style grid of big-number stat cards."""
+    stats = slide.get("stats", [])
+    cards_html = ""
+    for stat in stats:
+        featured_class = " stat-featured" if stat.get("featured") or stat.get("span", 1) > 1 else ""
+        value     = _esc(stat.get("value", ""))
+        label     = _esc(stat.get("label", ""))
+        sublabel  = _esc(stat.get("sublabel", ""))
+        sub_html  = f'<span class="stat-sublabel">{sublabel}</span>' if sublabel else ""
+        # data-target drives the count-up animation in JS
+        cards_html += f"""
+    <div class="stat-card{featured_class}">
+      <span class="stat-label">{label}</span>
+      <span class="stat-value" data-target="{value}">{value}</span>
+      {sub_html}
+    </div>"""
+
+    eyebrow_html = _eyebrow(slide)
+    heading = f'<h2 class="headline">{_esc(slide["heading"])}</h2>' if slide.get("heading") else ""
+    return f"""
+  <div class="slide-inner">
+    {eyebrow_html}
+    {heading}
+    <div class="stats-grid">{cards_html}
+    </div>
+  </div>"""
+
+
+def _render_gallery(slide: dict) -> str:
+    """Ken Burns photo gallery — cycles through multiple images with pan/zoom."""
+    srcs = slide.get("srcs", [])
+    kb_slides_html = ""
+    for src in srcs:
+        if src and not src.startswith(("http://", "https://", "data:")):
+            src = _local_to_data_uri(src)
+        kb_slides_html += f'\n      <div class="kb-slide"><img src="{src}" alt="" loading="lazy"></div>'
+
+    dots_html = ""
+    if len(srcs) > 1:
+        dots = "".join('<div class="gallery-dot"></div>' for _ in srcs)
+        dots_html = f'<div class="gallery-dots">{dots}</div>'
+
+    eyebrow_html = _eyebrow(slide)
+    heading = f'<h2 class="headline">{_esc(slide["heading"])}</h2>' if slide.get("heading") else ""
+    caption = f'<p class="media-caption">{_esc(slide["caption"])}</p>' if slide.get("caption") else ""
+
+    return f"""
+  <div class="slide-inner slide-inner--center slide-inner--media">
+    {eyebrow_html}
+    {heading}
+    <div class="gallery-frame">
+      <div class="gallery-kb">{kb_slides_html}
+      </div>
+    </div>
+    {dots_html}
     {caption}
   </div>"""
 
