@@ -530,6 +530,13 @@
     .ts-xl blockquote             { font-size: clamp(28px, 4.4vw, 64px); }
     .ts-xl .col-title             { font-size: clamp(17px, 1.8vw, 26px); }
 
+    /* Nav jump buttons */
+    #nav-jumps {
+      display:        flex;
+      gap:            3px;
+      pointer-events: all;
+    }
+
     /* Text size pill buttons */
     #text-sizer {
       display:  flex;
@@ -601,6 +608,10 @@
 <div id="progress"></div>
 
 <div id="hud">
+  <div id="nav-jumps">
+    <button class="ts-btn" id="btn-first" title="Jump to first slide">⏮</button>
+    <button class="ts-btn" id="btn-last"  title="Jump to last slide">⏭</button>
+  </div>
   <span class="hud-label" id="counter">1 / {{SLIDE_COUNT}}</span>
   <div id="text-sizer">
     <button class="ts-btn" data-ts="sm">A−</button>
@@ -936,6 +947,16 @@
                        // loses a specificity battle or paints late.
   animateIn(first);
   updateHUD();
+
+  // ── Jump buttons ─────────────────────────────────────────────────
+  document.getElementById('btn-first').addEventListener('click', e => {
+    e.stopPropagation();
+    if (current !== 0) goTo(0, -1);
+  });
+  document.getElementById('btn-last').addEventListener('click', e => {
+    e.stopPropagation();
+    if (current !== TOTAL - 1) goTo(TOTAL - 1, 1);
+  });
 
   // ── Text size control ────────────────────────────────────────────
   const TS_CLASSES = ['ts-sm', 'ts-md', 'ts-lg', 'ts-xl'];
