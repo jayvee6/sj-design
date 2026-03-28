@@ -242,9 +242,11 @@
     .slide-inner {
       width: 100%;
       max-width: 1100px;
+      max-height: 100%;   /* never taller than the slide's content box (deck - padding) */
+      overflow: hidden;   /* clip if content is still too tall — prevents top+bottom double-clip */
       display: flex;
       flex-direction: column;
-      gap: clamp(12px, 2vw, 28px);
+      gap: clamp(10px, 1.6vw, 24px);
     }
 
     .slide-inner--center {
@@ -901,6 +903,31 @@
     /* Each word in a split headline is wrapped in .wi for staggered reveals */
     .wi { display: inline-block; }
 
+    /* ─── Portrait / small-screen ───────────────────────────────── */
+    /* Tight vertical space: compress gaps and padding so content fits */
+    @media (max-height: 500px), (max-width: 600px) {
+      .slide { padding: clamp(14px, 3%, 32px) clamp(18px, 4%, 56px); }
+      .slide-inner { gap: clamp(6px, 1vw, 14px); }
+      .headline { font-size: clamp(18px, 4vw, 42px) !important; }
+      .eyebrow  { font-size: clamp(9px, 1.4vw, 16px) !important; }
+      .bullets li { font-size: clamp(11px, 2vw, 18px) !important; }
+      .stat-value { font-size: clamp(22px, 5vw, 52px) !important; }
+    }
+
+    /* Portrait-mode nudge — slides are landscape by design */
+    #portrait-hint {
+      display: none;
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.92);
+      align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+      color: #fff; font-family: var(--font); text-align: center; padding: 32px;
+    }
+    #portrait-hint p:first-child { font-size: 48px; }
+    #portrait-hint p:last-child  { font-size: 15px; opacity: 0.6; }
+    @media (orientation: portrait) and (max-width: 768px) {
+      #portrait-hint { display: flex; }
+    }
+
     /* ─── Pre-hide animatable children ──────────────────────────── */
     /* Set opacity:0 before JS loads so there's no flash of content  */
     /* before GSAP's fromTo() takes over. GSAP overrides via inline  */
@@ -1027,6 +1054,10 @@
 <div id="progress"></div>
 <div id="sf-fog"></div>
 <div id="emoji-rain"></div>
+<div id="portrait-hint" aria-live="polite">
+  <p>↻</p>
+  <p>Rotate your device for the best experience</p>
+</div>
 
 <div id="hud">
   <div id="nav-jumps">
@@ -1981,7 +2012,6 @@
   initBokeh();      // bokeh colors adapt per theme
 
   if (_THEME === 'dark' || _THEME === 'noir') _startFog();
-  if (_THEME === 'light' || _THEME === 'golden-hour') initSun();
   if (_THEME === 'obsidian') initDust();
   if (_THEME === 'noir') initGrain();
 
