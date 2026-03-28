@@ -1,1804 +1,590 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Presentation Skill — Feature Showcase</title>
-
-  <!-- GSAP — industry-standard animation engine -->
+  <title>Presentation Skill — Theme Showcase</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-
   <style>
-    /* ─── Reset ──────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ─── Design tokens ──────────────────────────────────────────── */
     :root {
-      --font:        -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-                     "Helvetica Neue", Arial, sans-serif;
-      --font-serif:  Georgia, "Times New Roman", serif;
-
-      /* Dark — Blue Hour: deep indigo night sky */
-      --bg:          #060618;
-      --bg-gradient: radial-gradient(ellipse at 35% 15%, #1A237E 0%, #191970 28%, #0d0d3a 58%, #050510 100%);
-      --label-1:     #ffffff;
-      --label-2:     rgba(255,255,255,0.55);
-      --label-3:     rgba(255,255,255,0.25);
-      --accent:      #0A84FF;
-      --accent-glow: rgba(10,132,255,0.35);
-      --fill-1:      rgba(255,255,255,0.04);
-      --fill-2:      rgba(255,255,255,0.08);
-      --sep:         rgba(255,255,255,0.10);
-      --glass-bg:    rgba(255,255,255,0.09);
-      --glass-bdr:   rgba(255,255,255,0.18);
-      --glass-shd:   0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      --bg: #08080F;
+      --label-1: #F5F5F7;
+      --label-2: rgba(245,245,247,0.55);
+      --label-3: rgba(245,245,247,0.25);
+      --accent: #0A84FF;
+      --sep: rgba(255,255,255,0.08);
     }
 
-    [data-theme="light"] {
-      /* Crissy Field — California bright, fog-free afternoon at the Golden Gate */
-      --bg:          #E8F4FF;
-      --bg-gradient: linear-gradient(175deg, #0096FF 0%, #1E90FF 28%, #5BB8FF 52%, #C8E8FF 72%, #EEF7FF 100%);
-      --label-1:     #001E3C;
-      --label-2:     rgba(0,30,60,0.55);
-      --label-3:     rgba(0,30,60,0.28);
-      --accent:      #E8450A;
-      --accent-glow: rgba(232,69,10,0.28);
-      --fill-1:      rgba(0,100,200,0.05);
-      --fill-2:      rgba(0,100,200,0.09);
-      --sep:         rgba(0,80,180,0.12);
-      --glass-bg:    rgba(200,230,255,0.68);
-      --glass-bdr:   rgba(0,100,200,0.14);
-      --glass-shd:   0 8px 40px rgba(0,50,120,0.12), inset 0 1px 0 rgba(255,255,255,0.85);
-    }
-
-    /* ─── Base ───────────────────────────────────────────────────── */
     html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-    }
-
-    html { transition: background 0.4s; }
-
-    body {
-      font-family: var(--font);
-      background: var(--bg-gradient);
+      width: 100%; min-height: 100%;
+      background: var(--bg);
       color: var(--label-1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ─── Perlin gobo layer ──────────────────────────────────────── */
-    #gobo-layer {
-      position: fixed;
-      inset: 0;
+    #bg-gobo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+    .page { position: relative; z-index: 1; }
+
+    /* ── Hero ── */
+    .hero {
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      padding: clamp(80px,12vh,140px) clamp(24px,5vw,80px) clamp(60px,9vh,100px);
+      gap: 20px;
+    }
+    .hero-eyebrow {
+      font-size: clamp(11px,1.1vw,14px); font-weight: 600;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); opacity: 0;
+    }
+    .hero-heading {
+      font-size: clamp(38px,6vw,88px); font-weight: 700;
+      letter-spacing: -0.03em; line-height: 1.0; max-width: 780px; opacity: 0;
+    }
+    .hero-sub {
+      font-size: clamp(16px,1.8vw,22px); font-weight: 400;
+      color: var(--label-2); max-width: 560px; line-height: 1.55; opacity: 0;
+    }
+    .hero-cta {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
+      padding: 14px 28px; border-radius: 100px; background: var(--accent);
+      color: #fff; font-size: clamp(14px,1.3vw,16px); font-weight: 600;
+      text-decoration: none; letter-spacing: -0.01em; opacity: 0;
+      transition: filter 0.2s, transform 0.2s;
+    }
+    .hero-cta:hover { filter: brightness(1.15); transform: translateY(-2px); }
+
+    /* ── Shared section ── */
+    .section-label {
+      font-size: clamp(11px,1.1vw,13px); font-weight: 600;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+    }
+    .section-heading {
+      font-size: clamp(28px,3.5vw,52px); font-weight: 700;
+      letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 14px;
+    }
+    .section-body {
+      font-size: clamp(15px,1.5vw,18px); color: var(--label-2);
+      line-height: 1.6; max-width: 620px;
+    }
+    .divider { width: 100%; height: 1px; background: var(--sep); }
+
+    /* ── Theme grid ── */
+    .themes-section { padding: clamp(60px,9vh,100px) clamp(24px,5vw,80px); }
+    .themes-header { margin-bottom: clamp(40px,6vh,72px); }
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr));
+      gap: clamp(20px,2.5vw,36px);
+    }
+
+    /* ── Theme card ── */
+    .theme-card {
+      border-radius: 20px; overflow: hidden;
+      display: flex; flex-direction: column;
+      border: 1px solid var(--sep); background: rgba(255,255,255,0.03);
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s; opacity: 0;
+    }
+    .theme-card:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
+
+    .theme-preview { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #000; }
+    .theme-preview iframe {
+      width: 300%; height: 300%;
+      transform: scale(0.3333); transform-origin: top left;
+      border: none; pointer-events: none; display: block;
+    }
+    .preview-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.55) 100%);
       pointer-events: none;
-      z-index: 0;
-      overflow: visible;
-      contain: layout style;
     }
-
-    /* ─── Starfield ──────────────────────────────────────────────── */
-    #starfield {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-      contain: strict;
-    }
-
-    /* ─── Bokeh ──────────────────────────────────────────────────── */
-    #bokeh-layer {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-      overflow: hidden;
-      contain: strict;
-    }
-
-    /* Star twinkle — driven by CSS custom properties set per-element */
-    @keyframes star-twinkle {
-      from { opacity: var(--op); }
-      to   { opacity: var(--op-low); }
-    }
-
-    /* Hide starfield in light theme — golden hour has no stars */
-    [data-theme="light"] #starfield { opacity: 0; }
-
-    /* ─── Deck ───────────────────────────────────────────────────── */
-    #deck {
-      position: relative;
-      z-index: 9; /* above fog (z-index:8) — galleries and slides render in foreground */
-      width:  min(100vw, 177.78vh);
-      height: min(100vh, 56.25vw);
-      overflow: hidden;
-      perspective:        1400px;   /* enables rotateX/Y depth on slide children */
-      perspective-origin: 50% 38%;
-    }
-
-    /* ─── Slides ─────────────────────────────────────────────────── */
-    .slide {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: clamp(28px, 5%, 72px) clamp(36px, 7%, 108px);
-      opacity: 0;
-      pointer-events: none;
-      will-change: opacity, transform;
-    }
-
-    .slide.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    /* ─── Slide inner containers ─────────────────────────────────── */
-    .slide-inner {
-      width: 100%;
-      max-width: 1100px;
-      display: flex;
-      flex-direction: column;
-      gap: clamp(12px, 2vw, 28px);
-    }
-
-    .slide-inner--center {
-      align-items: center;
-      text-align: center;
-    }
-
-    /* ─── Eyebrow ────────────────────────────────────────────────── */
-    .eyebrow {
-      font-size:      clamp(17px, 2.2vw, 32px);
-      font-weight:    600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color:          var(--accent);
-    }
-    /* In Crissy Field light mode the vivid blue background kills contrast
-       on small-caps orange — swap to near-white for legibility */
-    [data-theme="light"] .eyebrow {
-      color: rgba(255,255,255,0.92);
-    }
-
-    /* ─── Icon ───────────────────────────────────────────────────── */
-    .slide-icon {
-      font-size: clamp(28px, 4.5vw, 64px);
-      line-height: 1;
-    }
-
-    /* ─── Headlines ──────────────────────────────────────────────── */
-    .headline {
-      font-size:      clamp(26px, 4.6vw, 68px);
-      font-weight:    700;
-      line-height:    1.06;
-      letter-spacing: -0.028em;
-      color:          var(--label-1);
-    }
-
-    .slide-title .headline {
-      font-size:      clamp(32px, 6vw, 88px);
-      font-weight:    800;
-      letter-spacing: -0.038em;
-    }
-
-    .closing-headline {
-      font-size:      clamp(32px, 5.5vw, 80px);
-      font-weight:    800;
-      letter-spacing: -0.035em;
-    }
-
-    .media-heading {
-      font-size:      clamp(18px, 2.6vw, 38px);
-    }
-
-    /* ─── Subheading ─────────────────────────────────────────────── */
-    .subheading {
-      font-size:   clamp(17px, 2.2vw, 32px);
-      font-weight: 400;
-      line-height: 1.45;
-      color:       var(--label-2);
-    }
-
-    /* ─── Bullets ────────────────────────────────────────────────── */
-    .bullets {
-      list-style:    none;
-      display:       flex;
-      flex-direction: column;
-      gap:           clamp(10px, 1.4vw, 20px);
-    }
-
-    .bullets li {
-      font-size:   clamp(17px, 2.3vw, 34px);
-      font-weight: 500;
-      line-height: 1.5;
-      color:       var(--label-1);
-      padding-left: clamp(18px, 1.8vw, 28px);
-      position:    relative;
-    }
-
-    .bullets li::before {
-      content:       '';
-      position:      absolute;
-      left:          0;
-      top:           0.65em;
-      width:         clamp(4px, 0.45vw, 7px);
-      height:        clamp(4px, 0.45vw, 7px);
-      border-radius: 50%;
-      background:    var(--accent);
-    }
-
-    /* ─── Slide note ─────────────────────────────────────────────── */
-    .slide-note {
-      font-size:  clamp(10px, 0.95vw, 14px);
-      font-style: italic;
-      color:      var(--label-3);
-      margin-top: clamp(4px, 0.5vw, 8px);
-    }
-
-    /* ─── Quote slide ────────────────────────────────────────────── */
-    .slide-inner--quote {
-      position: relative;
-      gap: clamp(20px, 3vw, 48px);
-    }
-
-    /* Decorative watermark — positioned behind content, out of flow */
-    .quote-watermark {
-      position:      absolute;
-      top:           -12%;
-      left:          50%;
-      transform:     translateX(-50%);
-      font-size:     clamp(140px, 22vw, 320px);
-      font-family:   var(--font-serif);
-      line-height:   1;
-      color:         var(--accent);
-      opacity:       0;           /* animated in by GSAP */
-      pointer-events: none;
-      user-select:   none;
-      z-index:       0;
-    }
-
-    .slide-inner--quote .slide-icon,
-    .slide-inner--quote .eyebrow,
-    .slide-inner--quote blockquote,
-    .slide-inner--quote cite {
-      position: relative;
-      z-index: 1;
-    }
-
-    blockquote {
-      font-size:      clamp(20px, 3.2vw, 48px);
-      font-weight:    600;
-      line-height:    1.38;
-      letter-spacing: -0.02em;
-      color:          var(--label-1);
-      max-width:      76%;
-      padding:        clamp(8px, 1.2vw, 18px) 0;
-    }
-
-    cite {
-      font-size:   clamp(12px, 1.2vw, 18px);
-      font-style:  normal;
-      color:       var(--accent);
-      letter-spacing: 0.01em;
-    }
-
-    .quote-credit {
-      font-size:      clamp(10px, 0.95vw, 14px);
-      font-style:     normal;
-      color:          var(--label-2);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin-top:     clamp(4px, 0.6vw, 8px);
-      position:       relative;
-      z-index:        1;
-    }
-
-    /* ─── Two-column ─────────────────────────────────────────────── */
-    .two-col {
-      display:               grid;
-      grid-template-columns: 1fr 1fr;
-      gap:                   clamp(16px, 2.5vw, 48px);
-    }
-
-    /* Two-column slides have more content — top-align so nothing gets cropped */
-    .slide-two-column {
-      align-items: flex-start;
-    }
-
-    /* Bullets inside columns need to be smaller than full-width bullets */
-    .slide-two-column .bullets li {
-      font-size:   clamp(13px, 1.4vw, 20px);
-      line-height: 1.55;
-    }
-
-    .col {
-      display:        flex;
-      flex-direction: column;
-      gap:            clamp(6px, 0.8vw, 12px);
-      padding:        clamp(14px, 1.8vw, 28px);
-      background:     var(--glass-bg);
-      border-radius:  clamp(10px, 1.2vw, 18px);
-      border:         1px solid var(--glass-bdr);
-      box-shadow:     var(--glass-shd);
-    }
-
-    .col-title {
-      font-size:      clamp(13px, 1.4vw, 20px);
-      font-weight:    700;
-      color:          var(--label-1);
-      letter-spacing: 0.01em;
-      padding-bottom: clamp(4px, 0.5vw, 8px);
-      border-bottom:  1px solid var(--sep);
-      margin-bottom:  clamp(2px, 0.3vw, 4px);
-    }
-
-    .col-text {
-      font-size:   clamp(11px, 1.1vw, 16px);
-      line-height: 1.55;
-      color:       var(--label-2);
-    }
-
-    /* ─── Media slide ────────────────────────────────────────────── */
-    .slide-inner--media {
-      gap: clamp(10px, 1.5vw, 20px);
-    }
-
-    .media-frame {
-      width:         100%;
-      max-width:     min(780px, 84vw);
-      aspect-ratio:  16 / 9;
-      border-radius: clamp(8px, 1vw, 14px);
-      overflow:      hidden;
-      background:    #000;
-      box-shadow:    var(--glass-shd);
-    }
-
-    .media-frame iframe,
-    .media-frame video,
-    .media-frame img {
-      width:       100%;
-      height:      100%;
-      object-fit:  cover;
-      display:     block;
-      border:      none;
-    }
-
-    /* ─── Ken Burns Gallery ──────────────────────────────────────── */
-    .slide-gallery .slide-inner {
-      gap:     clamp(6px, 0.9vw, 14px);
-      padding: clamp(10px, 1.5vh, 24px) clamp(10px, 1.8vw, 28px);
-    }
-
-    .gallery-frame {
-      width:         100%;
-      max-width:     min(1260px, 97vw);
-      aspect-ratio:  16 / 9;
-      border-radius: clamp(8px, 1vw, 14px);
-      overflow:      hidden;
-      background:    #000;
-      border:        1px solid var(--glass-bdr);
-      box-shadow:    var(--glass-shd);
-      position:      relative;
-    }
-
-    .gallery-kb {
-      position: relative;
-      width:    100%;
-      height:   100%;
-    }
-
-    .kb-slide {
-      position: absolute;
-      inset:    0;
-      opacity:  0; /* GSAP controls crossfade — no CSS transition */
-    }
-
-    .kb-slide img {
-      width:        100%;
-      height:       100%;
-      object-fit:   cover;
-      will-change:  transform;
-      display:      block;
-    }
-
-    /* All photos animate continuously — opacity controls visibility.
-       Negative delays start each photo mid-cycle so they're already
-       in motion when they cross-fade in. No snap-back on transition. */
-    .kb-slide:nth-child(1) img { animation: kb-1 7s ease-in-out infinite alternate; animation-delay:  -0s; }
-    .kb-slide:nth-child(2) img { animation: kb-2 7s ease-in-out infinite alternate; animation-delay: -2s; }
-    .kb-slide:nth-child(3) img { animation: kb-3 7s ease-in-out infinite alternate; animation-delay: -4s; }
-    .kb-slide:nth-child(4) img { animation: kb-4 7s ease-in-out infinite alternate; animation-delay: -1s; }
-    .kb-slide:nth-child(5) img { animation: kb-1 7s ease-in-out infinite alternate; animation-delay: -3s; }
-    .kb-slide:nth-child(6) img { animation: kb-2 7s ease-in-out infinite alternate; animation-delay: -5s; }
-    .kb-slide:nth-child(7) img { animation: kb-3 7s ease-in-out infinite alternate; animation-delay: -2s; }
-    .kb-slide:nth-child(8) img { animation: kb-4 7s ease-in-out infinite alternate; animation-delay: -6s; }
-    .kb-slide:nth-child(9) img { animation: kb-1 7s ease-in-out infinite alternate; animation-delay: -3s; }
-
-    @keyframes kb-1 {
-      0%   { transform: scale(1.00) translate( 0%,   0%); }
-      100% { transform: scale(1.18) translate(-3%,  -2%); }
-    }
-    @keyframes kb-2 {
-      0%   { transform: scale(1.18) translate(-3%,   2%); }
-      100% { transform: scale(1.00) translate( 3%,  -1%); }
-    }
-    @keyframes kb-3 {
-      0%   { transform: scale(1.00) translate( 3%,   1%); }
-      100% { transform: scale(1.16) translate(-2%,  -3%); }
-    }
-    @keyframes kb-4 {
-      0%   { transform: scale(1.12) translate(-1%,   2%); }
-      100% { transform: scale(1.00) translate( 2%,  -2%); }
-    }
-
-    /* Dot indicators */
-    .gallery-dots {
-      display:         flex;
-      gap:             clamp(4px, 0.5vw, 8px);
-      justify-content: center;
-      margin-top:      clamp(4px, 0.6vw, 10px);
-    }
-
-    .gallery-dot {
-      width:         5px;
-      height:        5px;
-      border-radius: 50%;
-      background:    rgba(255,255,255,0.22);
-      transition:    background 0.4s ease, transform 0.4s ease;
-    }
-
-    .gallery-dot.kb-dot-active {
-      background: rgba(255,255,255,0.88);
-      transform:  scale(1.4);
-    }
-
-    .media-caption {
-      font-size: clamp(10px, 0.95vw, 14px);
-      color:     var(--label-3);
-    }
-
-    /* ─── Closing slide ──────────────────────────────────────────── */
-    .cta {
-      font-size:   clamp(14px, 1.6vw, 24px);
-      font-weight: 500;
-      color:       var(--accent);
-    }
-
-    .contact {
-      font-size: clamp(11px, 1vw, 16px);
-      color:     var(--label-3);
-    }
-
-    /* ─── Stats bento ────────────────────────────────────────────── */
-    .slide-stats .slide-inner {
-      gap: clamp(6px, 0.9vw, 14px);
-      justify-content: flex-start;
-      padding-top: clamp(12px, 2vh, 30px);
-    }
-
-    .stats-grid {
-      display:               grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows:        minmax(clamp(62px, 8vh, 105px), auto);
-      gap:                   clamp(8px, 1.1vw, 16px);
-      width:                 100%;
-    }
-
-    .stat-card {
-      display:        flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      gap:             clamp(3px, 0.4vw, 6px);
-      padding:         clamp(14px, 1.8vw, 26px);
-      background:      var(--glass-bg);
-      border:          1px solid var(--glass-bdr);
-      border-radius:   clamp(10px, 1.3vw, 20px);
-      box-shadow:      var(--glass-shd);
-      position:        relative;
-      overflow:        visible;
-      min-width:       0; /* prevent 1fr grid columns from expanding to fit nowrap content */
-    }
-
-    /* Featured: spans 2 columns */
-    .stat-card.stat-featured {
-      grid-column: span 2;
-    }
-
-    .stat-label {
-      font-size:      clamp(10px, 1vw, 14px);
-      font-weight:    500;
-      color:          var(--label-2);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .stat-value {
-      font-size:      clamp(28px, 4.2vw, 62px);
-      font-weight:    700;
-      color:          var(--accent);
-      letter-spacing: -0.03em;
-      line-height:    1;
-      white-space:    nowrap;   /* never wrap mid-number */
-    }
-
-    .stat-card.stat-featured .stat-value {
-      font-size: clamp(38px, 6.2vw, 92px); /* 2-col wide card can go bigger */
-    }
-
-    .stat-sublabel {
-      font-size:   clamp(10px, 0.9vw, 13px);
-      color:       var(--label-2);
-      font-weight: 400;
-    }
-
-    /* ─── Progress bar ───────────────────────────────────────────── */
-    #progress {
-      position:   fixed;
-      bottom:     0;
-      left:       0;
-      height:     2px;
-      width:      0%;
-      background: var(--accent);
-      box-shadow: 0 0 10px var(--accent-glow);
-      transition: width 0.45s cubic-bezier(0.16,1,0.3,1);
-      z-index:    200;
-    }
-
-    /* ─── Emoji Rain ─────────────────────────────────────────────── */
-    #emoji-rain {
-      position:       fixed;
-      inset:          0;
-      pointer-events: none;
-      z-index:        999;
-      overflow:       hidden;
-    }
-
-    /* Back-layer lives inside the closing slide so it respects the
-       slide's GSAP-created stacking context and sits behind the text */
-    .emoji-rain-back {
-      position:       absolute;
-      inset:          0;
-      overflow:       hidden;
-      pointer-events: none;
-      z-index:        0;
-    }
-
-    /* Slide-inner must sit above the back rain layer */
-    .slide-closing .slide-inner {
-      position: relative;
-      z-index:  1;
-    }
-
-    .emoji-particle {
-      position:    absolute;
-      top:         -80px;
-      line-height: 1;
-      user-select: none;
-      will-change: transform, opacity;
-    }
-
-    .emoji-particle.ep-front {
-      font-size: clamp(24px, 3.5vw, 52px);
-    }
-
-    .emoji-particle.ep-back {
-      font-size: clamp(14px, 2vw, 32px);
-      filter:    blur(1.2px);
-    }
-
-    /* ─── SF Fog ─────────────────────────────────────────────────── */
-    #sf-fog {
-      position:       fixed;
-      inset:          0;
-      pointer-events: none;
-      z-index:        8;   /* above slides, well below HUD (200) */
-      overflow:       hidden;
-    }
-
-    .fog-particle {
-      position:    absolute;
-      line-height: 1;
-      user-select: none;
-      will-change: transform, opacity;
-    }
-
-    /* Deep background — Karl in all his glory. Huge, fully dissolved into bokeh */
-    .fog-deep {
-      font-size:   clamp(220px, 38vw, 520px);
-      filter:      blur(32px);
-      text-shadow: 0 0 80px  rgba(180, 210, 255, 0.50),
-                   0 0 160px rgba(160, 190, 240, 0.28);
-    }
-
-    /* Mid layer — still massive, softer bokeh */
-    .fog-mid {
-      font-size:   clamp(160px, 26vw, 360px);
-      filter:      blur(16px);
-      text-shadow: 0 0 50px rgba(190, 215, 255, 0.38),
-                   0 0 100px rgba(170, 200, 245, 0.18);
-    }
-
-    /* Near layer — large and lazy, just slightly in focus */
-    .fog-near {
-      font-size:   clamp(100px, 17vw, 240px);
-      filter:      blur(6px);
-      text-shadow: 0 0 28px rgba(200, 220, 255, 0.28);
-    }
-
-    /* ─── HUD (counter + hints) ──────────────────────────────────── */
-    #hud {
-      position:              fixed;
-      bottom:                clamp(10px, 1.2vw, 18px);
-      left:                  0;
-      right:                 0;
-      display:               grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items:           center;
-      padding:               0 clamp(16px, 2vw, 28px);
-      pointer-events:        none;
-      z-index:               200;
-    }
-
-    #hud-right {
-      display:         flex;
-      align-items:     center;
-      justify-content: flex-end;
-      gap:             clamp(8px, 1.2vw, 16px);
-      pointer-events:  all;
-    }
-
-    .hud-label {
-      font-size:       clamp(9px, 0.75vw, 11px);
-      color:           var(--label-3);
-      letter-spacing:  0.06em;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* ─── Text size presets ──────────────────────────────────────── */
-    /* ts-md is the default — no overrides needed                   */
-    .ts-sm .headline                        { font-size: clamp(22px, 3.8vw, 56px); }
-    .ts-sm .slide-title .headline           { font-size: clamp(26px, 5vw, 72px); }
-    .ts-sm .closing-headline                { font-size: clamp(26px, 4.5vw, 66px); }
-    .ts-sm .subheading                      { font-size: clamp(13px, 1.6vw, 24px); }
-    .ts-sm .bullets li                      { font-size: clamp(14px, 1.9vw, 28px); }
-    .ts-sm blockquote                       { font-size: clamp(16px, 2.6vw, 40px); }
-    .ts-sm .col-title                       { font-size: clamp(11px, 1.1vw, 16px); }
-    .ts-sm .col-text                        { font-size: clamp(9px, 0.9vw, 13px); }
-    .ts-sm .eyebrow                         { font-size: clamp(10px, 1.1vw, 16px); }
-    .ts-sm .stat-value                      { font-size: clamp(24px, 4.0vw, 62px); }
-    .ts-sm .stat-card.stat-featured .stat-value { font-size: clamp(32px, 5.5vw, 82px); }
-    .ts-sm .stat-label                      { font-size: clamp(8px, 0.85vw, 12px); }
-    .ts-sm .stat-sublabel                   { font-size: clamp(8px, 0.75vw, 11px); }
-    .ts-sm cite                             { font-size: clamp(10px, 1vw, 15px); }
-    .ts-sm .media-caption,
-    .ts-sm .slide-note                      { font-size: clamp(9px, 0.8vw, 12px); }
-
-    .ts-lg .headline                        { font-size: clamp(30px, 5.4vw, 80px); }
-    .ts-lg .slide-title .headline           { font-size: clamp(38px, 7.2vw, 104px); }
-    .ts-lg .closing-headline                { font-size: clamp(38px, 6.5vw, 94px); }
-    .ts-lg .subheading                      { font-size: clamp(19px, 2.6vw, 36px); }
-    .ts-lg .bullets li                      { font-size: clamp(20px, 2.7vw, 40px); }
-    .ts-lg blockquote                       { font-size: clamp(24px, 3.8vw, 56px); }
-    .ts-lg .col-title                       { font-size: clamp(15px, 1.6vw, 23px); }
-    .ts-lg .col-text                        { font-size: clamp(13px, 1.3vw, 19px); }
-    .ts-lg .eyebrow                         { font-size: clamp(15px, 1.75vw, 25px); }
-    .ts-lg .stat-value                      { font-size: clamp(36px, 6.0vw, 92px); }
-    .ts-lg .stat-card.stat-featured .stat-value { font-size: clamp(46px, 7.8vw, 116px); }
-    .ts-lg .stat-label                      { font-size: clamp(11px, 1.15vw, 17px); }
-    .ts-lg .stat-sublabel                   { font-size: clamp(11px, 1.05vw, 15px); }
-    .ts-lg cite                             { font-size: clamp(14px, 1.4vw, 21px); }
-    .ts-lg .media-caption,
-    .ts-lg .slide-note                      { font-size: clamp(12px, 1.1vw, 16px); }
-
-    .ts-xl .headline                        { font-size: clamp(34px, 6.2vw, 92px); }
-    .ts-xl .slide-title .headline           { font-size: clamp(42px, 8.2vw, 118px); }
-    .ts-xl .closing-headline                { font-size: clamp(42px, 7.4vw, 108px); }
-    .ts-xl .subheading                      { font-size: clamp(22px, 3vw, 42px); }
-    .ts-xl .bullets li                      { font-size: clamp(23px, 3.1vw, 46px); }
-    .ts-xl blockquote                       { font-size: clamp(28px, 4.4vw, 64px); }
-    .ts-xl .col-title                       { font-size: clamp(17px, 1.8vw, 26px); }
-    .ts-xl .col-text                        { font-size: clamp(15px, 1.5vw, 22px); }
-    .ts-xl .eyebrow                         { font-size: clamp(17px, 2.0vw, 29px); }
-    .ts-xl .stat-value                      { font-size: clamp(40px, 7.0vw, 104px); }
-    .ts-xl .stat-card.stat-featured .stat-value { font-size: clamp(52px, 9.0vw, 132px); }
-    .ts-xl .stat-label                      { font-size: clamp(13px, 1.3vw, 19px); }
-    .ts-xl .stat-sublabel                   { font-size: clamp(12px, 1.2vw, 17px); }
-    .ts-xl cite                             { font-size: clamp(16px, 1.6vw, 24px); }
-    .ts-xl .media-caption,
-    .ts-xl .slide-note                      { font-size: clamp(13px, 1.25vw, 18px); }
-
-    /* Nav jump buttons */
-    #nav-jumps {
-      display:        flex;
-      gap:            3px;
-      pointer-events: all;
-      justify-content: flex-start;
-    }
-
-    #counter {
-      text-align: center;
-    }
-
-    /* Text size pill buttons */
-    #text-sizer {
-      display:  flex;
-      gap:      3px;
-      pointer-events: all;
-    }
-
-    .ts-btn {
-      background:    rgba(255,255,255,0.07);
-      border:        1px solid rgba(255,255,255,0.1);
-      border-radius: 6px;
-      color:         var(--label-3);
-      font-family:   inherit;
-      font-size:     10px;
-      font-weight:   600;
-      letter-spacing: 0.02em;
-      padding:       4px 9px;
-      cursor:        pointer;
-      transition:    background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
-      line-height:   1;
-    }
-
-    .ts-btn:hover {
-      background:   rgba(255,255,255,0.13);
-      color:        var(--label-2);
-    }
-
-    .ts-btn.ts-active {
-      background:   rgba(0,136,255,0.18);
-      border-color: rgba(0,136,255,0.4);
-      color:        var(--accent);
-    }
-
-    /* ── Light mode HUD overrides ──────────────────────────────── */
-    [data-theme="light"] .ts-btn {
-      background:   rgba(255,255,255,0.55);
-      border-color: rgba(0,30,60,0.18);
-      color:        var(--label-2);
-    }
-    [data-theme="light"] .ts-btn:hover {
-      background:   rgba(255,255,255,0.80);
-      color:        var(--label-1);
-    }
-    [data-theme="light"] .ts-btn.ts-active {
-      background:   rgba(232,69,10,0.12);
-      border-color: rgba(232,69,10,0.45);
-      color:        var(--accent);
-    }
-    [data-theme="light"] .hud-label {
-      color: var(--label-2);
-    }
-
-    /* ─── Word-split inner spans ────────────────────────────────── */
-    /* Each word in a split headline is wrapped in .wi for staggered reveals */
-    .wi { display: inline-block; }
-
-    /* ─── Pre-hide animatable children ──────────────────────────── */
-    /* Set opacity:0 before JS loads so there's no flash of content  */
-    /* before GSAP's fromTo() takes over. GSAP overrides via inline  */
-    /* styles, so these rules have no effect during/after animation. */
-    .slide .eyebrow,
-    .slide .slide-icon,
-    .slide .headline,
-    .slide .subheading,
-    .slide .bullets li,
-    .slide blockquote,
-    .slide cite,
-    .slide .quote-watermark,
-    .slide .col,
-    .slide .stat-card,
-    .slide .media-frame,
-    .slide .gallery-frame,
-    .slide .media-caption,
-    .slide .cta,
-    .slide .contact,
-    .slide .slide-note {
-      opacity: 0;
+    .theme-badge {
+      position: absolute; top: 14px; left: 14px;
+      padding: 5px 12px; border-radius: 100px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }
+
+    .theme-body { padding: clamp(20px,2.5vw,32px); display: flex; flex-direction: column; gap: 12px; flex: 1; }
+    .theme-name { font-size: clamp(20px,2vw,26px); font-weight: 700; letter-spacing: -0.02em; }
+    .theme-tagline { font-size: clamp(13px,1.3vw,15px); color: var(--label-2); line-height: 1.5; }
+    .theme-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .tag {
+      padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 500;
+      letter-spacing: 0.04em; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.10); color: var(--label-2);
+    }
+    .theme-atmosphere {
+      font-size: clamp(12px,1.2vw,13px); color: var(--label-3);
+      line-height: 1.5; padding-top: 8px; border-top: 1px solid var(--sep);
+    }
+    .theme-atmosphere strong { color: var(--label-2); font-weight: 500; }
+
+    .theme-link {
+      display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+      padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 600;
+      text-decoration: none; letter-spacing: -0.01em; margin-top: 4px;
+      transition: filter 0.2s, transform 0.15s;
+    }
+    .theme-link:hover { filter: brightness(1.2); transform: translateX(3px); }
+
+    .card-dark       { --ca: #0A84FF; --cab: rgba(10,132,255,0.12); }
+    .card-light      { --ca: #E8450A; --cab: rgba(232,69,10,0.12); }
+    .card-obsidian   { --ca: #34C759; --cab: rgba(52,199,89,0.12); }
+    .card-deep-space { --ca: #32D2F2; --cab: rgba(50,210,242,0.12); }
+    .card-noir       { --ca: #FF3B5C; --cab: rgba(255,59,92,0.12); }
+    .card-golden     { --ca: #C43A00; --cab: rgba(196,58,0,0.12); }
+    .theme-badge, .theme-link {
+      background: var(--cab); color: var(--ca);
+      border: 1px solid color-mix(in srgb, var(--ca) 30%, transparent);
+    }
+
+    /* ── Animation cards ── */
+    .anim-section { padding: clamp(60px,9vh,100px) clamp(24px,5vw,80px); background: rgba(255,255,255,0.015); }
+    .anim-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%,270px),1fr));
+      gap: clamp(16px,2vw,24px); margin-top: clamp(36px,5vh,60px);
+    }
+    .anim-card {
+      padding: clamp(20px,2vw,28px); border-radius: 16px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--sep);
+      display: flex; flex-direction: column; gap: 10px; opacity: 0;
+    }
+    .anim-icon { font-size: 24px; line-height: 1; }
+    .anim-name { font-size: clamp(15px,1.5vw,17px); font-weight: 600; letter-spacing: -0.01em; }
+    .anim-desc { font-size: clamp(12px,1.2vw,14px); color: var(--label-2); line-height: 1.55; }
+    .anim-detail {
+      font-size: 11px; font-family: "SF Mono","Fira Code",monospace;
+      color: var(--accent); background: rgba(10,132,255,0.08);
+      padding: 6px 10px; border-radius: 6px; letter-spacing: 0.02em;
+    }
+
+    /* ── Philosophy ── */
+    .philosophy-section { padding: clamp(60px,9vh,100px) clamp(24px,5vw,80px); }
+    .philosophy-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: clamp(24px,3vw,48px); margin-top: clamp(36px,5vh,60px);
+    }
+    .philosophy-card {
+      padding: clamp(24px,2.5vw,36px); border-radius: 16px;
+      border: 1px solid var(--sep); background: rgba(255,255,255,0.03);
+      display: flex; flex-direction: column; gap: 14px; opacity: 0;
+    }
+    .philosophy-card h3 { font-size: clamp(18px,1.8vw,22px); font-weight: 600; letter-spacing: -0.02em; }
+    .philosophy-card p { font-size: clamp(13px,1.3vw,15px); color: var(--label-2); line-height: 1.6; }
+    .phi-label { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+
+    /* ── Prompts ── */
+    .prompts-section { padding: clamp(60px,9vh,100px) clamp(24px,5vw,80px); background: rgba(255,255,255,0.015); }
+    .prompts-list { display: flex; flex-direction: column; gap: 14px; margin-top: clamp(36px,5vh,60px); max-width: 820px; }
+    .prompt-item {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: clamp(16px,1.8vw,22px); border-radius: 14px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--sep); opacity: 0;
+    }
+    .prompt-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .prompt-text { font-size: clamp(13px,1.3vw,15px); color: var(--label-2); line-height: 1.55; font-style: italic; }
+    .prompt-theme { font-size: 11px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; margin-top: 5px; }
+
+    /* ── Footer ── */
+    .footer {
+      padding: clamp(40px,6vh,70px) clamp(24px,5vw,80px);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+      border-top: 1px solid var(--sep);
+    }
+    .footer-copy { font-size: 13px; color: var(--label-3); }
+    .footer-link { font-size: 13px; font-weight: 500; color: var(--accent); text-decoration: none; }
+    .footer-link:hover { text-decoration: underline; }
+
+    @media (max-width: 680px) {
+      .philosophy-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-
 <body>
 
-<!-- Perlin atmosphere layers (gobo blobs → starfield → bokeh) -->
-<div id="gobo-layer"  aria-hidden="true"></div>
-<div id="starfield"   aria-hidden="true"></div>
-<div id="bokeh-layer" aria-hidden="true"></div>
+<div id="bg-gobo" aria-hidden="true"></div>
 
-<div id="deck">
-<div class="slide slide-title active" data-index="0">
-  <div class="slide-inner slide-inner--center">
-    <p class="slide-icon">✦</p>
-    <p class="eyebrow">Studio Joe</p>
-    <h1 class="headline">Beautiful slide decks from a single JSON file</h1>
-    <p class="subheading">Apple-style design · GSAP animations · self-contained HTML</p>
-  </div>
-</div>
-<div class="slide slide-content" data-index="1">
-  <div class="slide-inner">
-    <p class="eyebrow">What you get</p>
-    <h2 class="headline">Every deck comes fully loaded</h2>
-    <ul class="bullets"><li>8 slide types — title, content, stats, quote, two-column, gallery, media, closing</li><li>2 themes — Blue Hour dark and Crissy Field light, switchable in one line</li><li>GSAP cinematic animations — word stagger, blur-clear, clip-path wipe, depth rotateX</li><li>Ambient atmosphere — starfield, bokeh, Perlin fog, and slow-drifting gobo blobs</li><li>HUD controls — font size presets, slide counter, emoji rain, fullscreen toggle</li><li>Self-contained output — one .html file, zero dependencies</li></ul>
-    
-  </div>
-</div>
-<div class="slide slide-gallery" data-index="2">
-  <div class="slide-inner slide-inner--center slide-inner--media">
-    <p class="eyebrow">Ken Burns gallery slide</p>
-    <h2 class="headline">Photos pan and zoom continuously</h2>
-    <div class="gallery-frame">
-      <div class="gallery-kb">
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-1.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-45.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-112.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-203.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-387.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-500.jpg" alt="" loading="lazy"></div>
+<div class="page">
+
+  <!-- Hero -->
+  <section class="hero">
+    <p class="hero-eyebrow">Presentation Skill</p>
+    <h1 class="hero-heading">Six themes. One JSON file.</h1>
+    <p class="hero-sub">Apple-style slide decks with cinematic GSAP animations, per-theme ambient atmosphere, and zero dependencies. Built for Claude Code.</p>
+    <a class="hero-cta" href="https://github.com/jayvee6/presentation-skill" target="_blank">
+      View on GitHub
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Theme Grid -->
+  <section class="themes-section">
+    <div class="themes-header">
+      <p class="section-label">Themes</p>
+      <h2 class="section-heading">Six distinct looks, six atmospheres</h2>
+      <p class="section-body">Every theme has its own ambient environment — gobo blob colors, bokeh palette, and a unique atmospheric effect. Set <code style="font-size:0.9em;color:var(--accent)">"theme": "obsidian"</code> and the whole deck transforms.</p>
+    </div>
+    <div class="theme-grid">
+
+      <div class="theme-card card-dark">
+        <div class="theme-preview">
+          <iframe src="decks/blue-hour.html" title="Blue Hour" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">dark</span>
+        </div>
+        <div class="theme-body">
+          <h3 class="theme-name">Blue Hour</h3>
+          <p class="theme-tagline">Deep indigo night sky — the 20 minutes after sunset when San Francisco turns violet.</p>
+          <div class="theme-tags">
+            <span class="tag">Pitch decks</span><span class="tag">Keynotes</span><span class="tag">Tech</span><span class="tag">AI</span>
+          </div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> 95 twinkling stars · Perlin gobo blobs in blue, indigo, teal, amber · 15 bokeh discs · 3-layer SF fog right-to-left</p>
+          <a class="theme-link" href="decks/blue-hour.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
       </div>
-    </div>
-    <div class="gallery-dots"><div class="gallery-dot"></div><div class="gallery-dot"></div><div class="gallery-dot"></div><div class="gallery-dot"></div><div class="gallery-dot"></div><div class="gallery-dot"></div></div>
-    <p class="media-caption">Gallery slides crossfade every 3.8 seconds with Ken Burns pan and zoom</p>
-  </div>
-</div>
-<div class="slide slide-stats" data-index="3">
-  <div class="slide-inner">
-    <p class="eyebrow">The numbers</p>
-    <h2 class="headline">Built for serious presentations</h2>
-    <div class="stats-grid">
-    <div class="stat-card">
-      <span class="stat-label">Slide types</span>
-      <span class="stat-value" data-target="8">8</span>
-      <span class="stat-sublabel">Every format covered</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Themes</span>
-      <span class="stat-value" data-target="2">2</span>
-      <span class="stat-sublabel">Dark · Light</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Animation cues</span>
-      <span class="stat-value" data-target="12+">12+</span>
-      <span class="stat-sublabel">All free GSAP</span>
-    </div>
-    <div class="stat-card stat-featured">
-      <span class="stat-label">File size</span>
-      <span class="stat-value" data-target="1">1</span>
-      <span class="stat-sublabel">HTML file, zero deps</span>
-    </div>
-    </div>
-  </div>
-</div>
-<div class="slide slide-two-column" data-index="4">
-  <div class="slide-inner">
-    <p class="eyebrow">Themes</p>
-    <h2 class="headline">Two looks, one spec file</h2>
-    <div class="two-col"><div class="col"><h3 class="col-title">✦ Blue Hour</h3><ul class="bullets"><li>Deep indigo night sky</li><li>Starfield + bokeh glow</li><li>Perlin gobo blobs</li><li>SF fog marine layer</li><li>Best for pitch decks and evening keynotes</li></ul></div><div class="col"><h3 class="col-title">☀ Crissy Field</h3><ul class="bullets"><li>California coastal daylight</li><li>Vivid blue-to-white gradient</li><li>Orange accent color</li><li>Glassmorphism cards</li><li>Best for investor decks and daytime talks</li></ul></div></div>
-  </div>
-</div>
-<div class="slide slide-quote" data-index="5">
-  <div class="slide-inner slide-inner--center slide-inner--quote">
-    <span class="quote-watermark">&ldquo;</span>
-    <p class="slide-icon">✦</p>
-    <p class="eyebrow">Design philosophy</p>
-    <blockquote>Design is not just what it looks like and feels like. Design is how it works.</blockquote>
-    <cite>&#8212;&nbsp;Steve Jobs</cite>
-    <p class="quote-credit">Founding principle behind every element of this skill</p>
-  </div>
-</div>
-<div class="slide slide-media" data-index="6">
-  <div class="slide-inner slide-inner--center slide-inner--media">
-    <h2 class="headline media-heading">Full-bleed media slide</h2>
-    <div class="media-frame"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-750.jpg" alt="Images, video files, and YouTube embeds all render in the same media slide type" loading="lazy"></div>
-    <p class="media-caption">Images, video files, and YouTube embeds all render in the same media slide type</p>
-  </div>
-</div>
-<div class="slide slide-content" data-index="7">
-  <div class="slide-inner">
-    <p class="eyebrow">How it works</p>
-    <h2 class="headline">JSON spec in, cinematic deck out</h2>
-    <ul class="bullets"><li>Describe your slides as a JSON array — each object is one slide</li><li>Run the Python build script: python3 build_presentation.py spec.json</li><li>One self-contained .html file lands in /tmp — open it anywhere</li><li>Navigate with arrow keys or click; press F for fullscreen</li><li>Local images are auto-embedded as base64 — share by attaching the file</li></ul>
-    <p class="slide-note">No npm, no bundler, no server — just Python 3 and a browser</p>
-  </div>
-</div>
-<div class="slide slide-stats" data-index="8">
-  <div class="slide-inner">
-    <p class="eyebrow">Animation system</p>
-    <h2 class="headline">Depth and motion in every transition</h2>
-    <div class="stats-grid">
-    <div class="stat-card">
-      <span class="stat-label">Word-split stagger</span>
-      <span class="stat-value" data-target="0.06s">0.06s</span>
-      <span class="stat-sublabel">Per word, staggered in</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Blur-clear pull</span>
-      <span class="stat-value" data-target="7px">7px</span>
-      <span class="stat-sublabel">Apple focus animation</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Clip-path wipe</span>
-      <span class="stat-value" data-target="0→100%">0→100%</span>
-      <span class="stat-sublabel">Eyebrow reveal</span>
-    </div>
-    <div class="stat-card stat-featured">
-      <span class="stat-label">3D depth</span>
-      <span class="stat-value" data-target="1400px">1400px</span>
-      <span class="stat-sublabel">Perspective on deck</span>
-    </div>
-    </div>
-  </div>
-</div>
-<div class="slide slide-gallery" data-index="9">
-  <div class="slide-inner slide-inner--center slide-inner--media">
-    <p class="eyebrow">More examples</p>
-    <h2 class="headline">Any image works</h2>
-    <div class="gallery-frame">
-      <div class="gallery-kb">
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-614.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-888.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-1001.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-1150.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-1450.jpg" alt="" loading="lazy"></div>
-      <div class="kb-slide"><img src="https://raw.githubusercontent.com/yavuzceliker/sample-images/main/docs/image-1700.jpg" alt="" loading="lazy"></div>
+
+      <div class="theme-card card-light">
+        <div class="theme-preview">
+          <iframe src="decks/crissy-field.html" title="Crissy Field" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">light</span>
+        </div>
+        <div class="theme-body">
+          <h3 class="theme-name">Crissy Field</h3>
+          <p class="theme-tagline">California coastal daylight — fog-free afternoon at the base of the Golden Gate.</p>
+          <div class="theme-tags">
+            <span class="tag">Investor decks</span><span class="tag">Real estate</span><span class="tag">Daytime</span>
+          </div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Solar disc + pulsing corona · 6 lens flares along optical axis with mix-blend-mode: screen · warm blue bokeh</p>
+          <a class="theme-link" href="decks/crissy-field.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
       </div>
-    </div>
-    <div class="gallery-dots"><div class="gallery-dot"></div><div class="gallery-dot"></div><div class="gallery-dot"></div><div class="gallery-dot"></div><div class="gallery-dot"></div><div class="gallery-dot"></div></div>
-    <p class="media-caption">Pass local file paths and they embed as base64 — the deck travels with the photos</p>
-  </div>
-</div>
-<div class="slide slide-content" data-index="10">
-  <div class="slide-inner">
-    <p class="eyebrow">Example prompts</p>
-    <h2 class="headline">Just describe what you need</h2>
-    <ul class="bullets"><li>"Build a pitch deck for my SF duplex — rental income stats, gallery of photos, light theme"</li><li>"Create a 10-slide product launch deck for our AI writing tool, audience: B2B SaaS buyers"</li><li>"Quarterly business review — revenue stats, Q3 vs Q4 comparison, strong closing"</li><li>"Lecture slides on the water cycle for high school — 8 slides, simple language, dark theme"</li><li>"Property overview for 740 37th Ave — $5,340 current income, $10,400 market potential"</li></ul>
-    
-  </div>
-</div>
-<div class="slide slide-closing" data-index="11">
-  <div class="emoji-rain-back"></div>
-  <div class="slide-inner slide-inner--center">
-    <h1 class="headline closing-headline">One prompt. One file. Any audience.</h1>
-    <p class="cta">Drop a JSON spec and run the build script</p>
-    <p class="contact">github.com/jayvee6/presentation-skill</p>
-  </div>
-</div>
-</div>
 
-<div id="progress"></div>
-<div id="sf-fog"></div>
-<div id="emoji-rain"></div>
+      <div class="theme-card card-obsidian">
+        <div class="theme-preview">
+          <iframe src="decks/obsidian.html" title="Obsidian" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">obsidian</span>
+        </div>
+        <div class="theme-body">
+          <h3 class="theme-name">Obsidian</h3>
+          <p class="theme-tagline">Matte charcoal with terminal green — precision and authority for technical audiences.</p>
+          <div class="theme-tags">
+            <span class="tag">Dev tools</span><span class="tag">Fintech</span><span class="tag">Security</span><span class="tag">SaaS</span>
+          </div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> 55 dust particles drifting upward — 28% green-tinted, 72% white · unique speed 14–36s · green gobo blobs</p>
+          <a class="theme-link" href="decks/obsidian.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
 
-<div id="hud">
-  <div id="nav-jumps">
-    <button class="ts-btn" id="btn-first" title="Jump to first slide">⏮</button>
-    <button class="ts-btn" id="btn-last"  title="Jump to last slide">⏭</button>
-    <button class="ts-btn" id="btn-emoji-toggle" title="Toggle emoji rain">😅</button>
-  </div>
-  <span class="hud-label" id="counter">1 / 12</span>
-  <div id="hud-right">
-    <span class="hud-label" id="hint">← → &nbsp;·&nbsp; F fullscreen</span>
-    <div id="text-sizer">
-      <button class="ts-btn" data-ts="sm">A−</button>
-      <button class="ts-btn ts-active" data-ts="md">A</button>
-      <button class="ts-btn" data-ts="lg">A+</button>
-      <button class="ts-btn" data-ts="xl">A++</button>
+      <div class="theme-card card-deep-space">
+        <div class="theme-preview">
+          <iframe src="decks/deep-space.html" title="Deep Space" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">deep-space</span>
+        </div>
+        <div class="theme-body">
+          <h3 class="theme-name">Deep Space</h3>
+          <p class="theme-tagline">200 stars, cyan nebula clouds, and cosmic silence — for ideas that transcend the planet.</p>
+          <div class="theme-tags">
+            <span class="tag">Aerospace</span><span class="tag">Sci-fi</span><span class="tag">Data viz</span><span class="tag">Futurism</span>
+          </div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> 200-star field (2× density) · 4 nebula gobos in cyan, violet, nebula pink, teal · no fog — the void is clean</p>
+          <a class="theme-link" href="decks/deep-space.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-noir">
+        <div class="theme-preview">
+          <iframe src="decks/noir.html" title="Noir" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">noir</span>
+        </div>
+        <div class="theme-body">
+          <h3 class="theme-name">Noir</h3>
+          <p class="theme-tagline">Pure black, crimson bloom, and film grain — the cinematic dark for editorial storytelling.</p>
+          <div class="theme-tags">
+            <span class="tag">Editorial</span><span class="tag">Cinema</span><span class="tag">Fashion</span><span class="tag">Journalism</span>
+          </div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> SVG feTurbulence film grain at 12fps · crimson gobo bloom · SF fog · deep-red bokeh · no starfield</p>
+          <a class="theme-link" href="decks/noir.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-golden">
+        <div class="theme-preview">
+          <iframe src="decks/golden-hour.html" title="Golden Hour" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">golden-hour</span>
+        </div>
+        <div class="theme-body">
+          <h3 class="theme-name">Golden Hour</h3>
+          <p class="theme-tagline">Warm amber light at dusk — Napa at 6pm, where every evening looks like a painting.</p>
+          <div class="theme-tags">
+            <span class="tag">Hospitality</span><span class="tag">Real estate</span><span class="tag">Lifestyle</span><span class="tag">Food</span>
+          </div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Low center sun with amber corona pulse · amber/gold/tangerine bokeh · no lens flares (diffuse source)</p>
+          <a class="theme-link" href="decks/golden-hour.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
     </div>
-  </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Animation system -->
+  <section class="anim-section">
+    <p class="section-label">Animation system</p>
+    <h2 class="section-heading">Free GSAP. All cinematic.</h2>
+    <p class="section-body">No SplitText, no FLIP, no ScrollTrigger. Every effect is built from GSAP's free public API and CSS — and it shows.</p>
+    <div class="anim-grid">
+
+      <div class="anim-card">
+        <div class="anim-icon">✦</div>
+        <div class="anim-name">Word-split stagger</div>
+        <div class="anim-desc">Headlines are split into <code>&lt;span class="wi"&gt;</code> elements at runtime. Each word staggers in at 0.06s intervals — the effect SplitText charges for, built manually and idempotently.</div>
+        <div class="anim-detail">stagger: 0.06 · y: 28 → 0 · ease: expo.out</div>
+      </div>
+
+      <div class="anim-card">
+        <div class="anim-icon">◧</div>
+        <div class="anim-name">Clip-path wipe</div>
+        <div class="anim-desc">Eyebrow labels reveal left-to-right via <code>clipPath</code>. GPU-composited, zero reflow — the text simply emerges from the left edge with no layout shift.</div>
+        <div class="anim-detail">inset(0 100% 0 0) → inset(0 0% 0 0) · 0.55s</div>
+      </div>
+
+      <div class="anim-card">
+        <div class="anim-icon">◎</div>
+        <div class="anim-name">Blur-clear focus pull</div>
+        <div class="anim-desc">Headline containers animate from <code>filter: blur(7px)</code> to clear simultaneously with the word stagger. A single compositing layer per headline — borrowed from Apple's product reveal cadence.</div>
+        <div class="anim-detail">blur(7px) → blur(0px) · 0.7s · expo.out</div>
+      </div>
+
+      <div class="anim-card">
+        <div class="anim-icon">⬡</div>
+        <div class="anim-name">3D depth — rotateX</div>
+        <div class="anim-desc">Stats cards and two-column panels tilt in with per-element <code>rotateX</code> using GSAP's <code>transformPerspective</code> — sidestepping the <code>preserve-3d</code> propagation problem without touching the DOM hierarchy.</div>
+        <div class="anim-detail">rotateX: 12 → 0 · transformPerspective: 900</div>
+      </div>
+
+      <div class="anim-card">
+        <div class="anim-icon">◐</div>
+        <div class="anim-name">Spring back.out</div>
+        <div class="anim-desc">Cards enter with a subtle overshoot that gives physical weight. Used on stat cards, gallery frames, and closing headlines — a small detail that makes the whole deck feel alive.</div>
+        <div class="anim-detail">ease: back.out(1.5) · scale: 0.93 → 1</div>
+      </div>
+
+      <div class="anim-card">
+        <div class="anim-icon">◉</div>
+        <div class="anim-name">Perlin gobo blobs</div>
+        <div class="anim-desc">2D Perlin noise drives 3–4 radial gradient blobs every frame via <code>gsap.ticker</code>. Each blob has unique noise offsets so paths never repeat. Colors are keyed per theme — blue for Blue Hour, cyan for Deep Space, crimson for Noir.</div>
+        <div class="anim-detail">pnoise(t + ox, oy) · 60fps ticker · GPU transform</div>
+      </div>
+
+      <div class="anim-card">
+        <div class="anim-icon">☀</div>
+        <div class="anim-name">Sun + lens flares</div>
+        <div class="anim-desc">Crissy Field and Golden Hour get a CSS solar disc with a pulsing <code>box-shadow</code> corona. Crissy Field adds 6 lens flare elements scattered along the optical axis using <code>mix-blend-mode: screen</code> for additive light.</div>
+        <div class="anim-detail">box-shadow corona · screen blend · 6 flares on optical axis</div>
+      </div>
+
+      <div class="anim-card">
+        <div class="anim-icon">◐</div>
+        <div class="anim-name">Film grain (Noir)</div>
+        <div class="anim-desc">SVG <code>feTurbulence</code> with an animated <code>seed</code> attribute refreshes at 12fps. Full-viewport overlay at 7% opacity — classic photochemical grain texture without a video file.</div>
+        <div class="anim-detail">feTurbulence · seed++ every 83ms · opacity: 0.07</div>
+      </div>
+
+      <div class="anim-card">
+        <div class="anim-icon">◌</div>
+        <div class="anim-name">Floating dust (Obsidian)</div>
+        <div class="anim-desc">55 particles — 28% terminal-green, 72% white — drift upward from the lower half of the screen. Each has a unique speed, drift, and start delay so the field never looks uniform.</div>
+        <div class="anim-detail">55 particles · y: 0 → −(startPct+25)vh · ease: none</div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Design philosophy -->
+  <section class="philosophy-section">
+    <p class="section-label">Design thinking</p>
+    <h2 class="section-heading">How the themes were made</h2>
+    <p class="section-body">Each theme started as a place, a time of day, or a material. Colors were sampled from photographs. The atmosphere followed the color.</p>
+    <div class="philosophy-grid">
+
+      <div class="philosophy-card">
+        <p class="phi-label">Blue Hour</p>
+        <h3>Indigo 20 minutes after dusk</h3>
+        <p>The gradient was matched to a photograph of the Bay at 8:02pm in October — the exact moment the sky turns violet before going black. SF fog was the obvious companion: it's always there. The starfield uses 95 individually twinkling stars, each on a 1.8–6s GSAP cycle with random delay so no two blink together.</p>
+      </div>
+
+      <div class="philosophy-card">
+        <p class="phi-label">Crissy Field</p>
+        <h3>The sun was a later addition</h3>
+        <p>The original light theme had no sun — just the blue gradient. It was added after the gradient clearly suggested a cloudless noon sky. The 6 lens flares came from staring at Golden Gate photos at 11am: they're optically unavoidable. Each flare is positioned along the axis from sun (82vw, 12vh) through center and beyond.</p>
+      </div>
+
+      <div class="philosophy-card">
+        <p class="phi-label">Obsidian</p>
+        <h3>The terminal has been black for 50 years</h3>
+        <p>The question was: what if the dark theme had no color cast at all? Pure charcoal, near-black. The terminal green (#34C759 — exact macOS Terminal color) signals expertise to the right audience immediately. Dust particles replace stars because in a sealed dark room, what moves is dust.</p>
+      </div>
+
+      <div class="philosophy-card">
+        <p class="phi-label">Deep Space</p>
+        <h3>The void should feel alive</h3>
+        <p>200 stars instead of 95, and the nebula gobo colors are deliberately vivid — cyan, violet, nebula pink. Real Hubble imagery uses exactly these palettes. The fog is absent: the cosmic void is clean and silent, and the absence of atmosphere makes the starfield feel infinite rather than cozy.</p>
+      </div>
+
+      <div class="philosophy-card">
+        <p class="phi-label">Noir</p>
+        <h3>Film grain was the missing piece</h3>
+        <p>The crimson bloom came first — a single practical lamp in an otherwise dark room. Red gobo blobs in three values (red, crimson, dark red) avoided the flat-neon trap. The grain was added last: SVG feTurbulence at 12fps gives photochemical texture that no CSS filter can replicate. The fog returned from Blue Hour — in noir, it's mood, not weather.</p>
+      </div>
+
+      <div class="philosophy-card">
+        <p class="phi-label">Golden Hour</p>
+        <h3>Sampled from a photograph at 6:18pm</h3>
+        <p>The gradient stops came directly from a Napa vineyard photo in late September — amber at the horizon, warm white above. The sun is centered and low (not upper-corner like Crissy Field) because Golden Hour light is diffuse and everywhere, not directional. No lens flares for the same reason: you can't find the source.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Prompts -->
+  <section class="prompts-section">
+    <p class="section-label">Example prompts</p>
+    <h2 class="section-heading">Just describe what you need</h2>
+    <p class="section-body">These are the prompts that built the six decks above. Drop them into Claude Code with the presentation skill loaded.</p>
+    <div class="prompts-list">
+
+      <div class="prompt-item">
+        <div class="prompt-dot" style="background:#0A84FF;margin-top:5px"></div>
+        <div>
+          <p class="prompt-text">"Build a keynote on the future of AI — stats on market size and productivity lift, two-column comparing AI-native vs AI-adjacent companies, YouTube embed of a live demo. Dark theme."</p>
+          <p class="prompt-theme" style="color:#0A84FF">Blue Hour · dark</p>
+        </div>
+      </div>
+
+      <div class="prompt-item">
+        <div class="prompt-dot" style="background:#E8450A;margin-top:5px"></div>
+        <div>
+          <p class="prompt-text">"Pitch deck for an SF duplex at 740–742 37th Ave. Stats: $5,340 current income, $10,400 market potential, $1.66M 2031 value. Gallery of property photos. Crissy Field light theme."</p>
+          <p class="prompt-theme" style="color:#E8450A">Crissy Field · light</p>
+        </div>
+      </div>
+
+      <div class="prompt-item">
+        <div class="prompt-dot" style="background:#34C759;margin-top:5px"></div>
+        <div>
+          <p class="prompt-text">"Product launch deck for a developer platform — before/after comparison of build times, stats on deploy frequency and uptime, YouTube demo of a 60-second deploy. Obsidian theme."</p>
+          <p class="prompt-theme" style="color:#34C759">Obsidian</p>
+        </div>
+      </div>
+
+      <div class="prompt-item">
+        <div class="prompt-dot" style="background:#32D2F2;margin-top:5px"></div>
+        <div>
+          <p class="prompt-text">"Mission briefing for Mars 2040 — stats on distance, transit time, and budget. Phase comparison of orbital vs surface missions. Gallery of terrain imagery. Deep space theme."</p>
+          <p class="prompt-theme" style="color:#32D2F2">Deep Space</p>
+        </div>
+      </div>
+
+      <div class="prompt-item">
+        <div class="prompt-dot" style="background:#FF3B5C;margin-top:5px"></div>
+        <div>
+          <p class="prompt-text">"Editorial deck on the craft of storytelling — quote from Robert McKee, want vs need two-column, industry stats on greenlit scripts. Gallery of cinematic images. Noir theme."</p>
+          <p class="prompt-theme" style="color:#FF3B5C">Noir</p>
+        </div>
+      </div>
+
+      <div class="prompt-item">
+        <div class="prompt-dot" style="background:#C43A00;margin-top:5px"></div>
+        <div>
+          <p class="prompt-text">"Property collection deck for Napa Valley — gallery of vineyard and estate photos, market stats on median price and short-term yield, estate vs income two-column. Golden hour theme."</p>
+          <p class="prompt-theme" style="color:#C43A00">Golden Hour</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p class="footer-copy">Presentation Skill — Built with Claude Code</p>
+    <a class="footer-link" href="https://github.com/jayvee6/presentation-skill" target="_blank">github.com/jayvee6/presentation-skill</a>
+  </footer>
+
 </div>
 
 <script>
-(function () {
-  'use strict';
-
-  // ── Constants ────────────────────────────────────────────────────
-  const TOTAL   = 12;
-  const slides  = Array.from(document.querySelectorAll('.slide'));
-
-  // Apple expo-out easing — same curve iOS/macOS use for most transitions
-  const EASE_OUT    = 'cubic-bezier(0.16, 1, 0.3, 1)';
-  const EASE_SPRING = 'back.out(1.5)';
-  const EASE_SOFT   = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-  const DUR         = 0.6;
-
-  let current   = 0;
-  let animating = false;
-
-  // ── Perlin noise (smoothstep 2-D gradient noise) ─────────────────
-  // Used to drive gobo blobs, bokeh drift, and star shimmer.
-  // Self-contained: builds its own permutation table so each page
-  // load produces a unique animation without any external dependency.
-  const _p = new Uint8Array(512);
-  (function () {
-    const t = new Uint8Array(256);
-    for (let i = 0; i < 256; i++) t[i] = i;
-    for (let i = 255; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [t[i], t[j]] = [t[j], t[i]];
+  // Ambient Perlin gobo blobs on the landing page background
+  (function() {
+    function fade(t){return t*t*t*(t*(t*6-15)+10);}
+    function lerp(a,b,t){return a+t*(b-a);}
+    const P=new Uint8Array(512);
+    {const p=[];for(let i=0;i<256;i++)p[i]=i;for(let i=255;i>0;i--){const j=Math.floor(Math.random()*(i+1));[p[i],p[j]]=[p[j],p[i]];}for(let i=0;i<512;i++)P[i]=p[i&255];}
+    const G=[[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+    function dot(g,x,y){return g[0]*x+g[1]*y;}
+    function pnoise(x,y){
+      const X=Math.floor(x)&255,Y=Math.floor(y)&255,xf=x-Math.floor(x),yf=y-Math.floor(y);
+      const u=fade(xf),v=fade(yf),aa=P[P[X]+Y],ab=P[P[X]+Y+1],ba=P[P[X+1]+Y],bb=P[P[X+1]+Y+1];
+      return lerp(lerp(dot(G[aa&7],xf,yf),dot(G[ba&7],xf-1,yf),u),lerp(dot(G[ab&7],xf,yf-1),dot(G[bb&7],xf-1,yf-1),u),v);
     }
-    _p.set(t); _p.set(t, 256);
-  }());
-  function _fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-  function _lerp(a, b, t) { return a + t * (b - a); }
-  function _grad(h, x, y) {
-    const v = h & 3;
-    return v === 0 ? x + y : v === 1 ? -x + y : v === 2 ? x - y : -x - y;
-  }
-  function pnoise(x, y) {
-    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
-    x -= Math.floor(x); y -= Math.floor(y);
-    const u = _fade(x), v = _fade(y);
-    const a = _p[X] + Y, b = _p[X + 1] + Y;
-    return _lerp(
-      _lerp(_grad(_p[a],     x,     y),   _grad(_p[b],     x - 1, y),   u),
-      _lerp(_grad(_p[a + 1], x,     y - 1), _grad(_p[b + 1], x - 1, y - 1), u), v);
-  }
-
-  // ── Perlin gobo blobs ────────────────────────────────────────────
-  // Slow-drifting radial blobs driven by 2-D Perlin noise — each blob
-  // wanders a different path, creating an ever-changing ambient glow.
-  function initGobos() {
-    const layer = document.getElementById('gobo-layer');
-    if (!layer) return;
-
-    // Accent colors pulled from the design token palette
-    const CFG = [
-      { color: 'rgba(10,132,255,0.20)',  sz: 58, blur: 130, range: 22 },  // blue
-      { color: 'rgba(88,86,214,0.16)',   sz: 48, blur: 110, range: 18 },  // purple
-      { color: 'rgba(0,199,190,0.12)',   sz: 42, blur: 100, range: 24 },  // teal
-      { color: 'rgba(255,159,10,0.10)',  sz: 36, blur:  90, range: 20 },  // amber (accent variety)
+    const layer=document.getElementById('bg-gobo');
+    const CFG=[
+      {color:'rgba(10,132,255,0.13)',sz:55,blur:130,range:22},
+      {color:'rgba(88,86,214,0.09)',sz:45,blur:110,range:18},
+      {color:'rgba(0,199,190,0.07)',sz:40,blur:100,range:24},
     ];
-
-    const blobs = CFG.map(({ color, sz, blur, range }, i) => {
-      const el = document.createElement('div');
-      Object.assign(el.style, {
-        position:      'fixed',
-        width:         sz  + 'vw',
-        height:        sz  + 'vw',
-        borderRadius:  '50%',
-        background:    `radial-gradient(circle, ${color}, transparent 70%)`,
-        filter:        `blur(${blur}px)`,
-        pointerEvents: 'none',
-        willChange:    'transform',
-        top:           '0',
-        left:          '0',
-      });
+    const blobs=CFG.map(({color,sz,blur,range})=>{
+      const el=document.createElement('div');
+      Object.assign(el.style,{position:'fixed',width:sz+'vw',height:sz+'vw',borderRadius:'50%',background:`radial-gradient(circle, ${color}, transparent 70%)`,filter:`blur(${blur}px)`,pointerEvents:'none',willChange:'transform',top:'0',left:'0'});
       layer.appendChild(el);
-      return {
-        el,
-        ox: Math.random() * 100,          // unique noise offset X
-        oy: Math.random() * 100,          // unique noise offset Y
-        cx: 15 + Math.random() * 70,      // centre %, keeps blobs on-screen
-        cy: 15 + Math.random() * 70,
-        range,
-      };
+      return{el,ox:Math.random()*100,oy:Math.random()*100,cx:15+Math.random()*70,cy:15+Math.random()*70,range};
     });
-
-    gsap.ticker.add(time => {
-      const t = time * 0.038;
-      blobs.forEach(({ el, ox, oy, cx, cy, range }) => {
-        const px = cx + pnoise(t + ox, oy)          * range;
-        const py = cy + pnoise(ox,     t + oy * 1.3) * range;
-        // Use transform (not left/top) for GPU compositing
-        gsap.set(el, { x: px + 'vw', y: py + 'vh', xPercent: -50, yPercent: -50 });
+    gsap.ticker.add(time=>{
+      const t=time*0.032;
+      blobs.forEach(({el,ox,oy,cx,cy,range})=>{
+        const px=cx+pnoise(t+ox,oy)*range,py=cy+pnoise(ox,t+oy*1.3)*range;
+        gsap.set(el,{x:px+'vw',y:py+'vh',xPercent:-50,yPercent:-50});
       });
     });
-  }
-
-  // ── Starfield ────────────────────────────────────────────────────
-  // Tiny white dots that twinkle independently — pure CSS + GSAP, no
-  // canvas, so they respect the presentation's stacking context and
-  // stay invisible in light theme via the CSS opacity:0.3 override.
-  function initStarfield() {
-    const layer = document.getElementById('starfield');
-    if (!layer) return;
-
-    const COUNT = 95;
-    for (let i = 0; i < COUNT; i++) {
-      const el  = document.createElement('div');
-      const sz  = 1 + Math.random() * 2.2;
-      const x   = Math.random() * 100;
-      const y   = Math.random() * 100;
-      const op  = 0.18 + Math.random() * 0.52;
-
-      Object.assign(el.style, {
-        position:      'absolute',
-        width:         sz + 'px',
-        height:        sz + 'px',
-        borderRadius:  '50%',
-        background:    '#ffffff',
-        left:          x + '%',
-        top:           y + '%',
-        opacity:       op,
-      });
-      layer.appendChild(el);
-
-      // Each star twinkles at its own random cadence
-      gsap.to(el, {
-        opacity:  op * (0.15 + Math.random() * 0.65),
-        duration: 1.8 + Math.random() * 4.5,
-        repeat:   -1,
-        yoyo:     true,
-        ease:     'sine.inOut',
-        delay:    Math.random() * 6,
-      });
-    }
-  }
-
-  // ── Bokeh ────────────────────────────────────────────────────────
-  // Large, heavily blurred glowing discs that drift slowly — mimics
-  // out-of-focus light sources (city lights, stage rigs, etc.).
-  // Keeps opacity low so slides stay legible at all sizes.
-  function initBokeh() {
-    const layer = document.getElementById('bokeh-layer');
-    if (!layer) return;
-
-    const COLORS = [
-      'rgba(10,132,255,0.85)',   // accent blue
-      'rgba(88,86,214,0.75)',    // purple
-      'rgba(0,199,190,0.65)',    // teal
-      'rgba(255,255,255,0.55)',  // white highlight
-      'rgba(255,159,10,0.55)',   // amber
-    ];
-
-    for (let i = 0; i < 15; i++) {
-      const color  = COLORS[Math.floor(Math.random() * COLORS.length)];
-      const sz     = 48 + Math.random() * 110;  // px
-      const blurPx = 14 + Math.random() * 28;
-      const op     = 0.04 + Math.random() * 0.07;
-      const el     = document.createElement('div');
-
-      Object.assign(el.style, {
-        position:      'absolute',
-        width:         sz + 'px',
-        height:        sz + 'px',
-        borderRadius:  '50%',
-        background:    `radial-gradient(circle, ${color}, transparent 68%)`,
-        filter:        `blur(${blurPx}px)`,
-        left:          Math.random() * 100 + '%',
-        top:           Math.random() * 100 + '%',
-        opacity:       op,
-        pointerEvents: 'none',
-        willChange:    'transform, opacity',
-      });
-      layer.appendChild(el);
-
-      // Slow parallax drift + gentle opacity breathe
-      gsap.to(el, {
-        x:        (Math.random() - 0.5) * 220,
-        y:        (Math.random() - 0.5) * 180,
-        opacity:  op * (0.35 + Math.random() * 1.1),
-        duration: 9 + Math.random() * 16,
-        repeat:   -1,
-        yoyo:     true,
-        ease:     'sine.inOut',
-        delay:    Math.random() * 9,
-      });
-    }
-  }
-
-  // ── Ken Burns Gallery ────────────────────────────────────────────
-  const _kbTimers = new Map();
-
-  function _startGallery(slide) {
-    const gallery = slide.querySelector('.gallery-kb');
-    if (!gallery) return;
-    const kbSlides = Array.from(gallery.querySelectorAll('.kb-slide'));
-    const dots     = Array.from(slide.querySelectorAll('.gallery-dot'));
-    if (!kbSlides.length) return;
-
-    let idx = 0;
-    // Fade first photo in via GSAP
-    gsap.to(kbSlides[0], { opacity: 1, duration: 0.8, ease: 'power2.inOut' });
-    if (dots[0]) dots[0].classList.add('kb-dot-active');
-
-    const timer = setInterval(() => {
-      const prev = idx;
-      idx = (idx + 1) % kbSlides.length;
-      // Simultaneous GSAP crossfade — no snap, no hitch
-      gsap.to(kbSlides[prev], { opacity: 0, duration: 1.2, ease: 'power2.inOut' });
-      gsap.to(kbSlides[idx],  { opacity: 1, duration: 1.2, ease: 'power2.inOut' });
-      if (dots[prev]) dots[prev].classList.remove('kb-dot-active');
-      if (dots[idx])  dots[idx].classList.add('kb-dot-active');
-    }, 3800);
-
-    _kbTimers.set(slide, timer);
-  }
-
-  function _stopGallery(slide) {
-    const t = _kbTimers.get(slide);
-    if (t) { clearInterval(t); _kbTimers.delete(slide); }
-    const gallery = slide.querySelector('.gallery-kb');
-    if (!gallery) return;
-    gsap.set(gallery.querySelectorAll('.kb-slide'), { opacity: 0 });
-    slide.querySelectorAll('.gallery-dot').forEach(d => d.classList.remove('kb-dot-active'));
-  }
-
-  // ── Emoji Rain ──────────────────────────────────────────────────
-  const RAIN_EMOJIS = ['🌉','🔑','💰','📈','🏡','🎉','✨','🎊','💫','🥂','🏠','💎'];
-  let _rainInterval      = null;
-  let _rainBackEl        = null;   // .emoji-rain-back inside closing slide
-  let _emojiRainEnabled  = false;  // off by default — toggle with 😅 button
-
-  function _spawnEmoji(isBack) {
-    // Back-layer goes inside the slide (behind text); front goes on fixed overlay
-    const container = isBack
-      ? _rainBackEl
-      : document.getElementById('emoji-rain');
-    if (!container) return;
-
-    const el = document.createElement('span');
-    el.className   = 'emoji-particle ' + (isBack ? 'ep-back' : 'ep-front');
-    el.textContent = RAIN_EMOJIS[Math.floor(Math.random() * RAIN_EMOJIS.length)];
-
-    const startX = Math.random() * 105 - 2;
-    const drift  = (Math.random() - 0.5) * (isBack ? 80 : 140);
-    const rot    = (Math.random() - 0.5) * 540;
-    // Back emojis fall slower + start more transparent → feel farther away
-    const dur    = isBack
-      ? 4.0 + Math.random() * 2.8
-      : 2.8 + Math.random() * 2.4;
-    const maxOp  = isBack ? 0.38 : 1;
-    const scale  = isBack
-      ? 0.4 + Math.random() * 0.45
-      : 0.7 + Math.random() * 0.7;
-    const delay  = Math.random() * 0.3;
-    const fallH  = isBack ? container.offsetHeight + 120 : window.innerHeight + 140;
-
-    gsap.set(el, { left: startX + 'vw', top: '-80px', opacity: 0, rotation: 0, scale });
-    container.appendChild(el);
-
-    gsap.timeline({ onComplete: () => el.remove() })
-      .to(el, { opacity: maxOp, duration: 0.35, ease: 'power2.out', delay })
-      .to(el, { y: fallH, x: drift, rotation: rot, duration: dur, ease: 'none' }, '<0.1')
-      .to(el, { opacity: 0, duration: 0.7, ease: 'power1.in' }, `-=0.85`);
-  }
-
-  function startEmojiRain(slide) {
-    stopEmojiRain(); // always clear first — prevents stuck state from stale intervals
-    _rainBackEl = slide ? slide.querySelector('.emoji-rain-back') : null;
-
-    // Initial burst — mix of front and back for instant depth
-    for (let i = 0; i < 22; i++) {
-      setTimeout(() => _spawnEmoji(i % 3 === 0), i * 55);
-    }
-    // Steady rain: ~60% front, 40% back
-    _rainInterval = setInterval(() => _spawnEmoji(Math.random() < 0.4), 180);
-  }
-
-  function stopEmojiRain() {
-    if (_rainInterval) { clearInterval(_rainInterval); _rainInterval = null; }
-    _rainBackEl = null;
-    document.querySelectorAll('.emoji-particle').forEach(el => {
-      gsap.to(el, { opacity: 0, duration: 0.4, onComplete: () => el.remove() });
-    });
-  }
-
-  // ── SF Fog ──────────────────────────────────────────────────────
-  // Three depth layers drift right-to-left (ocean fog direction).
-  // Each layer has different blur, bokeh glow, opacity, and speed —
-  // together they create a parallax atmosphere over all slides.
-  // Perlin noise drives each cloud's Y so they curl and breathe
-  // organically rather than sliding in a straight line.
-  const FOG_LAYERS = [
-    // [ cssClass, minOp, maxOp, minDur, maxDur, weight ]
-    ['fog-deep', 0.06, 0.11,  90, 150, 6],  // Karl — enormous, glacial, dominant
-    ['fog-mid',  0.08, 0.13,  70, 110, 3],  // supporting mass
-    ['fog-near', 0.09, 0.15,  55,  85, 1],  // rare, nearly as slow
-  ];
-  // Weighted layer picker
-  const _fogLayerPool = FOG_LAYERS.flatMap(([cls,,,,,w]) => Array(w).fill(cls));
-
-  // Active fog particles tracked for Perlin Y drive
-  const _fogActive = [];
-
-  function _spawnFogCloud() {
-    const fog = document.getElementById('sf-fog');
-    const el  = document.createElement('span');
-
-    // Pick depth layer
-    const layerCls = _fogLayerPool[Math.floor(Math.random() * _fogLayerPool.length)];
-    const cfg = FOG_LAYERS.find(l => l[0] === layerCls);
-    const [cls, minOp, maxOp, minDur, maxDur] = cfg;
-
-    el.className   = 'fog-particle ' + cls;
-    el.textContent = '☁️';
-
-    const fromRight = Math.random() > 0.18;          // mostly right→left like real SF fog
-    const startX    = fromRight ?  108 : -40;        // vw
-    const endX      = fromRight ? -42  :  110;       // vw
-    const y         = Math.random() * 92;            // vh — fill whole screen
-    const dur       = minDur + Math.random() * (maxDur - minDur);
-    const op        = minOp  + Math.random() * (maxOp  - minOp);
-    const fadeT     = dur * 0.14;
-
-    // Perlin offsets — each cloud wanders a unique path
-    const ox       = Math.random() * 100;
-    const oy       = Math.random() * 100;
-    // Deeper layers wander less (heavier mass), near wisps wander more
-    const yRange   = cls === 'fog-deep' ? 38 : cls === 'fog-mid' ? 60 : 88;
-    const tSpeed   = cls === 'fog-deep' ? 0.012 : cls === 'fog-mid' ? 0.018 : 0.026;
-
-    gsap.set(el, { left: startX + 'vw', top: y + 'vh', opacity: 0 });
-    fog.appendChild(el);
-
-    const entry = { el, ox, oy, yRange, tSpeed, alive: true };
-    _fogActive.push(entry);
-
-    gsap.timeline({
-      onComplete: () => {
-        entry.alive = false;
-        el.remove();
-      }
-    })
-      .to(el, { opacity: op, duration: fadeT, ease: 'power1.in' })
-      .to(el, { left: endX + 'vw', duration: dur, ease: 'none' }, 0)
-      .to(el, { opacity: 0, duration: fadeT, ease: 'power1.out' }, `-=${fadeT}`);
-  }
-
-  function _startFog() {
-    // Seed: immediately place clouds at random x positions so there's no
-    // awkward empty-screen moment at the start
-    for (let i = 0; i < 6; i++) {
-      setTimeout(() => {
-        const fog = document.getElementById('sf-fog');
-        const el  = document.createElement('span');
-        const layerCls = _fogLayerPool[Math.floor(Math.random() * _fogLayerPool.length)];
-        const cfg = FOG_LAYERS.find(l => l[0] === layerCls);
-        const [cls, minOp, maxOp, minDur, maxDur] = cfg;
-        el.className   = 'fog-particle ' + cls;
-        el.textContent = '☁️';
-        const x      = Math.random() * 100;
-        const y      = Math.random() * 92;
-        const dur    = minDur + Math.random() * (maxDur - minDur);
-        const op     = (minOp + Math.random() * (maxOp - minOp)) * 0.75;
-        const ox     = Math.random() * 100;
-        const oy     = Math.random() * 100;
-        const yRange = cls === 'fog-deep' ? 38 : cls === 'fog-mid' ? 60 : 88;
-        const tSpeed = cls === 'fog-deep' ? 0.012 : cls === 'fog-mid' ? 0.018 : 0.026;
-
-        gsap.set(el, { left: x + 'vw', top: y + 'vh', opacity: op });
-        fog.appendChild(el);
-
-        const entry = { el, ox, oy, yRange, tSpeed, alive: true };
-        _fogActive.push(entry);
-
-        const endX = x - 55 - Math.random() * 55;
-        gsap.to(el, {
-          left: endX + 'vw', opacity: 0, duration: dur, ease: 'none',
-          onComplete: () => { entry.alive = false; el.remove(); }
-        });
-      }, i * 200);
-    }
-
-    // Steady new clouds every 6s — unhurried, like real marine layer
-    setInterval(_spawnFogCloud, 6000);
-
-    // Perlin Y drive for all active fog clouds — runs every frame.
-    // X is owned by the GSAP tween (left CSS), Y is owned by transform —
-    // no conflict. Culls dead entries to keep the array lean.
-    gsap.ticker.add(time => {
-      // Cull dead entries periodically
-      if (_fogActive.length > 30) {
-        for (let i = _fogActive.length - 1; i >= 0; i--) {
-          if (!_fogActive[i].alive) _fogActive.splice(i, 1);
-        }
-      }
-      const t = time;
-      _fogActive.forEach(({ el, ox, oy, yRange, tSpeed, alive }) => {
-        if (!alive) return;
-        gsap.set(el, { y: pnoise(t * tSpeed + ox, oy) * yRange });
-      });
-    });
-  }
-
-  // ── Word-split utility ───────────────────────────────────────────
-  // Wraps each word in a <span class="wi"> for staggered word reveals.
-  // Idempotent — returns existing spans on repeat calls.
-  // Preserves <br> and other inline elements as-is.
-  function splitWords(el) {
-    if (!el) return [];
-    if (el.dataset.ws) return Array.from(el.querySelectorAll('.wi'));
-    el.dataset.ws = '1';
-    const nodes = Array.from(el.childNodes);
-    el.innerHTML = '';
-    const spans = [];
-    nodes.forEach(node => {
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        el.appendChild(node); return; // preserve <br> etc.
-      }
-      node.textContent.split(/(\s+)/).forEach(part => {
-        if (/^\s+$/.test(part)) { el.appendChild(document.createTextNode(part)); return; }
-        if (!part) return;
-        const s = document.createElement('span');
-        s.className = 'wi';
-        s.textContent = part;
-        el.appendChild(s);
-        spans.push(s);
-      });
-    });
-    return spans;
-  }
-
-  // ── Animate a slide's children in ───────────────────────────────
-  // Uses fromTo() exclusively so start AND end states are unambiguous —
-  // gsap.from() alone breaks when elements were previously set to opacity:0.
-  function animateIn(slide) {
-    const type = (Array.from(slide.classList)
-      .find(c => c.startsWith('slide-') && c !== 'slide-inner') || '')
-      .replace('slide-', '');
-
-    const tl = gsap.timeline();
-
-    const get  = sel => slide.querySelector(sel);
-    const getA = sel => Array.from(slide.querySelectorAll(sel));
-
-    const eyebrow   = get('.eyebrow');
-    const icon      = get('.slide-icon');
-    const headline  = get('.headline');
-    const sub       = get('.subheading');
-    const bullets   = getA('.bullets li');
-    const bq        = get('blockquote');
-    const cite      = get('cite');
-    const watermark = get('.quote-watermark');
-    const cols      = getA('.col');
-    const frame     = get('.media-frame');
-    const gframe    = get('.gallery-frame');
-    const caption   = get('.media-caption');
-    const cta       = get('.cta');
-    const contact   = get('.contact');
-    const note      = get('.slide-note');
-
-    const S = 0.09; // stagger per item
-
-    // Helper: fromTo with visible end state — always resets rotation/filter
-    const ft = (el, from, opts, pos) => {
-      if (!el) return;
-      tl.fromTo(el, from, {
-        y: 0, x: 0, scale: 1, opacity: 1, rotateX: 0, rotateY: 0,
-        ...opts
-      }, pos);
-    };
-
-    // Eyebrow clip-path wipe: left → right reveal
-    const ftEyebrow = (pos) => {
-      if (!eyebrow) return;
-      tl.fromTo(eyebrow,
-        { opacity: 1, clipPath: 'inset(0 100% 0 0)' },
-        { opacity: 1, clipPath: 'inset(0 0% 0 0)', duration: 0.52, ease: EASE_OUT }, pos);
-    };
-
-    // Headline word-stagger + Apple-style blur-to-sharp focus
-    const ftWords = (el, pos, yAmt = 26) => {
-      if (!el) return;
-      const words = splitWords(el);
-      // Container: snap opacity then blur-clear (depth-of-field focus pull)
-      tl.fromTo(el,
-        { opacity: 1, filter: 'blur(7px)' },
-        { opacity: 1, filter: 'blur(0px)', duration: DUR * 1.15, ease: 'power2.out' }, pos);
-      // Words: stagger up from below, riding the blur clear
-      if (words.length) {
-        tl.fromTo(words,
-          { y: yAmt, opacity: 0 },
-          { y: 0, opacity: 1, stagger: 0.065, duration: DUR * 0.95, ease: EASE_OUT }, pos);
-      }
-    };
-
-    switch (type) {
-
-      case 'title':
-        ft(icon, { y: -16, opacity: 0 }, { duration: DUR * 0.75, ease: EASE_OUT }, 0);
-        ftEyebrow(0.06);
-        ftWords(headline, icon || eyebrow ? 0.18 : 0, 32);
-        ft(sub, { y: 20, opacity: 0 }, { duration: DUR, ease: EASE_OUT }, 0.38);
-        break;
-
-      case 'content':
-        ftEyebrow(0);
-        ftWords(headline, 0.12, 22);
-        bullets.forEach((li, i) =>
-          ft(li, { x: -18, opacity: 0 }, { duration: DUR * 0.85, ease: EASE_OUT }, 0.26 + i * S));
-        ft(note, { opacity: 0 }, { duration: DUR * 0.55, ease: EASE_SOFT }, 0.26 + bullets.length * S + 0.1);
-        break;
-
-      case 'quote': {
-        if (watermark) tl.fromTo(watermark,
-          { opacity: 0, scale: 1.4 },
-          { opacity: 0.065, scale: 1, duration: 0.95, ease: EASE_OUT }, 0);
-        ft(icon, { scale: 0.7, opacity: 0 }, { duration: DUR * 0.75, ease: EASE_SPRING }, 0.1);
-        ftEyebrow(0.18);
-        const bqWords = splitWords(bq);
-        if (bq) tl.set(bq, { opacity: 1 }, 0);
-        if (bqWords.length) tl.fromTo(bqWords,
-          { y: 18, opacity: 0 },
-          { y: 0, opacity: 1, stagger: 0.04, duration: DUR, ease: EASE_OUT }, 0.28);
-        ft(cite, { y: 12, opacity: 0 }, { duration: DUR * 0.7, ease: EASE_SOFT }, 0.52);
-        ft(get('.quote-credit'), { y: 8, opacity: 0 }, { duration: DUR * 0.6, ease: EASE_SOFT }, 0.66);
-        break;
-      }
-
-      case 'two-column':
-        ftEyebrow(0);
-        ftWords(headline, 0.1, 18);
-        ft(cols[0], { x: -42, opacity: 0, rotateX: 6, transformPerspective: 1200 },
-          { duration: DUR, ease: EASE_OUT }, 0.24);
-        ft(cols[1], { x:  42, opacity: 0, rotateX: 6, transformPerspective: 1200 },
-          { duration: DUR, ease: EASE_OUT }, 0.34);
-        bullets.forEach((li, i) => ft(li, { y: 8, opacity: 0 },
-          { duration: DUR * 0.65, ease: EASE_OUT }, 0.44 + i * 0.07));
-        break;
-
-      case 'stats': {
-        ftEyebrow(0);
-        ftWords(headline, 0.1, 18);
-        const statCards = getA('.stat-card');
-        statCards.forEach((card, i) =>
-          ft(card, { y: 28, scale: 0.93, opacity: 0, rotateX: 12, transformPerspective: 900 },
-            { duration: DUR * 1.05, ease: EASE_SPRING }, 0.2 + i * 0.09));
-        tl.call(() => {
-          slide.querySelectorAll('.stat-value[data-target]').forEach(el => {
-            el.style.minWidth = el.offsetWidth + 'px';
-            const raw    = el.dataset.target;
-            const prefix = raw.match(/^[^0-9]*/)[0];
-            const suffix = raw.match(/[^0-9.]*$/)[0];
-            const num    = parseFloat(raw.replace(/[^0-9.]/g, '')) || 0;
-            const isInt  = Number.isInteger(num);
-            gsap.fromTo({ v: 0 }, { v: 0 }, {
-              v: num, duration: 1.1, ease: 'power2.out',
-              onUpdate: function () {
-                const val = this.targets()[0].v;
-                el.textContent = prefix + (isInt ? Math.round(val).toLocaleString() : val.toFixed(1)) + suffix;
-              }
-            });
-          });
-        }, [], 0.3);
-        break;
-      }
-
-      case 'gallery':
-        ftEyebrow(0);
-        ftWords(headline, 0.08, 16);
-        ft(gframe,  { scale: 1.04, opacity: 0, filter: 'blur(10px)' },
-          { duration: DUR * 1.2, ease: EASE_OUT, filter: 'blur(0px)' }, 0.16);
-        ft(caption, { opacity: 0 }, { duration: DUR * 0.6, ease: EASE_SOFT }, 0.55);
-        tl.call(() => _startGallery(slide), [], 0.42);
-        break;
-
-      case 'media':
-        ftWords(headline, 0, 18);
-        ft(frame,   { scale: 1.05, opacity: 0, filter: 'blur(8px)' },
-          { duration: DUR * 1.1, ease: EASE_OUT, filter: 'blur(0px)' }, headline ? 0.12 : 0);
-        ft(caption, { opacity: 0 }, { duration: DUR * 0.6, ease: EASE_SOFT }, 0.45);
-        break;
-
-      case 'closing': {
-        const closingWords = splitWords(headline);
-        if (headline) tl.fromTo(headline,
-          { opacity: 1, filter: 'blur(8px)' },
-          { opacity: 1, filter: 'blur(0px)', duration: DUR * 1.2, ease: 'power2.out' }, 0);
-        if (closingWords.length) tl.fromTo(closingWords,
-          { scale: 0.86, opacity: 0, rotateX: 10, transformPerspective: 1000 },
-          { scale: 1, opacity: 1, rotateX: 0, stagger: 0.08, duration: DUR * 1.15, ease: EASE_SPRING }, 0);
-        ft(cta,     { y: 20, opacity: 0 }, { duration: DUR,        ease: EASE_OUT  }, 0.34);
-        ft(contact, { opacity: 0 },        { duration: DUR * 0.75, ease: EASE_SOFT }, 0.50);
-        tl.call(() => { if (_emojiRainEnabled && slides[current] === slide) startEmojiRain(slide); }, [], 0.5);
-        break;
-      }
-
-      default: {
-        const all = [icon, eyebrow, headline, sub, bq, cite,
-                     frame, caption, cta, contact, note,
-                     ...bullets, ...cols].filter(Boolean);
-        all.forEach((el, i) => ft(el, { y: 12, opacity: 0 },
-          { duration: DUR, ease: EASE_OUT }, i * S));
-      }
-    }
-
-    return tl;
-  }
-
-  // ── Reset slide children to hidden before entering ──────────────
-  // Called before a slide becomes active to prevent flashing of
-  // previously-animated content (which has GSAP inline opacity:1).
-  const CHILD_SEL = '.eyebrow, .slide-icon, .headline, .subheading, ' +
-    '.bullets li, blockquote, cite, .quote-credit, .col, .stat-card, .media-frame, .gallery-frame, ' +
-    '.media-caption, .cta, .contact, .slide-note';
-
-  function resetSlide(slide) {
-    _stopGallery(slide);
-    stopEmojiRain();
-    gsap.set(slide.querySelectorAll(CHILD_SEL), { opacity: 0 });
-    // Reset split word spans so they don't flash visible when headline container is revealed
-    gsap.set(slide.querySelectorAll('.wi'), { y: 26, opacity: 0, scale: 1 });
-    gsap.set(slide.querySelectorAll('.headline, blockquote'), { filter: 'none' });
-    const wm = slide.querySelector('.quote-watermark');
-    if (wm) gsap.set(wm, { opacity: 0, scale: 1.4 });
-  }
-
-  // ── Navigate to a slide ──────────────────────────────────────────
-  function goTo(next, dir) {
-    if (next < 0 || next >= TOTAL || animating) return;
-    animating = true;
-
-    const from = slides[current];
-    const to   = slides[next];
-    const dx   = dir * 36;
-
-    _stopGallery(from);      // stop Ken Burns on outgoing slide
-    resetSlide(to);          // hide incoming slide's children before visible
-
-    // Outgoing slide
-    gsap.to(from, {
-      opacity: 0,
-      x: -dx,
-      duration: 0.28,
-      ease: EASE_SOFT,
-      onComplete() {
-        from.classList.remove('active');
-        gsap.set(from, { clearProps: 'x,opacity' });
+  })();
+
+  // Hero entrance
+  const E='cubic-bezier(0.16,1,0.3,1)';
+  gsap.fromTo('.hero-eyebrow',{opacity:0,y:10},{opacity:1,y:0,duration:0.7,ease:E,delay:0.2});
+  gsap.fromTo('.hero-heading', {opacity:0,y:24,filter:'blur(8px)'},{opacity:1,y:0,filter:'blur(0px)',duration:0.9,ease:E,delay:0.38});
+  gsap.fromTo('.hero-sub',     {opacity:0,y:16},{opacity:1,y:0,duration:0.8,ease:E,delay:0.54});
+  gsap.fromTo('.hero-cta',     {opacity:0,y:12},{opacity:1,y:0,duration:0.7,ease:E,delay:0.70});
+
+  // Scroll-reveal for cards
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const el=e.target,d=parseFloat(el.dataset.d||0);
+        gsap.to(el,{opacity:1,y:0,duration:0.7,ease:E,delay:d});
+        obs.unobserve(el);
       }
     });
+  },{threshold:0.1});
 
-    // Incoming slide — starts offset, snaps to 0
-    gsap.set(to, { opacity: 1, x: dx * 0.6 });
-    to.classList.add('active');
-
-    gsap.to(to, {
-      x: 0,
-      duration: 0.35,
-      ease: EASE_OUT,
-      delay: 0.12,
-      onComplete() { animating = false; }
-    });
-
-    // Animate content in after slide starts arriving
-    setTimeout(() => animateIn(to), 100);
-
-    current = next;
-    updateHUD();
-  }
-
-  // ── HUD ──────────────────────────────────────────────────────────
-  function updateHUD() {
-    document.getElementById('counter').textContent = `${current + 1} / ${TOTAL}`;
-    document.getElementById('progress').style.width = `${((current + 1) / TOTAL) * 100}%`;
-  }
-
-  // ── Hide hint after first interaction ───────────────────────────
-  let hintDismissed = false;
-  function dismissHint() {
-    if (hintDismissed) return;
-    hintDismissed = true;
-    const hint = document.getElementById('hint');
-    gsap.to(hint, { opacity: 0, duration: 0.4 });
-  }
-
-  // ── Input handling ───────────────────────────────────────────────
-  document.addEventListener('keydown', e => {
-    dismissHint();
-    switch (e.key) {
-      case 'ArrowRight': case 'ArrowDown': case ' ':
-        e.preventDefault(); goTo(current + 1, 1); break;
-      case 'ArrowLeft': case 'ArrowUp':
-        e.preventDefault(); goTo(current - 1, -1); break;
-      case 'f': case 'F':
-        toggleFullscreen(); break;
-      case 'Home':
-        e.preventDefault(); goTo(0, -1); break;
-      case 'End':
-        e.preventDefault(); goTo(TOTAL - 1, 1); break;
-    }
+  document.querySelectorAll('.theme-card,.anim-card,.philosophy-card,.prompt-item').forEach((el,i)=>{
+    gsap.set(el,{y:28});
+    el.dataset.d=(i%3)*0.08;
+    obs.observe(el);
   });
-
-  document.getElementById('deck').addEventListener('click', e => {
-    dismissHint();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const frac = (e.clientX - rect.left) / rect.width;
-    goTo(frac > 0.42 ? current + 1 : current - 1, frac > 0.42 ? 1 : -1);
-  });
-
-  // Touch / swipe
-  let t0x = 0, t0y = 0;
-  document.addEventListener('touchstart', e => {
-    t0x = e.touches[0].clientX;
-    t0y = e.touches[0].clientY;
-  }, { passive: true });
-  document.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - t0x;
-    const dy = e.changedTouches[0].clientY - t0y;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
-      dismissHint();
-      goTo(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
-    }
-  }, { passive: true });
-
-  // ── Fullscreen ───────────────────────────────────────────────────
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
-    } else {
-      document.exitFullscreen?.();
-    }
-  }
-
-  // ── Init ─────────────────────────────────────────────────────────
-  const first = slides[0];
-  first.classList.add('active');
-  gsap.set(first, { opacity: 1 });
-  resetSlide(first);   // guarantee all children start at opacity:0 via
-                       // inline styles *before* the first RAF fires,
-                       // so there's no 1-frame flash even if CSS pre-hide
-                       // loses a specificity battle or paints late.
-  animateIn(first);
-  updateHUD();
-
-  // Perlin atmosphere — runs throughout the entire presentation
-  initGobos();      // slow-drifting radial blobs (Perlin-driven)
-  initStarfield();  // twinkling star field
-  initBokeh();      // blurred bokeh discs
-
-  _startFog();    // SF fog — ambient across all slides
-
-  // ── Jump buttons ─────────────────────────────────────────────────
-  document.getElementById('btn-first').addEventListener('click', e => {
-    e.stopPropagation();
-    if (current !== 0) goTo(0, -1);
-  });
-  document.getElementById('btn-last').addEventListener('click', e => {
-    e.stopPropagation();
-    if (current !== TOTAL - 1) goTo(TOTAL - 1, 1);
-  });
-
-  // ── Emoji rain toggle ─────────────────────────────────────────────
-  document.getElementById('btn-emoji-toggle').addEventListener('click', e => {
-    e.stopPropagation();
-    _emojiRainEnabled = !_emojiRainEnabled;
-    document.getElementById('btn-emoji-toggle').classList.toggle('ts-active', _emojiRainEnabled);
-    // If we're currently on the closing slide, start/stop immediately
-    const activeSlide = slides[current];
-    if (activeSlide && activeSlide.dataset.type === 'closing') {
-      _emojiRainEnabled ? startEmojiRain(activeSlide) : stopEmojiRain();
-    }
-  });
-
-  // ── Text size control ────────────────────────────────────────────
-  const TS_CLASSES = ['ts-sm', 'ts-md', 'ts-lg', 'ts-xl'];
-
-  function applyTextSize(size) {
-    TS_CLASSES.forEach(c => document.documentElement.classList.remove(c));
-    if (size !== 'md') document.documentElement.classList.add(`ts-${size}`);
-    document.querySelectorAll('.ts-btn').forEach(b => {
-      b.classList.toggle('ts-active', b.dataset.ts === size);
-    });
-    try { localStorage.setItem('pres-ts', size); } catch(e) {}
-  }
-
-  document.querySelectorAll('.ts-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      applyTextSize(btn.dataset.ts);
-    });
-  });
-
-  // Restore saved preference
-  try {
-    const saved = localStorage.getItem('pres-ts');
-    if (saved && TS_CLASSES.includes(`ts-${saved}`)) applyTextSize(saved);
-  } catch(e) {}
-
-  // Fade hint out after 4 s of inactivity
-  setTimeout(() => {
-    if (!hintDismissed) gsap.to(document.getElementById('hint'), { opacity: 0, duration: 0.6 });
-  }, 4000);
-
-}());
 </script>
-
 </body>
 </html>
