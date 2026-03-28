@@ -291,7 +291,8 @@ def build(spec: dict, output_path: str) -> None:
 
     html = template
     html = html.replace("{{TITLE}}", _esc(title))
-    html = html.replace("{{THEME}}", theme if theme in ("dark", "light") else "dark")
+    VALID_THEMES = {"dark", "light", "obsidian", "deep-space", "noir", "golden-hour"}
+    html = html.replace("{{THEME}}", theme if theme in VALID_THEMES else "dark")
     html = html.replace("{{SLIDES}}", slides_html)
     html = html.replace("{{SLIDE_COUNT}}", str(slide_count))
 

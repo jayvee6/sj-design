@@ -198,14 +198,16 @@ Tell the user:
 
 ## Themes
 
-| Theme | Value | Look |
-|-------|-------|------|
-| Blue Hour | `"dark"` | Deep indigo night sky — starfield, bokeh glows, Perlin gobo blobs, SF fog |
-| Crissy Field | `"light"` | California coastal daylight — vivid blue-to-white gradient, orange accent, glassmorphism cards |
+| Theme | Value | Atmosphere | Best for |
+|-------|-------|------------|----------|
+| Blue Hour | `"dark"` | Starfield · bokeh · Perlin gobo blobs · SF fog | Pitch decks, evening keynotes, most dark content |
+| Crissy Field | `"light"` | Sun + lens flares · warm bokeh · blue gradient | Investor decks, daytime presentations |
+| Obsidian | `"obsidian"` | Floating dust particles · green-tinted gobo blobs | Tech, finance, developer tools, terminal aesthetic |
+| Deep Space | `"deep-space"` | Dense 200-star field · cyan/violet/pink nebula gobos | Sci-fi, data viz, space/aerospace, futurism |
+| Noir | `"noir"` | Film grain · crimson gobo bloom · SF fog | Editorial, fashion, cinema, dark storytelling |
+| Golden Hour | `"golden-hour"` | Low sun · warm amber bokeh · amber-to-cream gradient | Hospitality, lifestyle, food, warm brand storytelling |
 
-**When to use light:** investor decks, daytime presentations, content-heavy slides where dark feels too dramatic.
-
-Both themes are fully supported — all components adapt via CSS design tokens. The `light` eyebrow text automatically switches to near-white for legibility against the blue gradient background.
+**Choosing a theme:** dark themes (Blue Hour, Obsidian, Deep Space, Noir) are best for dramatic impact and stage presentations. Light themes (Crissy Field, Golden Hour) read better in bright rooms and investor contexts. Each theme has its own ambient atmosphere that runs throughout — no configuration needed.
 
 ---
 
