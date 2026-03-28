@@ -774,6 +774,10 @@
       color: var(--label-2);
     }
 
+    /* ─── Word-split inner spans ────────────────────────────────── */
+    /* Each word in a split headline is wrapped in .wi for staggered reveals */
+    .wi { display: inline-block; }
+
     /* ─── Pre-hide animatable children ──────────────────────────── */
     /* Set opacity:0 before JS loads so there's no flash of content  */
     /* before GSAP's fromTo() takes over. GSAP overrides via inline  */
@@ -1237,6 +1241,34 @@
     });
   }
 
+  // ── Word-split utility ───────────────────────────────────────────
+  // Wraps each word in a <span class="wi"> for staggered word reveals.
+  // Idempotent — returns existing spans on repeat calls.
+  // Preserves <br> and other inline elements as-is.
+  function splitWords(el) {
+    if (!el) return [];
+    if (el.dataset.ws) return Array.from(el.querySelectorAll('.wi'));
+    el.dataset.ws = '1';
+    const nodes = Array.from(el.childNodes);
+    el.innerHTML = '';
+    const spans = [];
+    nodes.forEach(node => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        el.appendChild(node); return; // preserve <br> etc.
+      }
+      node.textContent.split(/(\s+)/).forEach(part => {
+        if (/^\s+$/.test(part)) { el.appendChild(document.createTextNode(part)); return; }
+        if (!part) return;
+        const s = document.createElement('span');
+        s.className = 'wi';
+        s.textContent = part;
+        el.appendChild(s);
+        spans.push(s);
+      });
+    });
+    return spans;
+  }
+
   // ── Animate a slide's children in ───────────────────────────────
   // Uses fromTo() exclusively so start AND end states are unambiguous —
   // gsap.from() alone breaks when elements were previously set to opacity:0.
@@ -1274,73 +1306,88 @@
       tl.fromTo(el, from, { ...from, y: 0, x: 0, scale: 1, opacity: 1, ...opts }, pos);
     };
 
+    // Eyebrow clip-path wipe: left → right reveal
+    const ftEyebrow = (pos) => {
+      if (!eyebrow) return;
+      tl.fromTo(eyebrow,
+        { opacity: 1, clipPath: 'inset(0 100% 0 0)' },
+        { opacity: 1, clipPath: 'inset(0 0% 0 0)', duration: 0.52, ease: EASE_OUT }, pos);
+    };
+
+    // Headline word-stagger: split into .wi spans, reveal from below
+    const ftWords = (el, pos, yAmt = 26) => {
+      if (!el) return;
+      const words = splitWords(el);
+      tl.set(el, { opacity: 1 }, 0); // reveal container; words animate in individually
+      if (words.length) {
+        tl.fromTo(words,
+          { y: yAmt, opacity: 0 },
+          { y: 0, opacity: 1, stagger: 0.065, duration: DUR * 0.95, ease: EASE_OUT }, pos);
+      }
+    };
+
     switch (type) {
 
       case 'title':
-        ft(icon,     { y: -16, opacity: 0 }, { duration: DUR * 0.75, ease: EASE_OUT }, 0);
-        ft(eyebrow,  { y: -12, opacity: 0 }, { duration: DUR * 0.7,  ease: EASE_OUT }, 0.05);
-        ft(headline, { y:  44, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, icon || eyebrow ? 0.12 : 0);
-        ft(sub,      { y:  20, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.28);
+        ft(icon, { y: -16, opacity: 0 }, { duration: DUR * 0.75, ease: EASE_OUT }, 0);
+        ftEyebrow(0.06);
+        ftWords(headline, icon || eyebrow ? 0.18 : 0, 32);
+        ft(sub, { y: 20, opacity: 0 }, { duration: DUR, ease: EASE_OUT }, 0.38);
         break;
 
       case 'content':
-        ft(eyebrow,  { x: -18, opacity: 0 }, { duration: DUR * 0.65, ease: EASE_OUT }, 0);
-        ft(headline, { x: -28, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.06);
-        bullets.forEach((li, i) => {
-          ft(li, { x: -18, opacity: 0 }, { duration: DUR * 0.85, ease: EASE_OUT }, 0.22 + i * S);
-        });
-        ft(note, { opacity: 0 }, { duration: DUR * 0.55, ease: EASE_SOFT }, 0.22 + bullets.length * S + 0.1);
+        ftEyebrow(0);
+        ftWords(headline, 0.12, 22);
+        bullets.forEach((li, i) =>
+          ft(li, { x: -18, opacity: 0 }, { duration: DUR * 0.85, ease: EASE_OUT }, 0.26 + i * S));
+        ft(note, { opacity: 0 }, { duration: DUR * 0.55, ease: EASE_SOFT }, 0.26 + bullets.length * S + 0.1);
         break;
 
-      case 'quote':
+      case 'quote': {
         if (watermark) tl.fromTo(watermark,
           { opacity: 0, scale: 1.4 },
           { opacity: 0.065, scale: 1, duration: 0.95, ease: EASE_OUT }, 0);
-        ft(icon,    { scale: 0.7, opacity: 0 }, { duration: DUR * 0.75, ease: EASE_SPRING }, 0.1);
-        ft(eyebrow, { y: -10, opacity: 0 },     { duration: DUR * 0.65, ease: EASE_OUT },    0.18);
-        ft(bq,      { y:  32, opacity: 0 },     { duration: DUR * 1.05, ease: EASE_OUT },    0.22);
-        ft(cite,    { y:  12, opacity: 0 },     { duration: DUR * 0.7,  ease: EASE_SOFT },   0.52);
+        ft(icon, { scale: 0.7, opacity: 0 }, { duration: DUR * 0.75, ease: EASE_SPRING }, 0.1);
+        ftEyebrow(0.18);
+        const bqWords = splitWords(bq);
+        if (bq) tl.set(bq, { opacity: 1 }, 0);
+        if (bqWords.length) tl.fromTo(bqWords,
+          { y: 18, opacity: 0 },
+          { y: 0, opacity: 1, stagger: 0.04, duration: DUR, ease: EASE_OUT }, 0.28);
+        ft(cite, { y: 12, opacity: 0 }, { duration: DUR * 0.7, ease: EASE_SOFT }, 0.52);
         ft(get('.quote-credit'), { y: 8, opacity: 0 }, { duration: DUR * 0.6, ease: EASE_SOFT }, 0.66);
         break;
+      }
 
       case 'two-column':
-        ft(eyebrow,  { y: -14, opacity: 0 }, { duration: DUR * 0.65, ease: EASE_OUT }, 0);
-        ft(headline, { y:  22, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.06);
-        ft(cols[0],  { x: -38, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.22);
-        ft(cols[1],  { x:  38, opacity: 0 }, { duration: DUR,        ease: EASE_OUT }, 0.32);
-        // Stagger bullets inside each col after the cards land
+        ftEyebrow(0);
+        ftWords(headline, 0.1, 18);
+        ft(cols[0], { x: -38, opacity: 0 }, { duration: DUR, ease: EASE_OUT }, 0.24);
+        ft(cols[1], { x:  38, opacity: 0 }, { duration: DUR, ease: EASE_OUT }, 0.34);
         bullets.forEach((li, i) => ft(li, { y: 8, opacity: 0 },
-          { duration: DUR * 0.65, ease: EASE_OUT }, 0.42 + i * 0.07));
+          { duration: DUR * 0.65, ease: EASE_OUT }, 0.44 + i * 0.07));
         break;
 
       case 'stats': {
-        ft(eyebrow,  { y: -14, opacity: 0 }, { duration: DUR * 0.65, ease: EASE_OUT  }, 0);
-        ft(headline, { y:  22, opacity: 0 }, { duration: DUR,        ease: EASE_OUT  }, 0.06);
+        ftEyebrow(0);
+        ftWords(headline, 0.1, 18);
         const statCards = getA('.stat-card');
-        statCards.forEach((card, i) => {
+        statCards.forEach((card, i) =>
           ft(card, { y: 24, scale: 0.94, opacity: 0 },
-            { duration: DUR * 1.0, ease: EASE_SPRING }, 0.18 + i * 0.09);
-        });
-        // Count-up animation on .stat-value elements after cards appear
+            { duration: DUR * 1.0, ease: EASE_SPRING }, 0.22 + i * 0.09));
         tl.call(() => {
           slide.querySelectorAll('.stat-value[data-target]').forEach(el => {
-            // Lock width to the final value's rendered width so cards don't resize during count-up
             el.style.minWidth = el.offsetWidth + 'px';
-            const raw    = el.dataset.target;        // e.g. "$12,000" "+$234K" "68%"
+            const raw    = el.dataset.target;
             const prefix = raw.match(/^[^0-9]*/)[0];
             const suffix = raw.match(/[^0-9.]*$/)[0];
             const num    = parseFloat(raw.replace(/[^0-9.]/g, '')) || 0;
             const isInt  = Number.isInteger(num);
             gsap.fromTo({ v: 0 }, { v: 0 }, {
-              v: num,
-              duration: 1.1,
-              ease: 'power2.out',
+              v: num, duration: 1.1, ease: 'power2.out',
               onUpdate: function () {
                 const val = this.targets()[0].v;
-                const fmt = isInt
-                  ? Math.round(val).toLocaleString()
-                  : val.toFixed(1);
-                el.textContent = prefix + fmt + suffix;
+                el.textContent = prefix + (isInt ? Math.round(val).toLocaleString() : val.toFixed(1)) + suffix;
               }
             });
           });
@@ -1349,26 +1396,30 @@
       }
 
       case 'gallery':
-        ft(eyebrow,  { y: -14, opacity: 0 },       { duration: DUR * 0.65, ease: EASE_OUT  }, 0);
-        ft(headline, { y:  18, opacity: 0 },        { duration: DUR,        ease: EASE_OUT  }, 0.06);
-        ft(gframe,   { scale: 0.96, opacity: 0 },   { duration: DUR * 1.1,  ease: EASE_OUT  }, 0.14);
-        ft(caption,  { opacity: 0 },                { duration: DUR * 0.6,  ease: EASE_SOFT }, 0.52);
-        // Start Ken Burns after frame has animated in
+        ftEyebrow(0);
+        ftWords(headline, 0.08, 16);
+        ft(gframe,  { scale: 0.96, opacity: 0 }, { duration: DUR * 1.1, ease: EASE_OUT  }, 0.16);
+        ft(caption, { opacity: 0 },              { duration: DUR * 0.6, ease: EASE_SOFT }, 0.52);
         tl.call(() => _startGallery(slide), [], 0.42);
         break;
 
       case 'media':
-        ft(headline, { y: -18, opacity: 0   }, { duration: DUR * 0.75, ease: EASE_OUT  }, 0);
-        ft(frame,    { scale: 0.94, opacity: 0 }, { duration: DUR * 1.05, ease: EASE_OUT }, headline ? 0.1 : 0);
-        ft(caption,  { opacity: 0 },          { duration: DUR * 0.6,  ease: EASE_SOFT }, 0.45);
+        ftWords(headline, 0, 18);
+        ft(frame,   { scale: 0.94, opacity: 0 }, { duration: DUR * 1.05, ease: EASE_OUT }, headline ? 0.12 : 0);
+        ft(caption, { opacity: 0 },              { duration: DUR * 0.6,  ease: EASE_SOFT }, 0.45);
         break;
 
-      case 'closing':
-        ft(headline, { scale: 0.88, opacity: 0 }, { duration: DUR * 1.1, ease: EASE_SPRING }, 0);
-        ft(cta,      { y:  20, opacity: 0 },      { duration: DUR,       ease: EASE_OUT },    0.28);
-        ft(contact,  { opacity: 0 },              { duration: DUR * 0.75, ease: EASE_SOFT },  0.46);
+      case 'closing': {
+        const closingWords = splitWords(headline);
+        if (headline) tl.set(headline, { opacity: 1 }, 0);
+        if (closingWords.length) tl.fromTo(closingWords,
+          { scale: 0.88, opacity: 0 },
+          { scale: 1, opacity: 1, stagger: 0.08, duration: DUR * 1.1, ease: EASE_SPRING }, 0);
+        ft(cta,     { y: 20, opacity: 0 }, { duration: DUR,        ease: EASE_OUT  }, 0.32);
+        ft(contact, { opacity: 0 },        { duration: DUR * 0.75, ease: EASE_SOFT }, 0.48);
         tl.call(() => { if (_emojiRainEnabled && slides[current] === slide) startEmojiRain(slide); }, [], 0.5);
         break;
+      }
 
       default: {
         const all = [icon, eyebrow, headline, sub, bq, cite,
@@ -1393,6 +1444,8 @@
     _stopGallery(slide);
     stopEmojiRain();
     gsap.set(slide.querySelectorAll(CHILD_SEL), { opacity: 0 });
+    // Reset split word spans so they don't flash visible when headline container is revealed
+    gsap.set(slide.querySelectorAll('.wi'), { y: 26, opacity: 0, scale: 1 });
     const wm = slide.querySelector('.quote-watermark');
     if (wm) gsap.set(wm, { opacity: 0, scale: 1.4 });
   }
