@@ -20,16 +20,16 @@ Generate beautiful, animated HTML slide decks with Apple-style design and GSAP a
 ### Step 1 — Understand the request
 Read the user's prompt carefully. Identify:
 - Topic / subject matter
-- Audience (executive, technical, general)
-- Tone (professional, educational, inspirational)
+- Audience (executive, technical, general, investors)
+- Tone (professional, educational, inspirational, persuasive)
 - Any specific slides, sections, or content to include
-- Preferred theme: `dark` (default) or `light`
+- Preferred theme: `dark` (default — Blue Hour) or `light` (Crissy Field)
 
 ### Step 2 — Plan the structure
 Design a narrative arc. A good deck has:
 - **Opening**: title slide that names the thing and creates interest
 - **Problem / context**: why this matters
-- **Body**: 3–6 slides covering the core content (use two-column for comparisons, quote for social proof, media for demos)
+- **Body**: 3–6 slides covering the core content (use two-column for comparisons, stats for numbers, quote for social proof, media/gallery for visuals)
 - **Closing**: clear call to action or memorable finish
 
 Rule: **6–12 slides** is optimal. Fewer feels thin; more loses the audience.
@@ -67,7 +67,8 @@ Construct a JSON object matching this schema:
       "type": "title",
       "eyebrow": "Optional label above headline",
       "heading": "Main headline",
-      "subheading": "Optional subtitle or speaker name"
+      "subheading": "Optional subtitle or speaker name",
+      "icon": "🚀"
     },
     {
       "type": "content",
@@ -81,12 +82,23 @@ Construct a JSON object matching this schema:
       "note": "Optional footnote or source"
     },
     {
+      "type": "stats",
+      "eyebrow": "The numbers",
+      "heading": "Optional headline above the grid",
+      "stats": [
+        { "label": "Annual revenue", "value": "$4.2M", "sublabel": "Up 38% YoY" },
+        { "label": "Customers", "value": "1,200" },
+        { "label": "NPS score", "value": "72", "sublabel": "Industry avg: 31" },
+        { "label": "Retention", "value": "94%", "sublabel": "Best-in-class", "featured": true }
+      ]
+    },
+    {
       "type": "quote",
       "eyebrow": "Context label (e.g. 'Industry consensus')",
-      "heading": "Slide heading (used if no eyebrow)",
       "icon": "💬",
       "quote": "The actual quote text goes here.",
-      "attribution": "Person Name, Title"
+      "attribution": "Person Name, Title",
+      "credit": "Optional secondary credit line"
     },
     {
       "type": "two-column",
@@ -100,6 +112,17 @@ Construct a JSON object matching this schema:
         "title": "Right column heading",
         "items": ["Point one", "Point two", "Point three"]
       }
+    },
+    {
+      "type": "gallery",
+      "eyebrow": "Optional label",
+      "heading": "Optional heading",
+      "srcs": [
+        "https://example.com/photo1.jpg",
+        "https://example.com/photo2.jpg",
+        "/local/path/to/image.webp"
+      ],
+      "caption": "Optional caption beneath gallery"
     },
     {
       "type": "media",
@@ -118,11 +141,25 @@ Construct a JSON object matching this schema:
 }
 ```
 
+**Stats slide notes:**
+- `value` drives the animated count-up — supports `$`, `%`, `+`, commas (e.g. `"$1,662,761"`, `"94%"`, `"+38%"`)
+- `featured: true` (or `span: 2`) makes a card span the full width — use for the most important number
+- `sublabel` adds a small context line beneath the value
+- Cards animate in with spring easing; values count up from zero
+- Card widths are locked before count-up starts to prevent layout reflow
+
 **Media slide notes:**
 - `media_type` can be `"auto"` (detected from URL), `"youtube"`, `"video"`, or `"image"`
 - YouTube URLs (youtube.com/watch or youtu.be) are auto-converted to embeds
 - Video files: `.mp4`, `.webm`, `.ogg`
 - Images: any URL ending in `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, or `.svg`
+- Local file paths are auto-embedded as base64 data URIs (self-contained)
+
+**Gallery slide notes:**
+- Displays a Ken Burns photo slideshow — photos pan and zoom continuously
+- Each image crossfades every 3.8 seconds via GSAP
+- Local file paths are auto-embedded as base64
+- Dot indicators show which photo is active
 
 ### Step 5 — Run the build script
 
@@ -159,16 +196,33 @@ Tell the user:
 
 ---
 
+## Themes
+
+| Theme | Value | Look |
+|-------|-------|------|
+| Blue Hour | `"dark"` | Deep indigo night sky — starfield, bokeh glows, Perlin gobo blobs, SF fog |
+| Crissy Field | `"light"` | California coastal daylight — vivid blue-to-white gradient, orange accent, glassmorphism cards |
+
+**When to use light:** investor decks, daytime presentations, content-heavy slides where dark feels too dramatic.
+
+Both themes are fully supported — all components adapt via CSS design tokens. The `light` eyebrow text automatically switches to near-white for legibility against the blue gradient background.
+
+---
+
 ## Slide type reference
 
 | Type | Best for | Key fields |
 |------|----------|------------|
-| `title` | Opening, section breaks | `heading`, `subheading`, `eyebrow` |
+| `title` | Opening, section breaks | `heading`, `subheading`, `eyebrow`, `icon` |
 | `content` | Facts, lists, features | `heading`, `bullets`, `note` |
-| `quote` | Social proof, emphasis | `quote`, `attribution`, `icon` |
+| `stats` | Key metrics, financials | `stats[]` with `label`, `value`, `sublabel`, `featured` |
+| `quote` | Social proof, emphasis | `quote`, `attribution`, `icon`, `credit` |
 | `two-column` | Comparisons, before/after | `left`, `right` (each with `title` + `items`) |
+| `gallery` | Photo showcases, properties | `srcs[]`, `caption` |
 | `media` | Demos, YouTube, screenshots | `src`, `caption`, `media_type` |
 | `closing` | CTA, thank you | `heading`, `cta`, `contact` |
+
+---
 
 ## Animation reference (GSAP)
 
@@ -176,11 +230,57 @@ Animations are applied automatically by slide type — no configuration needed:
 
 | Slide type | Animation |
 |------------|-----------|
-| `title` | Headline drops in from top, subtitle rises from below |
-| `content` | Headline slides from left, bullets stagger in one by one |
-| `quote` | Quote mark scales up as watermark, quote text fades in |
-| `two-column` | Columns slide in from opposite sides |
-| `media` | Frame scales up from 95%, caption fades in |
-| `closing` | Headline scales up with spring easing, CTA fades in |
+| `title` | Icon drops from top, eyebrow follows, headline rises, subheading fades |
+| `content` | Eyebrow and headline slide from left, bullets stagger in one by one |
+| `stats` | Eyebrow/headline animate in, cards spring up with scale, values count up from zero |
+| `quote` | Quote-mark watermark scales in behind text, icon springs, quote fades up, attribution follows |
+| `two-column` | Columns slide in from opposite sides, bullets stagger inside |
+| `gallery` | Frame scales in, Ken Burns photo cycle begins (crossfade + pan/zoom) |
+| `media` | Heading drops, frame scales up from 95%, caption fades |
+| `closing` | Headline scales up with spring easing, CTA fades, emoji rain available |
 
-All animations use Apple's `cubic-bezier(0.16, 1, 0.3, 1)` easing curve (expo out).
+All animations use Apple's `cubic-bezier(0.16, 1, 0.3, 1)` easing curve (expo out). Spring effects use `back.out(1.5)`.
+
+---
+
+## Ambient atmosphere
+
+Every presentation includes layered ambient effects that run throughout:
+
+- **Perlin gobo blobs** — Slow-drifting radial color blobs driven by 2D Perlin noise; unique path every load
+- **Starfield** — 95 twinkling white stars (hidden in Crissy Field light theme)
+- **Bokeh discs** — Blurred glowing circles that drift and breathe
+- **SF fog** — Three-depth-layer fog clouds (☁️ emoji, blurred) that drift right-to-left like the real marine layer; Perlin noise drives vertical curl
+
+---
+
+## HUD controls
+
+Every deck includes a persistent heads-up display:
+
+| Control | Function |
+|---------|----------|
+| `⏮ ⏭` buttons | Jump to first / last slide |
+| `😅` button | Toggle emoji rain on the closing slide |
+| `1 / 12` counter | Current slide position |
+| `A− A A+ A++` | Text size presets (sm / md / lg / xl) — persisted in localStorage |
+| Progress bar | Thin accent-colored bar along the bottom edge |
+
+---
+
+## Example prompts
+
+**Investor pitch:**
+> "Build a pitch deck for my SF duplex investment — include stats on rental income, a gallery of property photos, and a closing slide with my contact info. Use the light theme."
+
+**Product launch:**
+> "Create a 10-slide product launch deck for our new AI writing tool. Audience is B2B SaaS buyers. Include a demo slide with a YouTube link and a quote from a beta user."
+
+**Team presentation:**
+> "Make a quarterly business review deck — revenue stats, two-column comparison of Q3 vs Q4, key wins as bullets, and a strong closing."
+
+**Educational:**
+> "I need lecture slides on the water cycle for a high school class — eight slides, clear diagrams described as image placeholders, simple language, dark theme."
+
+**Real estate:**
+> "Build a property overview deck for 740-742 37th Ave. Stats: $5,340 current monthly income, $10,400 market rent potential, $1,662,761 projected 2031 value. Gallery of exterior photos."

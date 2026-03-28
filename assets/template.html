@@ -18,9 +18,9 @@
                      "Helvetica Neue", Arial, sans-serif;
       --font-serif:  Georgia, "Times New Roman", serif;
 
-      /* Dark (default) */
-      --bg:          #000000;
-      --bg-gradient: radial-gradient(ellipse at 25% 25%, #0c0c22 0%, #060610 45%, #000 100%);
+      /* Dark — Blue Hour: deep indigo night sky */
+      --bg:          #060618;
+      --bg-gradient: radial-gradient(ellipse at 35% 15%, #1A237E 0%, #191970 28%, #0d0d3a 58%, #050510 100%);
       --label-1:     #ffffff;
       --label-2:     rgba(255,255,255,0.55);
       --label-3:     rgba(255,255,255,0.25);
@@ -29,25 +29,26 @@
       --fill-1:      rgba(255,255,255,0.04);
       --fill-2:      rgba(255,255,255,0.08);
       --sep:         rgba(255,255,255,0.10);
-      --glass-bg:    rgba(255,255,255,0.05);
-      --glass-bdr:   rgba(255,255,255,0.10);
-      --glass-shd:   0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+      --glass-bg:    rgba(255,255,255,0.09);
+      --glass-bdr:   rgba(255,255,255,0.18);
+      --glass-shd:   0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
     }
 
     [data-theme="light"] {
-      --bg:          #f5f5f7;
-      --bg-gradient: linear-gradient(145deg, #f5f5f7 0%, #e5e5ea 100%);
-      --label-1:     #1d1d1f;
-      --label-2:     rgba(0,0,0,0.55);
-      --label-3:     rgba(0,0,0,0.25);
-      --accent:      #0071E3;
-      --accent-glow: rgba(0,113,227,0.25);
-      --fill-1:      rgba(0,0,0,0.04);
-      --fill-2:      rgba(0,0,0,0.07);
-      --sep:         rgba(0,0,0,0.10);
-      --glass-bg:    rgba(255,255,255,0.65);
-      --glass-bdr:   rgba(0,0,0,0.08);
-      --glass-shd:   0 8px 40px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9);
+      /* Crissy Field — California bright, fog-free afternoon at the Golden Gate */
+      --bg:          #E8F4FF;
+      --bg-gradient: linear-gradient(175deg, #0096FF 0%, #1E90FF 28%, #5BB8FF 52%, #C8E8FF 72%, #EEF7FF 100%);
+      --label-1:     #001E3C;
+      --label-2:     rgba(0,30,60,0.55);
+      --label-3:     rgba(0,30,60,0.28);
+      --accent:      #E8450A;
+      --accent-glow: rgba(232,69,10,0.28);
+      --fill-1:      rgba(0,100,200,0.05);
+      --fill-2:      rgba(0,100,200,0.09);
+      --sep:         rgba(0,80,180,0.12);
+      --glass-bg:    rgba(200,230,255,0.68);
+      --glass-bdr:   rgba(0,100,200,0.14);
+      --glass-shd:   0 8px 40px rgba(0,50,120,0.12), inset 0 1px 0 rgba(255,255,255,0.85);
     }
 
     /* ─── Base ───────────────────────────────────────────────────── */
@@ -55,6 +56,8 @@
       width: 100%; height: 100%;
       overflow: hidden;
     }
+
+    html { transition: background 0.4s; }
 
     body {
       font-family: var(--font);
@@ -73,6 +76,7 @@
       pointer-events: none;
       z-index: 0;
       overflow: visible;
+      contain: layout style;
     }
 
     /* ─── Starfield ──────────────────────────────────────────────── */
@@ -82,6 +86,7 @@
       pointer-events: none;
       z-index: 0;
       overflow: hidden;
+      contain: strict;
     }
 
     /* ─── Bokeh ──────────────────────────────────────────────────── */
@@ -91,11 +96,17 @@
       pointer-events: none;
       z-index: 1;
       overflow: hidden;
+      contain: strict;
     }
 
-    /* Hide starfield + bokeh in light theme — they look best on dark */
-    [data-theme="light"] #starfield,
-    [data-theme="light"] #bokeh-layer { opacity: 0.3; }
+    /* Star twinkle — driven by CSS custom properties set per-element */
+    @keyframes star-twinkle {
+      from { opacity: var(--op); }
+      to   { opacity: var(--op-low); }
+    }
+
+    /* Hide starfield in light theme — golden hour has no stars */
+    [data-theme="light"] #starfield { opacity: 0; }
 
     /* ─── Deck ───────────────────────────────────────────────────── */
     #deck {
@@ -139,11 +150,16 @@
 
     /* ─── Eyebrow ────────────────────────────────────────────────── */
     .eyebrow {
-      font-size:      clamp(9px, 0.95vw, 14px);
+      font-size:      clamp(17px, 2.2vw, 32px);
       font-weight:    600;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color:          var(--accent);
+    }
+    /* In Crissy Field light mode the vivid blue background kills contrast
+       on small-caps orange — swap to near-white for legibility */
+    [data-theme="light"] .eyebrow {
+      color: rgba(255,255,255,0.92);
     }
 
     /* ─── Icon ───────────────────────────────────────────────────── */
@@ -286,15 +302,26 @@
       gap:                   clamp(16px, 2.5vw, 48px);
     }
 
+    /* Two-column slides have more content — top-align so nothing gets cropped */
+    .slide-two-column {
+      align-items: flex-start;
+    }
+
+    /* Bullets inside columns need to be smaller than full-width bullets */
+    .slide-two-column .bullets li {
+      font-size:   clamp(13px, 1.4vw, 20px);
+      line-height: 1.55;
+    }
+
     .col {
       display:        flex;
       flex-direction: column;
       gap:            clamp(6px, 0.8vw, 12px);
       padding:        clamp(14px, 1.8vw, 28px);
-      background:     rgba(255,255,255,0.07);
+      background:     var(--glass-bg);
       border-radius:  clamp(10px, 1.2vw, 18px);
-      border:         1px solid rgba(255,255,255,0.18);
-      box-shadow:     0 4px 24px rgba(0,0,0,0.4);
+      border:         1px solid var(--glass-bdr);
+      box-shadow:     var(--glass-shd);
     }
 
     .col-title {
@@ -303,7 +330,7 @@
       color:          var(--label-1);
       letter-spacing: 0.01em;
       padding-bottom: clamp(4px, 0.5vw, 8px);
-      border-bottom:  1px solid rgba(255,255,255,0.10);
+      border-bottom:  1px solid var(--sep);
       margin-bottom:  clamp(2px, 0.3vw, 4px);
     }
 
@@ -351,6 +378,7 @@
       border-radius: clamp(8px, 1vw, 14px);
       overflow:      hidden;
       background:    #000;
+      border:        1px solid var(--glass-bdr);
       box-shadow:    var(--glass-shd);
       position:      relative;
     }
@@ -445,15 +473,15 @@
 
     /* ─── Stats bento ────────────────────────────────────────────── */
     .slide-stats .slide-inner {
-      gap: clamp(10px, 1.4vw, 20px);
+      gap: clamp(6px, 0.9vw, 14px);
       justify-content: flex-start;
-      padding-top: clamp(20px, 4vh, 52px);
+      padding-top: clamp(12px, 2vh, 30px);
     }
 
     .stats-grid {
       display:               grid;
       grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows:        minmax(clamp(80px, 11vh, 140px), auto);
+      grid-auto-rows:        minmax(clamp(62px, 8vh, 105px), auto);
       gap:                   clamp(8px, 1.1vw, 16px);
       width:                 100%;
     }
@@ -464,48 +492,44 @@
       justify-content: flex-end;
       gap:             clamp(3px, 0.4vw, 6px);
       padding:         clamp(14px, 1.8vw, 26px);
-      background:      var(--fill-1);
-      border:          1px solid var(--sep);
+      background:      var(--glass-bg);
+      border:          1px solid var(--glass-bdr);
       border-radius:   clamp(10px, 1.3vw, 20px);
+      box-shadow:      var(--glass-shd);
       position:        relative;
-      overflow:        hidden;
+      overflow:        visible;
+      min-width:       0; /* prevent 1fr grid columns from expanding to fit nowrap content */
     }
 
-    /* Featured: spans 2 columns, taller, accent glow */
+    /* Featured: spans 2 columns */
     .stat-card.stat-featured {
-      grid-column:  span 2;
-      background:   linear-gradient(135deg,
-                      rgba(0, 136, 255, 0.12) 0%,
-                      rgba(0, 136, 255, 0.04) 60%,
-                      var(--fill-1) 100%);
-      border-color: rgba(0, 136, 255, 0.3);
-      box-shadow:   0 0 40px rgba(0, 136, 255, 0.08),
-                    inset 0 1px 0 rgba(255,255,255,0.06);
+      grid-column: span 2;
     }
 
     .stat-label {
       font-size:      clamp(10px, 1vw, 14px);
       font-weight:    500;
-      color:          var(--label-3);
+      color:          var(--label-2);
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
 
     .stat-value {
-      font-size:      clamp(28px, 4.8vw, 72px);
+      font-size:      clamp(28px, 4.2vw, 62px);
       font-weight:    700;
       color:          var(--accent);
       letter-spacing: -0.03em;
       line-height:    1;
+      white-space:    nowrap;   /* never wrap mid-number */
     }
 
     .stat-card.stat-featured .stat-value {
-      font-size: clamp(36px, 6.5vw, 96px);
+      font-size: clamp(38px, 6.2vw, 92px); /* 2-col wide card can go bigger */
     }
 
     .stat-sublabel {
       font-size:   clamp(10px, 0.9vw, 13px);
-      color:       var(--label-3);
+      color:       var(--label-2);
       font-weight: 400;
     }
 
@@ -634,29 +658,56 @@
 
     /* ─── Text size presets ──────────────────────────────────────── */
     /* ts-md is the default — no overrides needed                   */
-    .ts-sm .headline              { font-size: clamp(22px, 3.8vw, 56px); }
-    .ts-sm .slide-title .headline { font-size: clamp(26px, 5vw, 72px); }
-    .ts-sm .closing-headline      { font-size: clamp(26px, 4.5vw, 66px); }
-    .ts-sm .subheading            { font-size: clamp(13px, 1.6vw, 24px); }
-    .ts-sm .bullets li            { font-size: clamp(14px, 1.9vw, 28px); }
-    .ts-sm blockquote             { font-size: clamp(16px, 2.6vw, 40px); }
-    .ts-sm .col-title             { font-size: clamp(11px, 1.1vw, 16px); }
+    .ts-sm .headline                        { font-size: clamp(22px, 3.8vw, 56px); }
+    .ts-sm .slide-title .headline           { font-size: clamp(26px, 5vw, 72px); }
+    .ts-sm .closing-headline                { font-size: clamp(26px, 4.5vw, 66px); }
+    .ts-sm .subheading                      { font-size: clamp(13px, 1.6vw, 24px); }
+    .ts-sm .bullets li                      { font-size: clamp(14px, 1.9vw, 28px); }
+    .ts-sm blockquote                       { font-size: clamp(16px, 2.6vw, 40px); }
+    .ts-sm .col-title                       { font-size: clamp(11px, 1.1vw, 16px); }
+    .ts-sm .col-text                        { font-size: clamp(9px, 0.9vw, 13px); }
+    .ts-sm .eyebrow                         { font-size: clamp(10px, 1.1vw, 16px); }
+    .ts-sm .stat-value                      { font-size: clamp(24px, 4.0vw, 62px); }
+    .ts-sm .stat-card.stat-featured .stat-value { font-size: clamp(32px, 5.5vw, 82px); }
+    .ts-sm .stat-label                      { font-size: clamp(8px, 0.85vw, 12px); }
+    .ts-sm .stat-sublabel                   { font-size: clamp(8px, 0.75vw, 11px); }
+    .ts-sm cite                             { font-size: clamp(10px, 1vw, 15px); }
+    .ts-sm .media-caption,
+    .ts-sm .slide-note                      { font-size: clamp(9px, 0.8vw, 12px); }
 
-    .ts-lg .headline              { font-size: clamp(30px, 5.4vw, 80px); }
-    .ts-lg .slide-title .headline { font-size: clamp(38px, 7.2vw, 104px); }
-    .ts-lg .closing-headline      { font-size: clamp(38px, 6.5vw, 94px); }
-    .ts-lg .subheading            { font-size: clamp(19px, 2.6vw, 36px); }
-    .ts-lg .bullets li            { font-size: clamp(20px, 2.7vw, 40px); }
-    .ts-lg blockquote             { font-size: clamp(24px, 3.8vw, 56px); }
-    .ts-lg .col-title             { font-size: clamp(15px, 1.6vw, 23px); }
+    .ts-lg .headline                        { font-size: clamp(30px, 5.4vw, 80px); }
+    .ts-lg .slide-title .headline           { font-size: clamp(38px, 7.2vw, 104px); }
+    .ts-lg .closing-headline                { font-size: clamp(38px, 6.5vw, 94px); }
+    .ts-lg .subheading                      { font-size: clamp(19px, 2.6vw, 36px); }
+    .ts-lg .bullets li                      { font-size: clamp(20px, 2.7vw, 40px); }
+    .ts-lg blockquote                       { font-size: clamp(24px, 3.8vw, 56px); }
+    .ts-lg .col-title                       { font-size: clamp(15px, 1.6vw, 23px); }
+    .ts-lg .col-text                        { font-size: clamp(13px, 1.3vw, 19px); }
+    .ts-lg .eyebrow                         { font-size: clamp(15px, 1.75vw, 25px); }
+    .ts-lg .stat-value                      { font-size: clamp(36px, 6.0vw, 92px); }
+    .ts-lg .stat-card.stat-featured .stat-value { font-size: clamp(46px, 7.8vw, 116px); }
+    .ts-lg .stat-label                      { font-size: clamp(11px, 1.15vw, 17px); }
+    .ts-lg .stat-sublabel                   { font-size: clamp(11px, 1.05vw, 15px); }
+    .ts-lg cite                             { font-size: clamp(14px, 1.4vw, 21px); }
+    .ts-lg .media-caption,
+    .ts-lg .slide-note                      { font-size: clamp(12px, 1.1vw, 16px); }
 
-    .ts-xl .headline              { font-size: clamp(34px, 6.2vw, 92px); }
-    .ts-xl .slide-title .headline { font-size: clamp(42px, 8.2vw, 118px); }
-    .ts-xl .closing-headline      { font-size: clamp(42px, 7.4vw, 108px); }
-    .ts-xl .subheading            { font-size: clamp(22px, 3vw, 42px); }
-    .ts-xl .bullets li            { font-size: clamp(23px, 3.1vw, 46px); }
-    .ts-xl blockquote             { font-size: clamp(28px, 4.4vw, 64px); }
-    .ts-xl .col-title             { font-size: clamp(17px, 1.8vw, 26px); }
+    .ts-xl .headline                        { font-size: clamp(34px, 6.2vw, 92px); }
+    .ts-xl .slide-title .headline           { font-size: clamp(42px, 8.2vw, 118px); }
+    .ts-xl .closing-headline                { font-size: clamp(42px, 7.4vw, 108px); }
+    .ts-xl .subheading                      { font-size: clamp(22px, 3vw, 42px); }
+    .ts-xl .bullets li                      { font-size: clamp(23px, 3.1vw, 46px); }
+    .ts-xl blockquote                       { font-size: clamp(28px, 4.4vw, 64px); }
+    .ts-xl .col-title                       { font-size: clamp(17px, 1.8vw, 26px); }
+    .ts-xl .col-text                        { font-size: clamp(15px, 1.5vw, 22px); }
+    .ts-xl .eyebrow                         { font-size: clamp(17px, 2.0vw, 29px); }
+    .ts-xl .stat-value                      { font-size: clamp(40px, 7.0vw, 104px); }
+    .ts-xl .stat-card.stat-featured .stat-value { font-size: clamp(52px, 9.0vw, 132px); }
+    .ts-xl .stat-label                      { font-size: clamp(13px, 1.3vw, 19px); }
+    .ts-xl .stat-sublabel                   { font-size: clamp(12px, 1.2vw, 17px); }
+    .ts-xl cite                             { font-size: clamp(16px, 1.6vw, 24px); }
+    .ts-xl .media-caption,
+    .ts-xl .slide-note                      { font-size: clamp(13px, 1.25vw, 18px); }
 
     /* Nav jump buttons */
     #nav-jumps {
@@ -701,6 +752,25 @@
       background:   rgba(0,136,255,0.18);
       border-color: rgba(0,136,255,0.4);
       color:        var(--accent);
+    }
+
+    /* ── Light mode HUD overrides ──────────────────────────────── */
+    [data-theme="light"] .ts-btn {
+      background:   rgba(255,255,255,0.55);
+      border-color: rgba(0,30,60,0.18);
+      color:        var(--label-2);
+    }
+    [data-theme="light"] .ts-btn:hover {
+      background:   rgba(255,255,255,0.80);
+      color:        var(--label-1);
+    }
+    [data-theme="light"] .ts-btn.ts-active {
+      background:   rgba(232,69,10,0.12);
+      border-color: rgba(232,69,10,0.45);
+      color:        var(--accent);
+    }
+    [data-theme="light"] .hud-label {
+      color: var(--label-2);
     }
 
     /* ─── Pre-hide animatable children ──────────────────────────── */
@@ -1253,6 +1323,8 @@
         // Count-up animation on .stat-value elements after cards appear
         tl.call(() => {
           slide.querySelectorAll('.stat-value[data-target]').forEach(el => {
+            // Lock width to the final value's rendered width so cards don't resize during count-up
+            el.style.minWidth = el.offsetWidth + 'px';
             const raw    = el.dataset.target;        // e.g. "$12,000" "+$234K" "68%"
             const prefix = raw.match(/^[^0-9]*/)[0];
             const suffix = raw.match(/[^0-9.]*$/)[0];
