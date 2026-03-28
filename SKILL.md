@@ -201,13 +201,24 @@ Tell the user:
 | Theme | Value | Atmosphere | Best for |
 |-------|-------|------------|----------|
 | Blue Hour | `"dark"` | Starfield · bokeh · Perlin gobo blobs · SF fog | Pitch decks, evening keynotes, most dark content |
-| Crissy Field | `"light"` | Sun + lens flares · warm bokeh · blue gradient | Investor decks, daytime presentations |
+| Crissy Field | `"light"` | Warm bokeh · blue gradient · Perlin gobo blobs | Investor decks, daytime presentations |
 | Obsidian | `"obsidian"` | Floating dust particles · green-tinted gobo blobs | Tech, finance, developer tools, terminal aesthetic |
 | Deep Space | `"deep-space"` | Dense 200-star field · cyan/violet/pink nebula gobos | Sci-fi, data viz, space/aerospace, futurism |
-| Noir | `"noir"` | Film grain · crimson gobo bloom · SF fog | Editorial, fashion, cinema, dark storytelling |
-| Golden Hour | `"golden-hour"` | Low sun · warm amber bokeh · amber-to-cream gradient | Hospitality, lifestyle, food, warm brand storytelling |
+| Noir | `"noir"` | Film grain · venetian blind bars · rain streaks · crimson bloom | Editorial, fashion, cinema, Sin City storytelling |
+| Golden Hour | `"golden-hour"` | Warm amber bokeh · amber-to-cream gradient | Hospitality, lifestyle, food, warm brand storytelling |
+| Twin Peaks | `"twin-peaks"` | City glow at bottom · teal fog · night purple/teal gobos | Night life, urban, moody Bay Area content |
+| Embarcadero | `"embarcadero"` | Steel-blue fog · grey-blue bokeh · cool gobos | Corporate, finance, waterfront, maritime |
+| Muir Woods | `"muir-woods"` | Blinking fireflies · deep forest green gobos | Nature, wellness, sustainability, outdoors |
+| The Mission | `"the-mission"` | Warm orange/pink gradients · vivid saturated gobos | Art, culture, food, creative agencies, Latin brand |
+| Santa Cruz | `"santa-cruz"` | Aqua/seafoam bokeh · ocean blue gobos | Surf, beach, outdoor rec, Pacific coast brands |
+| Sausalito | `"sausalito"` | Soft teal/silver bokeh · harbour mist gobos | Architecture, lifestyle, coastal real estate |
+| Half Moon Bay | `"half-moon-bay"` | Coastal fog · storm grey/slate gobos | Agriculture, wine, coastal tourism, moody editorial |
+| Redwood | `"redwood"` | Amber blinking fireflies · deep burgundy/forest gobos | Luxury, heritage brands, California wilderness |
+| The Richmond | `"the-richmond"` | SF fog · cool lavender/grey gobos | Residential, food, culture, neighbourhood storytelling |
+| Nob Hill | `"nob-hill"` | Champagne bokeh · gold/ivory gobos · light mist | Luxury real estate, finance, fundraising galas |
+| Haight | `"haight"` | Floating emoji · spinning mandala · confetti drops · explosion on nav | Parties, creative decks, anything that should feel joyful |
 
-**Choosing a theme:** dark themes (Blue Hour, Obsidian, Deep Space, Noir) are best for dramatic impact and stage presentations. Light themes (Crissy Field, Golden Hour) read better in bright rooms and investor contexts. Each theme has its own ambient atmosphere that runs throughout — no configuration needed.
+**Choosing a theme:** dark themes (Blue Hour, Obsidian, Deep Space, Noir, Twin Peaks, The Mission, Redwood) are best for dramatic impact. Light/mid themes (Crissy Field, Golden Hour, Embarcadero, Sausalito, Nob Hill) read better in bright rooms. Forest and coastal themes (Muir Woods, Santa Cruz, Half Moon Bay, The Richmond) suit nature and community content. Haight is for when the presentation itself is the party. Each theme has its own ambient atmosphere — no configuration needed.
 
 ---
 

@@ -131,12 +131,23 @@
     }
     .theme-link:hover { filter: brightness(1.2); transform: translateX(3px); }
 
-    .card-dark       { --ca: #0A84FF; --cab: rgba(10,132,255,0.12); }
-    .card-light      { --ca: #E8450A; --cab: rgba(232,69,10,0.12); }
-    .card-obsidian   { --ca: #34C759; --cab: rgba(52,199,89,0.12); }
-    .card-deep-space { --ca: #32D2F2; --cab: rgba(50,210,242,0.12); }
-    .card-noir       { --ca: #FF3B5C; --cab: rgba(255,59,92,0.12); }
-    .card-golden     { --ca: #C43A00; --cab: rgba(196,58,0,0.12); }
+    .card-dark          { --ca: #0A84FF; --cab: rgba(10,132,255,0.12); }
+    .card-light         { --ca: #E8450A; --cab: rgba(232,69,10,0.12); }
+    .card-obsidian      { --ca: #34C759; --cab: rgba(52,199,89,0.12); }
+    .card-deep-space    { --ca: #32D2F2; --cab: rgba(50,210,242,0.12); }
+    .card-noir          { --ca: #FF3B5C; --cab: rgba(255,59,92,0.12); }
+    .card-golden        { --ca: #C43A00; --cab: rgba(196,58,0,0.12); }
+    .card-twin-peaks    { --ca: #5AC8FA; --cab: rgba(90,200,250,0.12); }
+    .card-embarcadero   { --ca: #8DB4D8; --cab: rgba(141,180,216,0.12); }
+    .card-muir-woods    { --ca: #30D158; --cab: rgba(48,209,88,0.12); }
+    .card-the-mission   { --ca: #FF6B35; --cab: rgba(255,107,53,0.12); }
+    .card-santa-cruz    { --ca: #40C8E0; --cab: rgba(64,200,224,0.12); }
+    .card-sausalito     { --ca: #7ECAC3; --cab: rgba(126,202,195,0.12); }
+    .card-half-moon-bay { --ca: #8E8EA0; --cab: rgba(142,142,160,0.12); }
+    .card-redwood       { --ca: #C0392B; --cab: rgba(192,57,43,0.12); }
+    .card-the-richmond  { --ca: #9B7FD4; --cab: rgba(155,127,212,0.12); }
+    .card-nob-hill      { --ca: #D4AF37; --cab: rgba(212,175,55,0.12); }
+    .card-haight        { --ca: #FF6B9D; --cab: rgba(255,107,157,0.12); }
     .theme-badge, .theme-link {
       background: var(--cab); color: var(--ca);
       border: 1px solid color-mix(in srgb, var(--ca) 30%, transparent);
@@ -227,8 +238,8 @@
   <section class="themes-section">
     <div class="themes-header">
       <p class="section-label">Themes</p>
-      <h2 class="section-heading">Six distinct looks, six atmospheres</h2>
-      <p class="section-body">Every theme has its own ambient environment — gobo blob colors, bokeh palette, and a unique atmospheric effect. Set <code style="font-size:0.9em;color:var(--accent)">"theme": "obsidian"</code> and the whole deck transforms.</p>
+      <h2 class="section-heading">Seventeen distinct looks, seventeen atmospheres</h2>
+      <p class="section-body">Every theme has its own ambient environment — gobo blob colors, bokeh palette, and a unique atmospheric effect. Six originals plus eleven Bay Area themes, from Twin Peaks fog to Haight-Ashbury emoji explosions. Set <code style="font-size:0.9em;color:var(--accent)">"theme": "haight"</code> and the whole deck transforms.</p>
     </div>
     <div class="theme-grid">
 
@@ -261,7 +272,7 @@
           <div class="theme-tags">
             <span class="tag">Investor decks</span><span class="tag">Real estate</span><span class="tag">Daytime</span>
           </div>
-          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Solar disc + pulsing corona · 6 lens flares along optical axis with mix-blend-mode: screen · warm blue bokeh</p>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Warm blue/peach bokeh · Perlin gobo blobs in coral, sky-blue, and gold · light blue-to-white gradient</p>
           <a class="theme-link" href="decks/crissy-field.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
       </div>
@@ -312,7 +323,7 @@
           <div class="theme-tags">
             <span class="tag">Editorial</span><span class="tag">Cinema</span><span class="tag">Fashion</span><span class="tag">Journalism</span>
           </div>
-          <p class="theme-atmosphere"><strong>Atmosphere:</strong> SVG feTurbulence film grain at 12fps · crimson gobo bloom · SF fog · deep-red bokeh · no starfield</p>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> SVG feTurbulence film grain at 12fps · venetian blind bars (CSS repeating-linear-gradient) · 110 GSAP rain streaks · crimson gobo bloom · no fog</p>
           <a class="theme-link" href="decks/noir.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
       </div>
@@ -331,6 +342,171 @@
           </div>
           <p class="theme-atmosphere"><strong>Atmosphere:</strong> Low center sun with amber corona pulse · amber/gold/tangerine bokeh · no lens flares (diffuse source)</p>
           <a class="theme-link" href="decks/golden-hour.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-twin-peaks">
+        <div class="theme-preview">
+          <iframe src="decks/twin-peaks.html" title="Twin Peaks" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">twin-peaks</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Twin Peaks</div>
+          <p class="theme-tagline">Night city glow from the hilltop — teal fog, purple-to-black gradient, the SF skyline beneath you.</p>
+          <div class="theme-tags"><span class="tag">Night life</span><span class="tag">Urban</span><span class="tag">Moody</span><span class="tag">Photography</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Radial city-glow at bottom edge · deep teal fog · purple/teal/indigo gobos · sparse starfield</p>
+          <a class="theme-link" href="decks/twin-peaks.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-embarcadero">
+        <div class="theme-preview">
+          <iframe src="decks/embarcadero.html" title="Embarcadero" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">embarcadero</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Embarcadero</div>
+          <p class="theme-tagline">Steel-blue waterfront light — the Bay at dusk, fog rolling under the Bay Bridge.</p>
+          <div class="theme-tags"><span class="tag">Corporate</span><span class="tag">Finance</span><span class="tag">Maritime</span><span class="tag">Waterfront</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Steel-blue fog · grey-blue bokeh · cool slate/navy gobos · 45-star sparse field</p>
+          <a class="theme-link" href="decks/embarcadero.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-muir-woods">
+        <div class="theme-preview">
+          <iframe src="decks/muir-woods.html" title="Muir Woods" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">muir-woods</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Muir Woods</div>
+          <p class="theme-tagline">Cathedral redwoods, filtered light, and 32 fireflies blinking in the understory.</p>
+          <div class="theme-tags"><span class="tag">Nature</span><span class="tag">Wellness</span><span class="tag">Sustainability</span><span class="tag">Outdoors</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> 32 blinking fireflies · hover drift GSAP · deep forest green/jade/emerald gobos · no starfield</p>
+          <a class="theme-link" href="decks/muir-woods.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-the-mission">
+        <div class="theme-preview">
+          <iframe src="decks/the-mission.html" title="The Mission" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">the-mission</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">The Mission</div>
+          <p class="theme-tagline">Sun-drenched murals, warm terracotta walls, and the most saturated gradient in the collection.</p>
+          <div class="theme-tags"><span class="tag">Art</span><span class="tag">Culture</span><span class="tag">Creative</span><span class="tag">Latin brand</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Warm orange/coral/pink gradient · vivid high-opacity gobos · tangerine/coral/crimson bokeh</p>
+          <a class="theme-link" href="decks/the-mission.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-santa-cruz">
+        <div class="theme-preview">
+          <iframe src="decks/santa-cruz.html" title="Santa Cruz" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">santa-cruz</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Santa Cruz</div>
+          <p class="theme-tagline">Ocean aqua and seafoam — the color of a wave just before it breaks over a reef.</p>
+          <div class="theme-tags"><span class="tag">Surf</span><span class="tag">Beach</span><span class="tag">Outdoor rec</span><span class="tag">Pacific coast</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Aqua-to-deep-blue gradient · seafoam/aqua/teal bokeh · ocean-blue/cyan gobos · no starfield</p>
+          <a class="theme-link" href="decks/santa-cruz.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-sausalito">
+        <div class="theme-preview">
+          <iframe src="decks/sausalito.html" title="Sausalito" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">sausalito</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Sausalito</div>
+          <p class="theme-tagline">Silver harbour mist and soft teal light — the view from the houseboat deck at low tide.</p>
+          <div class="theme-tags"><span class="tag">Architecture</span><span class="tag">Lifestyle</span><span class="tag">Coastal real estate</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Soft teal/silver bokeh · harbour mist gobos · near-white glass cards · light eyebrow override</p>
+          <a class="theme-link" href="decks/sausalito.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-half-moon-bay">
+        <div class="theme-preview">
+          <iframe src="decks/half-moon-bay.html" title="Half Moon Bay" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">half-moon-bay</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Half Moon Bay</div>
+          <p class="theme-tagline">Coastal fog over pumpkin fields — storm grey and slate with 30 stars barely visible through the marine layer.</p>
+          <div class="theme-tags"><span class="tag">Agriculture</span><span class="tag">Wine</span><span class="tag">Coastal tourism</span><span class="tag">Editorial</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Coastal fog · storm grey/slate/pewter gobos · cool grey bokeh · 30-star sparse field</p>
+          <a class="theme-link" href="decks/half-moon-bay.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-redwood">
+        <div class="theme-preview">
+          <iframe src="decks/redwood.html" title="Redwood" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">redwood</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Redwood</div>
+          <p class="theme-tagline">Deep burgundy dusk over Sonoma — amber fireflies, wine-dark gobos, the luxury of old California.</p>
+          <div class="theme-tags"><span class="tag">Luxury</span><span class="tag">Wine</span><span class="tag">Heritage brands</span><span class="tag">California wilderness</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> 32 amber blinking fireflies · deep burgundy/forest/mahogany gobos · amber bokeh · no starfield</p>
+          <a class="theme-link" href="decks/redwood.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-the-richmond">
+        <div class="theme-preview">
+          <iframe src="decks/the-richmond.html" title="The Richmond" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">the-richmond</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">The Richmond</div>
+          <p class="theme-tagline">SF's quiet fog belt — cool lavender and grey, the neighbourhood that minds its own business beautifully.</p>
+          <div class="theme-tags"><span class="tag">Residential</span><span class="tag">Food</span><span class="tag">Culture</span><span class="tag">Neighbourhood</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> SF fog · cool lavender/grey/periwinkle gobos · cool white/lavender bokeh · 3-layer fog</p>
+          <a class="theme-link" href="decks/the-richmond.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-nob-hill">
+        <div class="theme-preview">
+          <iframe src="decks/nob-hill.html" title="Nob Hill" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">nob-hill</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Nob Hill</div>
+          <p class="theme-tagline">Champagne light, gold accents, and a whisper of fog — the aesthetic of a Fairmont ballroom at midnight.</p>
+          <div class="theme-tags"><span class="tag">Luxury real estate</span><span class="tag">Finance</span><span class="tag">Galas</span><span class="tag">Fundraising</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> Champagne/gold/ivory gobos · warm gold bokeh · light mist fog · 55 sparse stars</p>
+          <a class="theme-link" href="decks/nob-hill.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+
+      <div class="theme-card card-haight">
+        <div class="theme-preview">
+          <iframe src="decks/haight.html" title="Haight" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="preview-overlay"></div>
+          <span class="theme-badge">haight</span>
+        </div>
+        <div class="theme-body">
+          <div class="theme-name">Haight 🌈</div>
+          <p class="theme-tagline">Emoji float up. Confetti falls from the sky. A mandala of 25 spinning glyphs orbits behind your slides. Every navigation explodes.</p>
+          <div class="theme-tags"><span class="tag">Parties</span><span class="tag">Creative decks</span><span class="tag">Joyful anything</span><span class="tag">Summer of Love</span></div>
+          <p class="theme-atmosphere"><strong>Atmosphere:</strong> 22 drifting emoji · 3-ring spinning mandala (counter-rotating glyphs) · periodic confetti drops · explosion on every nav</p>
+          <a class="theme-link" href="decks/haight.html" target="_blank">Open deck <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
       </div>
 
