@@ -115,6 +115,8 @@
       width:  min(100vw, 177.78vh);
       height: min(100vh, 56.25vw);
       overflow: hidden;
+      perspective:        1400px;   /* enables rotateX/Y depth on slide children */
+      perspective-origin: 50% 38%;
     }
 
     /* ─── Slides ─────────────────────────────────────────────────── */
@@ -1300,10 +1302,13 @@
 
     const S = 0.09; // stagger per item
 
-    // Helper: fromTo with visible end state
+    // Helper: fromTo with visible end state — always resets rotation/filter
     const ft = (el, from, opts, pos) => {
       if (!el) return;
-      tl.fromTo(el, from, { ...from, y: 0, x: 0, scale: 1, opacity: 1, ...opts }, pos);
+      tl.fromTo(el, from, {
+        y: 0, x: 0, scale: 1, opacity: 1, rotateX: 0, rotateY: 0,
+        ...opts
+      }, pos);
     };
 
     // Eyebrow clip-path wipe: left → right reveal
@@ -1314,11 +1319,15 @@
         { opacity: 1, clipPath: 'inset(0 0% 0 0)', duration: 0.52, ease: EASE_OUT }, pos);
     };
 
-    // Headline word-stagger: split into .wi spans, reveal from below
+    // Headline word-stagger + Apple-style blur-to-sharp focus
     const ftWords = (el, pos, yAmt = 26) => {
       if (!el) return;
       const words = splitWords(el);
-      tl.set(el, { opacity: 1 }, 0); // reveal container; words animate in individually
+      // Container: snap opacity then blur-clear (depth-of-field focus pull)
+      tl.fromTo(el,
+        { opacity: 1, filter: 'blur(7px)' },
+        { opacity: 1, filter: 'blur(0px)', duration: DUR * 1.15, ease: 'power2.out' }, pos);
+      // Words: stagger up from below, riding the blur clear
       if (words.length) {
         tl.fromTo(words,
           { y: yAmt, opacity: 0 },
@@ -1362,8 +1371,10 @@
       case 'two-column':
         ftEyebrow(0);
         ftWords(headline, 0.1, 18);
-        ft(cols[0], { x: -38, opacity: 0 }, { duration: DUR, ease: EASE_OUT }, 0.24);
-        ft(cols[1], { x:  38, opacity: 0 }, { duration: DUR, ease: EASE_OUT }, 0.34);
+        ft(cols[0], { x: -42, opacity: 0, rotateX: 6, transformPerspective: 1200 },
+          { duration: DUR, ease: EASE_OUT }, 0.24);
+        ft(cols[1], { x:  42, opacity: 0, rotateX: 6, transformPerspective: 1200 },
+          { duration: DUR, ease: EASE_OUT }, 0.34);
         bullets.forEach((li, i) => ft(li, { y: 8, opacity: 0 },
           { duration: DUR * 0.65, ease: EASE_OUT }, 0.44 + i * 0.07));
         break;
@@ -1373,8 +1384,8 @@
         ftWords(headline, 0.1, 18);
         const statCards = getA('.stat-card');
         statCards.forEach((card, i) =>
-          ft(card, { y: 24, scale: 0.94, opacity: 0 },
-            { duration: DUR * 1.0, ease: EASE_SPRING }, 0.22 + i * 0.09));
+          ft(card, { y: 28, scale: 0.93, opacity: 0, rotateX: 12, transformPerspective: 900 },
+            { duration: DUR * 1.05, ease: EASE_SPRING }, 0.2 + i * 0.09));
         tl.call(() => {
           slide.querySelectorAll('.stat-value[data-target]').forEach(el => {
             el.style.minWidth = el.offsetWidth + 'px';
@@ -1398,25 +1409,29 @@
       case 'gallery':
         ftEyebrow(0);
         ftWords(headline, 0.08, 16);
-        ft(gframe,  { scale: 0.96, opacity: 0 }, { duration: DUR * 1.1, ease: EASE_OUT  }, 0.16);
-        ft(caption, { opacity: 0 },              { duration: DUR * 0.6, ease: EASE_SOFT }, 0.52);
+        ft(gframe,  { scale: 1.04, opacity: 0, filter: 'blur(10px)' },
+          { duration: DUR * 1.2, ease: EASE_OUT, filter: 'blur(0px)' }, 0.16);
+        ft(caption, { opacity: 0 }, { duration: DUR * 0.6, ease: EASE_SOFT }, 0.55);
         tl.call(() => _startGallery(slide), [], 0.42);
         break;
 
       case 'media':
         ftWords(headline, 0, 18);
-        ft(frame,   { scale: 0.94, opacity: 0 }, { duration: DUR * 1.05, ease: EASE_OUT }, headline ? 0.12 : 0);
-        ft(caption, { opacity: 0 },              { duration: DUR * 0.6,  ease: EASE_SOFT }, 0.45);
+        ft(frame,   { scale: 1.05, opacity: 0, filter: 'blur(8px)' },
+          { duration: DUR * 1.1, ease: EASE_OUT, filter: 'blur(0px)' }, headline ? 0.12 : 0);
+        ft(caption, { opacity: 0 }, { duration: DUR * 0.6, ease: EASE_SOFT }, 0.45);
         break;
 
       case 'closing': {
         const closingWords = splitWords(headline);
-        if (headline) tl.set(headline, { opacity: 1 }, 0);
+        if (headline) tl.fromTo(headline,
+          { opacity: 1, filter: 'blur(8px)' },
+          { opacity: 1, filter: 'blur(0px)', duration: DUR * 1.2, ease: 'power2.out' }, 0);
         if (closingWords.length) tl.fromTo(closingWords,
-          { scale: 0.88, opacity: 0 },
-          { scale: 1, opacity: 1, stagger: 0.08, duration: DUR * 1.1, ease: EASE_SPRING }, 0);
-        ft(cta,     { y: 20, opacity: 0 }, { duration: DUR,        ease: EASE_OUT  }, 0.32);
-        ft(contact, { opacity: 0 },        { duration: DUR * 0.75, ease: EASE_SOFT }, 0.48);
+          { scale: 0.86, opacity: 0, rotateX: 10, transformPerspective: 1000 },
+          { scale: 1, opacity: 1, rotateX: 0, stagger: 0.08, duration: DUR * 1.15, ease: EASE_SPRING }, 0);
+        ft(cta,     { y: 20, opacity: 0 }, { duration: DUR,        ease: EASE_OUT  }, 0.34);
+        ft(contact, { opacity: 0 },        { duration: DUR * 0.75, ease: EASE_SOFT }, 0.50);
         tl.call(() => { if (_emojiRainEnabled && slides[current] === slide) startEmojiRain(slide); }, [], 0.5);
         break;
       }
@@ -1446,6 +1461,7 @@
     gsap.set(slide.querySelectorAll(CHILD_SEL), { opacity: 0 });
     // Reset split word spans so they don't flash visible when headline container is revealed
     gsap.set(slide.querySelectorAll('.wi'), { y: 26, opacity: 0, scale: 1 });
+    gsap.set(slide.querySelectorAll('.headline, blockquote'), { filter: 'none' });
     const wm = slide.querySelector('.quote-watermark');
     if (wm) gsap.set(wm, { opacity: 0, scale: 1.4 });
   }
