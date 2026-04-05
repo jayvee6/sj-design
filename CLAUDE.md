@@ -4,7 +4,7 @@ This is the Studio Joe design system and presentation skill repo. It generates s
 
 ## What it is
 
-A Claude Code skill (`SKILL.md`) that produces beautiful `.html` presentations using GSAP animations and the Apple design system (SF Pro, Liquid Glass, Apple color tokens).
+A Claude Code skill (`SKILL.md`) that produces beautiful `.html` presentations using GSAP animations and the Apple design system (SF Pro, Glass Refraction, Apple color tokens).
 
 ## Key files
 

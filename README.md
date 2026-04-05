@@ -1,6 +1,6 @@
 # sj-design — Presentation Skill for Claude Code
 
-A Claude Code skill that generates beautiful, animated HTML slide decks from natural language prompts. Describe what you need; get a self-contained `.html` file with cinematic animations, Apple design tokens, and physics-based Liquid Glass fills — ready to open in any browser.
+A Claude Code skill that generates beautiful, animated HTML slide decks from natural language prompts. Describe what you need; get a self-contained `.html` file with cinematic animations, Apple design tokens, and physics-based glass refraction fills — ready to open in any browser.
 
 ![Showcase](docs/screenshots/showcase-hero.png)
 
@@ -14,7 +14,7 @@ Every deck is a single `.html` file with no external dependencies:
 - **17 themes** — dark, light, and atmospheric (see below)
 - **Cinematic GSAP animations** — Apple `cubic-bezier(0.16, 1, 0.3, 1)` expo-out, spring easing, per-element stagger
 - **Ambient atmosphere** — Perlin-noise gobo blobs, starfields, bokeh discs, SF fog layers, fireflies, rain, confetti — unique per theme, no config needed
-- **Liquid Glass** — physics-based frosted glass fills with 4-edge specular bezels, SVG `feDisplacementMap` rim refraction, and `feGaussianBlur` — works in Chrome, Firefox, and Safari
+- **Glass Refraction** — physics-based frosted glass fills with 4-edge specular bezels, SVG `feDisplacementMap` rim refraction, and `feGaussianBlur` — works in Chrome, Firefox, and Safari
 - **Stats count-up** — animated number counters that spring in from zero; supports `$`, `%`, `+`, commas
 - **Ken Burns gallery** — photo slideshow with continuous pan/zoom crossfades
 - **YouTube / video / image embeds** — auto-detected from URL; local files base64-embedded
@@ -136,7 +136,7 @@ sj-design/
 │   └── template.html                 # GSAP template with all 17 themes
 ├── showcase/
 │   ├── index.html                    # Design system showcase
-│   ├── liquid-glass-demo.html        # Interactive Liquid Glass technique demo
+│   ├── glass-refraction-demo.html        # Interactive Glass Refraction technique demo
 │   └── decks/                        # Example generated decks
 └── evals/
     └── evals.json                    # Eval test cases
@@ -160,11 +160,11 @@ echo '{"title":"My deck","theme":"dark","slides":[...]}' \
 
 ---
 
-## Liquid Glass
+## Glass Refraction
 
-![Liquid Glass Demo](docs/screenshots/liquid-glass-demo.png)
+![Glass Refraction Demo](docs/screenshots/glass-refraction-demo.png)
 
-The template uses a physics-based Liquid Glass rendering technique, ported from `@hashintel/refractive` (MIT/Apache-2.0) to vanilla JS/CSS/SVG:
+The template uses a physics-based glass refraction technique, ported from `@hashintel/refractive` (MIT/Apache-2.0) to vanilla JS/CSS/SVG:
 
 - **Surface equations** — `convexCircle`, `convex`, `concave`, `lip(x)` model light refraction through curved glass using Snell's law
 - **64×64 displacement map** — generated at runtime in a canvas, encoded as PNG, fed into `feImage` → `feDisplacementMap`
@@ -172,7 +172,7 @@ The template uses a physics-based Liquid Glass rendering technique, ported from 
 - **4-edge specular bezel** — `inset` box-shadows on all four edges with per-theme accent tints simulate light catching each face of the glass rim
 - **Cross-browser** — `feGaussianBlur` in the SVG filter chain handles blur; the displacement is applied to the background element rather than the glass card itself, avoiding Safari's `filter + backdrop-filter` compositing limitation
 
-See [`showcase/liquid-glass-demo.html`](showcase/liquid-glass-demo.html) for an interactive breakdown of each technique layer.
+See [`showcase/glass-refraction-demo.html`](showcase/glass-refraction-demo.html) for an interactive breakdown of each technique layer.
 
 ---
 

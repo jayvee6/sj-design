@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liquid Glass — sj-design technique demo</title>
+  <title>Glass Refraction — sj-design technique demo</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -693,7 +693,7 @@
   <!-- ── HERO ──────────────────────────────────────────────────── -->
   <section class="hero">
     <p class="hero-eyebrow">sj-design · technique</p>
-    <h1 class="hero-title">Liquid<br>Glass</h1>
+    <h1 class="hero-title">Glass<br>Refraction</h1>
     <p class="hero-sub">Physics-based refractive glass for vanilla HTML. Surface equations from Snell's law, 4-edge specular bezels, and real displacement maps — no React required.</p>
     <div class="hero-card">
       <div class="hero-card-label">Displacement scale</div>
@@ -823,7 +823,7 @@
       </div>
 
       <div class="interactive-controls">
-        <p class="controls-desc">The <code style="font-family:monospace;font-size:0.88em;background:rgba(255,255,255,0.07);padding:2px 5px;border-radius:4px;color:#5AC8FA">feDisplacementMap scale</code> controls how strongly edge pixels are displaced. At 0 — no refraction. At 6 (sj-design default) — physically plausible. At 30 — dramatic liquid effect.</p>
+        <p class="controls-desc">The <code style="font-family:monospace;font-size:0.88em;background:rgba(255,255,255,0.07);padding:2px 5px;border-radius:4px;color:#5AC8FA">feDisplacementMap scale</code> controls how strongly edge pixels are displaced. At 0 — no refraction. At 6 (sj-design default) — physically plausible. At 30 — dramatic refraction effect.</p>
 
         <div class="slider-row">
           <span class="slider-label">scale</span>
@@ -832,7 +832,7 @@
         </div>
 
         <div class="support-note ok" id="support-note">
-          ✓ Full liquid glass active — displacement filter supported in this browser.
+          ✓ Full glass refraction active — displacement filter supported in this browser.
         </div>
         <div class="support-note warn" id="no-support-note">
           ⚠ Displacement not applied in this browser — 4-edge bezel fallback active.
@@ -1037,7 +1037,7 @@
   }
 }
 
-<span class="cc">/* .lg-active class added by initLiquidGlass() after map injection */</span>
+<span class="cc">/* .lg-active class added by initGlassRefraction() after map injection */</span>
 <span class="cp">.col</span>.<span class="cv">lg-active</span>::<span class="ck">before</span>,
 <span class="cp">.stat-card</span>.<span class="cv">lg-active</span>::<span class="ck">before</span> {
   filter: <span class="cv">url(#lg-refract)</span>;
@@ -1046,7 +1046,7 @@
   </section>
 
   <footer class="demo-footer">
-    <p class="footer-copy">Liquid Glass Demo — sj-design · Techniques from <code style="font-family:monospace;font-size:0.9em;opacity:0.75">@hashintel/refractive</code> (MIT/Apache-2.0)</p>
+    <p class="footer-copy">Glass Refraction Demo — sj-design · Techniques from <code style="font-family:monospace;font-size:0.9em;opacity:0.75">@hashintel/refractive</code> (MIT/Apache-2.0)</p>
     <a class="footer-link" href="index.html">← Back to showcase</a>
   </footer>
 
@@ -1097,13 +1097,13 @@
     return c.toDataURL('image/png');
   }
 
-  // ── Init liquid glass ──────────────────────────────────────────────
+  // ── Init glass refraction ──────────────────────────────────────────────
   // Safari uses -webkit-backdrop-filter; check both
   const supportsBackdrop = CSS.supports('backdrop-filter', 'blur(1px)')
                         || CSS.supports('-webkit-backdrop-filter', 'blur(1px)');
   let lgActive = false;
 
-  function initLiquidGlass() {
+  function initGlassRefraction() {
     const mapUrl = buildDisplacementMap(64);
     const feImg  = document.getElementById('lg-demo-map');
     if (feImg) {
@@ -1292,7 +1292,7 @@
   ).forEach(el => { el.classList.add('reveal'); io.observe(el); });
 
   // ── Boot ───────────────────────────────────────────────────────────
-  initLiquidGlass();
+  initGlassRefraction();
   drawPhysicsCanvas();
   initSlider();
   initCodeTabs();
