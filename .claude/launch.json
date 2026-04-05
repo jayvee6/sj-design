@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "demo",
+      "name": "sj-design",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8788", "--directory", "/tmp"],
-      "port": 8788
+      "runtimeArgs": ["-m", "http.server", "7890", "--directory", "/Users/jdot/Documents/Development/sj-design"],
+      "port": 7890
     }
   ]
 }

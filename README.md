@@ -2,6 +2,8 @@
 
 A Claude Code skill that generates beautiful, animated HTML slide decks from natural language prompts. Describe what you need; get a self-contained `.html` file with cinematic animations, Apple design tokens, and physics-based Liquid Glass fills — ready to open in any browser.
 
+![Showcase](docs/screenshots/showcase-hero.png)
+
 ---
 
 ## What it produces
@@ -76,6 +78,23 @@ Claude plans a narrative arc, writes content following Apple Style Guide rules, 
 
 Specify a theme in your prompt or let Claude choose based on context.
 
+### Theme gallery
+
+| | |
+|---|---|
+| ![Blue Hour](docs/screenshots/blue-hour.png) | ![Noir](docs/screenshots/noir.png) |
+| **Blue Hour** — deep indigo night sky, SF fog, Perlin gobo blobs | **Noir** — pure black, crimson bloom, film grain, rain streaks |
+| ![Crissy Field](docs/screenshots/crissy-field.png) | ![Obsidian](docs/screenshots/obsidian.png) |
+| **Crissy Field** — California coastal daylight, warm blue gradient | **Obsidian** — matte charcoal, floating dust particles, terminal green |
+| ![Muir Woods](docs/screenshots/muir-woods.png) | ![Deep Space](docs/screenshots/deep-space.png) |
+| **Muir Woods** — deep forest, blinking fireflies, green gobos | **Deep Space** — 200-star field, cyan/violet/pink nebula |
+| ![Golden Hour](docs/screenshots/golden-hour.png) | ![Nob Hill](docs/screenshots/nob-hill.png) |
+| **Golden Hour** — warm amber gradient, low sun bokeh | **Nob Hill** — champagne bokeh, gold/ivory gobos, light mist |
+| ![Twin Peaks](docs/screenshots/twin-peaks.png) | ![The Mission](docs/screenshots/the-mission.png) |
+| **Twin Peaks** — city glow, teal fog, night purple gobos | **The Mission** — warm orange/pink gradients, vivid saturated gobos |
+| ![Haight](docs/screenshots/haight.png) | |
+| **Haight** — floating emoji, spinning mandala, confetti explosion | |
+
 ---
 
 ## Slide types
@@ -142,6 +161,8 @@ echo '{"title":"My deck","theme":"dark","slides":[...]}' \
 ---
 
 ## Liquid Glass
+
+![Liquid Glass Demo](docs/screenshots/liquid-glass-demo.png)
 
 The template uses a physics-based Liquid Glass rendering technique, ported from `@hashintel/refractive` (MIT/Apache-2.0) to vanilla JS/CSS/SVG:
 
