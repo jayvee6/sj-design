@@ -1,71 +1,129 @@
-# Presentation Skill for Claude Code
+# sj-design — Presentation Skill for Claude Code
 
-A Claude Code skill that generates beautiful, animated HTML slide decks from natural language prompts.
+A Claude Code skill that generates beautiful, animated HTML slide decks from natural language prompts. Describe what you need; get a self-contained `.html` file with cinematic animations, Apple design tokens, and physics-based Liquid Glass fills — ready to open in any browser.
 
 ---
 
-## What it does
+## What it produces
 
-Ask Claude to make a presentation and get a self-contained `.html` file with:
+Every deck is a single `.html` file with no external dependencies:
 
-- Cinematic GSAP animations (Apple's expo-out easing)
-- Apple design system — SF Pro, exact color tokens, Liquid Glass fills
-- Six slide layouts: title, content, quote, two-column, media, closing
-- YouTube / video / image embeds on media slides
-- Keyboard + click + swipe navigation
-- Dark and light themes
-- Fully responsive at any viewport size
+- **8 slide layouts** — title, content, stats, quote, two-column, gallery, media, closing
+- **17 themes** — dark, light, and atmospheric (see below)
+- **Cinematic GSAP animations** — Apple `cubic-bezier(0.16, 1, 0.3, 1)` expo-out, spring easing, per-element stagger
+- **Ambient atmosphere** — Perlin-noise gobo blobs, starfields, bokeh discs, SF fog layers, fireflies, rain, confetti — unique per theme, no config needed
+- **Liquid Glass** — physics-based frosted glass fills with 4-edge specular bezels, SVG `feDisplacementMap` rim refraction, and `feGaussianBlur` — works in Chrome, Firefox, and Safari
+- **Stats count-up** — animated number counters that spring in from zero; supports `$`, `%`, `+`, commas
+- **Ken Burns gallery** — photo slideshow with continuous pan/zoom crossfades
+- **YouTube / video / image embeds** — auto-detected from URL; local files base64-embedded
+- **HUD controls** — slide counter, text-size presets (persisted in localStorage), emoji rain toggle, progress bar
+- **Keyboard + click + swipe navigation** — `→` / `Space` advance, `←` back, `F` fullscreen
 
-## Example prompts
+---
+
+## Usage
+
+Claude Code picks up the skill automatically. Just describe what you want:
 
 ```
 Make me a 6-slide presentation about the history of the internet
-Create a pitch deck for a SaaS startup selling AI writing tools
-Turn this outline into slides: [paste your bullets]
-Build a product demo deck and embed this YouTube video on slide 3: [URL]
-I need a deck comparing React vs Vue vs Svelte
 ```
 
-## Installation
+```
+Create a pitch deck for a SaaS startup. Use the Obsidian theme.
+```
 
-1. Clone this repo
-2. Copy the `presentation/` folder into your Claude Code skills directory:
-   ```
-   ~/Library/Application Support/Claude/.../skills/presentation/
-   ```
-3. Ask Claude: *"make me a presentation about X"* — the skill triggers automatically.
+```
+Build a property overview for 740 37th Ave — stats: $5,340 current rent,
+$10,400 market potential, $1.66M projected 2031 value. Gallery of exterior photos.
+```
+
+```
+Quarterly business review — revenue stats, Q3 vs Q4 two-column comparison,
+key wins, strong closing. Dark theme.
+```
+
+```
+10-slide product launch deck for our AI writing tool. B2B audience.
+Include a demo slide with this YouTube link and a quote from a beta user.
+```
+
+Claude plans a narrative arc, writes content following Apple Style Guide rules, builds a JSON spec, runs the build script, and opens the result.
+
+---
+
+## Themes
+
+| Theme | Key | Atmosphere |
+|-------|-----|------------|
+| **Blue Hour** | `dark` | Starfield · Perlin gobo blobs · SF fog · bokeh |
+| **Crissy Field** | `light` | Warm bokeh · blue gradient · Perlin blobs |
+| **Obsidian** | `obsidian` | Floating dust particles · green-tinted gobos |
+| **Deep Space** | `deep-space` | 200-star field · cyan/violet/pink nebula |
+| **Noir** | `noir` | Film grain · venetian blinds · rain streaks · crimson bloom |
+| **Golden Hour** | `golden-hour` | Warm amber bokeh · amber-to-cream gradient |
+| **Twin Peaks** | `twin-peaks` | City glow · teal fog · night purple/teal gobos |
+| **Embarcadero** | `embarcadero` | Steel-blue fog · grey-blue bokeh |
+| **Muir Woods** | `muir-woods` | Blinking fireflies · deep forest green gobos |
+| **The Mission** | `the-mission` | Warm orange/pink gradients · vivid saturated gobos |
+| **Santa Cruz** | `santa-cruz` | Aqua/seafoam bokeh · ocean blue gobos |
+| **Sausalito** | `sausalito` | Soft teal/silver bokeh · harbour mist |
+| **Half Moon Bay** | `half-moon-bay` | Coastal fog · storm grey/slate gobos |
+| **Redwood** | `redwood` | Amber fireflies · deep burgundy/forest gobos |
+| **The Richmond** | `the-richmond` | SF fog · cool lavender/grey gobos |
+| **Nob Hill** | `nob-hill` | Champagne bokeh · gold/ivory gobos · light mist |
+| **Haight** | `haight` | Floating emoji · spinning mandala · confetti · explosion on nav |
+
+Specify a theme in your prompt or let Claude choose based on context.
+
+---
+
+## Slide types
+
+| Type | Best for |
+|------|----------|
+| `title` | Opening slide, section breaks |
+| `content` | Bullets, features, key points |
+| `stats` | Metrics, financials, KPIs — animated count-up |
+| `quote` | Social proof, pull quotes |
+| `two-column` | Comparisons, before/after, side-by-side |
+| `gallery` | Photo showcases — Ken Burns slideshow |
+| `media` | YouTube, video files, images |
+| `closing` | CTA, thank you, contact info |
+
+---
+
+## Navigation
+
+| Input | Action |
+|-------|--------|
+| `→` / `Space` / click right half | Next slide |
+| `←` / click left half | Previous slide |
+| `F` | Fullscreen |
+| Swipe left / right | Next / previous (touch) |
+| `⏮ ⏭` buttons | Jump to first / last slide |
+| `A−  A  A+  A++` | Text size presets |
+
+---
 
 ## File structure
 
 ```
-presentation-skill/
-├── SKILL.md              # Skill instructions + JSON spec reference
+sj-design/
+├── SKILL.md                          # Skill definition — Claude reads this
 ├── scripts/
-│   └── build_presentation.py   # Builds HTML from JSON spec
+│   └── build_presentation.py         # Builds HTML from a JSON spec
 ├── assets/
-│   └── template.html           # GSAP template with Apple design tokens
-├── evals/
-│   └── evals.json              # Eval test cases
-└── demo/
-    └── future-of-ai.html # Example output
+│   └── template.html                 # GSAP template with all 17 themes
+├── showcase/
+│   ├── index.html                    # Design system showcase
+│   ├── liquid-glass-demo.html        # Interactive Liquid Glass technique demo
+│   └── decks/                        # Example generated decks
+└── evals/
+    └── evals.json                    # Eval test cases
 ```
 
-## Slide spec format
-
-```json
-{
-  "title": "My Deck",
-  "theme": "dark",
-  "slides": [
-    { "type": "title",      "heading": "...", "subheading": "..." },
-    { "type": "content",    "heading": "...", "bullets": ["..."] },
-    { "type": "quote",      "quote": "...", "attribution": "..." },
-    { "type": "two-column", "heading": "...", "left": {...}, "right": {...} },
-    { "type": "media",      "src": "https://youtube.com/watch?v=...", "caption": "..." },
-    { "type": "closing",    "heading": "...", "cta": "...", "contact": "..." }
-  ]
-}
-```
+---
 
 ## Build manually
 
@@ -74,14 +132,26 @@ python3 scripts/build_presentation.py spec.json -o deck.html
 open deck.html
 ```
 
-## Navigation
+Pipe via stdin:
 
-| Input | Action |
-|-------|--------|
-| `→` / `Space` / click right | Next slide |
-| `←` / click left | Previous slide |
-| `F` | Fullscreen |
-| Swipe left/right | Next / previous (mobile) |
+```bash
+echo '{"title":"My deck","theme":"dark","slides":[...]}' \
+  | python3 scripts/build_presentation.py
+```
+
+---
+
+## Liquid Glass
+
+The template uses a physics-based Liquid Glass rendering technique, ported from `@hashintel/refractive` (MIT/Apache-2.0) to vanilla JS/CSS/SVG:
+
+- **Surface equations** — `convexCircle`, `convex`, `concave`, `lip(x)` model light refraction through curved glass using Snell's law
+- **64×64 displacement map** — generated at runtime in a canvas, encoded as PNG, fed into `feImage` → `feDisplacementMap`
+- **Rim-focused displacement** — peak refraction at ~6–10% inward from each edge; exact border pixels are always neutral (card shape never warps)
+- **4-edge specular bezel** — `inset` box-shadows on all four edges with per-theme accent tints simulate light catching each face of the glass rim
+- **Cross-browser** — `feGaussianBlur` in the SVG filter chain handles blur; the displacement is applied to the background element rather than the glass card itself, avoiding Safari's `filter + backdrop-filter` compositing limitation
+
+See [`showcase/liquid-glass-demo.html`](showcase/liquid-glass-demo.html) for an interactive breakdown of each technique layer.
 
 ---
 
