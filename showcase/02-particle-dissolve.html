@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 2: Particle Dissolve</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+      background: #0d0d0f;
+      color: #f5f5f7;
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════
+       CANVAS OVERLAY
+
+       Fixed, full-viewport, sits above everything.
+       pointer-events: none is critical — without it,
+       the canvas intercepts all clicks and the cards
+       become unresponsive.
+    ═══════════════════════════════════════ */
+    #fx-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;   /* let clicks pass through to the DOM */
+      z-index: 9999;
+    }
+
+    /* ═══════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════ */
+    #app { padding: 52px 32px; }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 52px;
+    }
+
+    .page-header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .page-header p {
+      margin-top: 10px;
+      color: #6e6e73;
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 740px;
+      margin: 0 auto;
+    }
+
+    /* ═══════════════════════════════════════
+       CARDS
+    ═══════════════════════════════════════ */
+    .card {
+      cursor: pointer;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #1c1c1e;
+      border: 1px solid rgba(255,255,255,0.06);
+      transition:
+        transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.2s ease,
+        opacity 0.05s ease;   /* fast fade-out on click */
+    }
+
+    .card:hover  { transform: translateY(-4px) scale(1.02); box-shadow: 0 24px 48px rgba(0,0,0,0.6); }
+    .card:active { transform: scale(0.95); }
+
+    .card.shattering {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .card-image {
+      width: 100%;
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+
+    .card-body  { padding: 12px 14px 14px; }
+    .card-title { font-size: 0.88rem; font-weight: 600; letter-spacing: -0.01em; }
+    .card-meta  { margin-top: 3px; font-size: 0.7rem; color: #555; }
+
+    /* ═══════════════════════════════════════
+       RESET BUTTON
+    ═══════════════════════════════════════ */
+    .footer {
+      text-align: center;
+      margin-top: 48px;
+    }
+
+    .reset-btn {
+      padding: 11px 28px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      color: #f5f5f7;
+      font-size: 0.9rem;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease, background 0.15s;
+      pointer-events: none;
+    }
+
+    .reset-btn.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .reset-btn:hover { background: rgba(255,255,255,0.13); }
+  </style>
+</head>
+<body>
+
+<!-- ─── Canvas: drawn OVER the page, clicks pass through ─── -->
+<canvas id="fx-canvas"></canvas>
+
+<div id="app">
+  <div class="page-header">
+    <h1>Particle Dissolve</h1>
+    <p>Click any card to shatter it into physics-driven fragments</p>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="footer">
+    <button class="reset-btn" id="reset-btn">↺ Restore All Cards</button>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────
+   CARD DATA — colors are sampled across each gradient
+   so particles inherit the card's actual palette
+───────────────────────────────────────────────────────── */
+const ITEMS = [
+  {
+    emoji: '🌊', title: 'Ocean Deep', meta: 'Aquatic · No. 1',
+    colors: ['#023e8a', '#0077b6', '#0096c7', '#48cae4', '#90e0ef', '#caf0f8'],
+  },
+  {
+    emoji: '🌋', title: 'Magma Core', meta: 'Fire · No. 4',
+    colors: ['#6a040f', '#9d0208', '#dc2f02', '#e85d04', '#f48c06', '#ffd166'],
+  },
+  {
+    emoji: '🌿', title: 'Forest Canopy', meta: 'Nature · No. 7',
+    colors: ['#1b4332', '#2d6a4f', '#40916c', '#74c69d', '#95d5b2', '#d8f3dc'],
+  },
+  {
+    emoji: '🌌', title: 'Nebula Drift', meta: 'Cosmos · No. 2',
+    colors: ['#10002b', '#3c096c', '#7b2d8b', '#9d4edd', '#c77dff', '#e0aaff'],
+  },
+  {
+    emoji: '🔥', title: 'Solar Flare', meta: 'Stellar · No. 3',
+    colors: ['#7b2d00', '#cc3300', '#ff6600', '#ff9500', '#ffcc00', '#fff4b8'],
+  },
+  {
+    emoji: '❄️', title: 'Arctic Void', meta: 'Polar · No. 1',
+    colors: ['#03045e', '#023e8a', '#0077b6', '#00b4d8', '#90e0ef', '#e0f7fa'],
+  },
+];
+
+/* ─────────────────────────────────────────────────────────
+   CANVAS SETUP
+
+   The canvas width/height must match the physical pixel
+   dimensions exactly — getBoundingClientRect() returns
+   CSS-pixel coordinates, and our canvas is sized in CSS
+   pixels via style. We match canvas.width to innerWidth
+   (not offsetWidth) to keep 1:1 coordinate mapping.
+───────────────────────────────────────────────────────── */
+const canvas = document.getElementById('fx-canvas');
+const ctx    = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+/* ─────────────────────────────────────────────────────────
+   PARTICLE CLASS
+
+   Each particle is a spinning glass shard: a rectangle with
+   a bright specular edge to simulate caught light.
+───────────────────────────────────────────────────────── */
+class Shard {
+  constructor(x, y, vx, vy, color, w, h) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.w = w;                               // shard width
+    this.h = h;                               // shard height
+    this.rotation = Math.random() * Math.PI * 2;
+    this.spin     = (Math.random() - 0.5) * 0.28;
+    this.life     = 0.85 + Math.random() * 0.15;   // start near-opaque
+    this.decay    = 0.007 + Math.random() * 0.012;  // lifespan variance
+  }
+
+  update() {
+    // Velocity integration
+    this.vy   += 0.28;    // gravity (pixels per frame²)
+    this.vx   *= 0.982;   // air resistance (horizontal)
+    this.vy   *= 0.995;   // slight vertical drag
+    this.x    += this.vx;
+    this.y    += this.vy;
+    this.rotation += this.spin;
+    this.life -= this.decay;
+  }
+
+  draw(ctx) {
+    if (this.life <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+
+    // Shard body
+    ctx.fillStyle = this.color;
+    ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+
+    // Specular highlight — bright top edge catches "light"
+    ctx.fillStyle = `rgba(255,255,255,${0.55 * this.life})`;
+    ctx.fillRect(-this.w / 2, -this.h / 2, this.w, Math.max(1.5, this.h * 0.18));
+
+    ctx.restore();
+  }
+
+  get isDead() {
+    return this.life <= 0 || this.y > canvas.height + 60;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   PARTICLE SYSTEM
+───────────────────────────────────────────────────────── */
+let particles = [];
+let rafId     = null;
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  particles = particles.filter(p => {
+    p.update();
+    p.draw(ctx);
+    return !p.isDead;
+  });
+
+  if (particles.length > 0) {
+    rafId = requestAnimationFrame(loop);
+  } else {
+    rafId = null;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   SHATTER FUNCTION
+
+   This is the core of the effect. The trick:
+   1. getBoundingClientRect() gives us the card's exact
+      screen position in viewport-relative CSS pixels.
+   2. The canvas is fixed at 0,0 with matching dimensions,
+      so those coordinates map directly to canvas space.
+   3. We hide the card element, then flood the same region
+      with particles — the eye never sees a gap.
+───────────────────────────────────────────────────────── */
+function shatter(card, item) {
+  // Step 1 — capture the card's position BEFORE hiding it
+  const rect = card.getBoundingClientRect();
+
+  // Step 2 — hide the real element immediately
+  //           (opacity: 0 keeps its layout space momentarily)
+  card.classList.add('shattering');
+
+  // Step 3 — derive explosion center
+  const cx = rect.left + rect.width  / 2;
+  const cy = rect.top  + rect.height / 2;
+
+  // Step 4 — spawn shards across the card's area
+  const COUNT  = 140;
+  const colors = [...item.colors, '#ffffff', '#ffffffcc']; // add speculars
+
+  for (let i = 0; i < COUNT; i++) {
+    // Random position within the card's bounding box
+    const x = rect.left + Math.random() * rect.width;
+    const y = rect.top  + Math.random() * rect.height;
+
+    // Velocity: vector away from center + random scatter
+    const dx   = x - cx;
+    const dy   = y - cy;
+    const dist = Math.hypot(dx, dy) + 0.001;
+    const speed = 1.5 + Math.random() * 7;
+
+    const vx = (dx / dist) * speed + (Math.random() - 0.5) * 3;
+    // Bias upward on initial burst — gravity will pull them back down
+    const vy = (dy / dist) * speed - (2 + Math.random() * 6);
+
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const w     = 3 + Math.random() * 7;        // shard width
+    const h     = w * (0.3 + Math.random());    // aspect ratio varies
+
+    particles.push(new Shard(x, y, vx, vy, color, w, h));
+  }
+
+  // Step 5 — remove card from DOM after short delay
+  //           (delay lets the opacity: 0 transition play)
+  setTimeout(() => {
+    card.remove();
+    checkAllGone();
+  }, 60);
+
+  // Step 6 — start the animation loop (only one loop runs at a time)
+  if (!rafId) rafId = requestAnimationFrame(loop);
+}
+
+/* ─────────────────────────────────────────────────────────
+   GRID BUILDER
+───────────────────────────────────────────────────────── */
+const gridEl   = document.getElementById('grid');
+const resetBtn = document.getElementById('reset-btn');
+
+function buildGrid() {
+  gridEl.innerHTML = '';
+  ITEMS.forEach(item => {
+    const gradient = `linear-gradient(135deg,
+      ${item.colors[0]} 0%,
+      ${item.colors[2]} 45%,
+      ${item.colors[4]} 100%)`;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-image" style="background:${gradient}">${item.emoji}</div>
+      <div class="card-body">
+        <div class="card-title">${item.title}</div>
+        <div class="card-meta">${item.meta}</div>
+      </div>
+    `;
+    card.addEventListener('click', () => shatter(card, item));
+    gridEl.appendChild(card);
+  });
+  resetBtn.classList.remove('visible');
+}
+
+function checkAllGone() {
+  if (gridEl.querySelectorAll('.card').length === 0) {
+    resetBtn.classList.add('visible');
+  }
+}
+
+resetBtn.addEventListener('click', buildGrid);
+
+buildGrid();
+</script>
+</body>
+</html>

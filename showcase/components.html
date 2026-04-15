@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Component Showcase — sj-design</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-0: #0a0a0f;
+      --bg-1: #111118;
+      --label-1: #f5f5f7;
+      --label-2: #8e8e93;
+      --accent: #2997ff;
+      --glass-bg: rgba(255,255,255,0.06);
+      --glass-bdr: rgba(255,255,255,0.10);
+      --purple: #5e5ce6;
+      --green: #30d158;
+      --orange: #ff9f0a;
+      --red: #ff453a;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; background: var(--bg-0); }
+
+    body {
+      min-height: 100vh;
+      color: var(--label-1);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Ambient background ───────────────────────────────── */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 45% at 15% 5%,  rgba(41,151,255,0.07) 0%, transparent 65%),
+        radial-gradient(ellipse 55% 35% at 85% 85%, rgba(94,92,230,0.06)  0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 55% 50%, rgba(48,209,88,0.03)  0%, transparent 60%);
+    }
+
+    /* ── Page layout ──────────────────────────────────────── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 24px 100px;
+    }
+
+    /* ── Back nav ─────────────────────────────────────────── */
+    .back-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      color: var(--accent);
+      text-decoration: none;
+      margin-bottom: 40px;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+    .back-nav:hover { opacity: 1; }
+    .back-nav svg { width: 16px; height: 16px; }
+
+    /* ── Page title ───────────────────────────────────────── */
+    .page-title {
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--label-1);
+      margin-bottom: 8px;
+    }
+    .page-subtitle {
+      font-size: 1rem;
+      color: var(--label-2);
+      margin-bottom: 64px;
+    }
+
+    /* ── Section ──────────────────────────────────────────── */
+    .section { margin-bottom: 72px; }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--label-2);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--glass-bdr);
+    }
+
+    /* ── Glass base ───────────────────────────────────────── */
+    .glass {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-bdr);
+      border-radius: clamp(14px, 1.6vw, 22px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 1 — STAT CARDS
+    ═══════════════════════════════════════════════════════ */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 700px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 420px) { .stat-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .stat-icon {
+      font-size: 1.25rem;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    .stat-value {
+      font-size: clamp(2.4rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--label-1);
+      line-height: 1;
+    }
+    .stat-value .suffix {
+      font-size: 0.55em;
+      font-weight: 600;
+      opacity: 0.8;
+      vertical-align: baseline;
+    }
+    .stat-label {
+      font-size: 0.8125rem;
+      color: var(--label-2);
+      font-weight: 500;
+    }
+    .stat-sublabel {
+      font-size: 0.72rem;
+      color: var(--label-2);
+      opacity: 0.6;
+    }
+
+    .stat-card.tint-blue   { border-color: rgba(41,151,255,0.25); }
+    .stat-card.tint-green  { border-color: rgba(48,209,88,0.22); }
+    .stat-card.tint-purple { border-color: rgba(94,92,230,0.22); }
+    .stat-card.tint-orange { border-color: rgba(255,159,10,0.22); }
+
+    .stat-card.tint-blue   .stat-value { color: #69baff; }
+    .stat-card.tint-green  .stat-value { color: #30d158; }
+    .stat-card.tint-purple .stat-value { color: #a8a6ff; }
+    .stat-card.tint-orange .stat-value { color: #ffbf5e; }
+
+    .stat-replay {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 20px;
+      padding: 8px 18px;
+      border-radius: 100px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-bdr);
+      color: var(--label-2);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      font-family: var(--font);
+    }
+    .stat-replay:hover {
+      color: var(--label-1);
+      border-color: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.09);
+    }
+    .stat-replay svg {
+      width: 13px;
+      height: 13px;
+      transition: transform 0.3s ease;
+    }
+    .stat-replay:hover svg { transform: rotate(-180deg); }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 2 — BENTO GRID
+    ═══════════════════════════════════════════════════════ */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 16px;
+      min-height: 360px;
+    }
+    @media (max-width: 600px) {
+      .bento-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+      .bento-large { grid-column: 1 !important; grid-row: auto !important; }
+      .bento-med, .bento-small { grid-column: 1; grid-row: auto; }
+    }
+
+    .bento-card {
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .bento-large  { grid-column: 1 / 2; grid-row: 1 / 3; }
+    .bento-med    { grid-column: 2 / 3; grid-row: 1 / 2; }
+    .bento-small  { grid-column: 2 / 3; grid-row: 2 / 3; }
+
+    /* Large card glows */
+    .bento-large::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(41,151,255,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .bento-large::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: -40px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(94,92,230,0.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .slide-preview {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .slide-preview-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .slide-preview-title {
+      font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #f5f5f7 0%, rgba(245,245,247,0.65) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .slide-preview-body {
+      font-size: 0.9rem;
+      color: var(--label-2);
+      line-height: 1.6;
+      max-width: 340px;
+    }
+    .slide-preview-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .slide-tag {
+      padding: 4px 12px;
+      border-radius: 100px;
+      background: rgba(41,151,255,0.12);
+      border: 1px solid rgba(41,151,255,0.25);
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Code snippet */
+    .code-card-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--label-2);
+      margin-bottom: 10px;
+    }
+    .code-block {
+      background: rgba(0,0,0,0.42);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 16px 18px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", Menlo, monospace;
+      font-size: 0.72rem;
+      line-height: 1.7;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .tok-comment { color: #636366; }
+    .tok-keyword { color: #ff9f0a; }
+    .tok-string  { color: #30d158; }
+    .tok-prop    { color: #69baff; }
+    .tok-val     { color: #ff6961; }
+    .tok-fn      { color: #a8a6ff; }
+
+    /* Small bento stat */
+    .bento-stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(41,151,255,0.14);
+      border: 1px solid rgba(41,151,255,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+    .bento-stat-value {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #30d158;
+      line-height: 1;
+    }
+    .bento-stat-label {
+      font-size: 0.8125rem;
+      color: var(--label-2);
+      margin-top: 6px;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 3 — TYPOGRAPHY SCALE
+    ═══════════════════════════════════════════════════════ */
+    .type-card { padding: 40px 44px; }
+
+    .type-row {
+      display: flex;
+      align-items: baseline;
+      gap: 20px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--glass-bdr);
+    }
+    .type-row:last-child { border-bottom: none; }
+
+    .type-meta {
+      width: 90px;
+      flex-shrink: 0;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--label-2);
+      opacity: 0.65;
+      text-align: right;
+      font-family: "SF Mono", Menlo, monospace;
+    }
+
+    .type-display {
+      font-size: clamp(2.5rem, 5vw, 3.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      background: linear-gradient(120deg, #f5f5f7 0%, rgba(245,245,247,0.65) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .type-h1 {
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.022em;
+      line-height: 1.15;
+      color: var(--label-1);
+    }
+    .type-h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      line-height: 1.2;
+      color: var(--label-1);
+    }
+    .type-h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.008em;
+      line-height: 1.3;
+      color: var(--label-1);
+    }
+    .type-body {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--label-1);
+    }
+    .type-caption {
+      font-size: 0.8125rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--label-2);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 4 — COLOR PALETTE
+    ═══════════════════════════════════════════════════════ */
+    .palette-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .swatch-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .swatch-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.12);
+      cursor: pointer;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .swatch-circle:hover { transform: scale(1.13) translateY(-2px); }
+
+    /* Tooltip on hover */
+    .swatch-circle::after {
+      content: attr(data-hex);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 0.65rem;
+      font-family: "SF Mono", Menlo, monospace;
+      color: #f5f5f7;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s;
+    }
+    .swatch-circle:hover::after { opacity: 1; }
+
+    .swatch-label {
+      font-size: 0.72rem;
+      color: var(--label-2);
+      font-weight: 500;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* Copy flash */
+    .swatch-copied {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      border-radius: 100px;
+      background: rgba(20,20,28,0.92);
+      border: 1px solid rgba(255,255,255,0.15);
+      backdrop-filter: blur(12px);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--label-1);
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 5 — BUTTONS
+    ═══════════════════════════════════════════════════════ */
+    .btn-section-wrapper {
+      padding: 36px 40px;
+      transition: background 0.4s ease, border-color 0.4s ease;
+    }
+    .btn-section-wrapper.light-mode {
+      background: rgba(242,242,247,0.92);
+      border-color: rgba(0,0,0,0.10);
+    }
+
+    .btn-theme-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .btn-theme-label {
+      font-size: 0.8125rem;
+      color: var(--label-2);
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+    .light-mode .btn-theme-label { color: #48484a; }
+
+    .toggle-track {
+      width: 44px;
+      height: 26px;
+      border-radius: 13px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.15);
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      flex-shrink: 0;
+    }
+    .toggle-track.active { background: var(--accent); border-color: var(--accent); }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .toggle-track.active .toggle-thumb { transform: translateX(18px); }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn-variant-label {
+      font-size: 0.7rem;
+      color: var(--label-2);
+      font-weight: 600;
+      margin-top: 22px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      transition: color 0.3s;
+    }
+    .light-mode .btn-variant-label { color: #636366; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 22px;
+      border-radius: 100px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: -0.01em;
+      transition: filter 0.15s ease;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(41,151,255,0.35);
+    }
+    .btn-primary:hover { filter: brightness(1.12); }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: var(--label-1);
+      backdrop-filter: blur(10px);
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.16); }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--label-2);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.35); color: var(--label-1); }
+
+    .btn-destructive {
+      background: rgba(255,69,58,0.14);
+      border: 1px solid rgba(255,69,58,0.32);
+      color: #ff6961;
+      transition: background 0.2s;
+    }
+    .btn-destructive:hover { background: rgba(255,69,58,0.24); }
+
+    /* Light mode btn overrides */
+    .light-mode .btn-secondary {
+      background: rgba(0,0,0,0.07);
+      border-color: rgba(0,0,0,0.13);
+      color: #1c1c1e;
+    }
+    .light-mode .btn-secondary:hover { background: rgba(0,0,0,0.11); }
+    .light-mode .btn-ghost {
+      border-color: rgba(0,0,0,0.18);
+      color: #48484a;
+    }
+    .light-mode .btn-ghost:hover { border-color: rgba(0,0,0,0.3); color: #1c1c1e; }
+    .light-mode .btn-destructive {
+      background: rgba(255,69,58,0.09);
+      border-color: rgba(255,69,58,0.28);
+      color: #c9190a;
+    }
+
+    /* Ripple */
+    .btn-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      transform: scale(0);
+      pointer-events: none;
+      width: 64px;
+      height: 64px;
+      margin-left: -32px;
+      margin-top: -32px;
+    }
+
+    /* ── Footer ───────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--label-2);
+      opacity: 0.4;
+      padding-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <div class="page">
+
+    <!-- Back nav -->
+    <a href="index.html" class="back-nav">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 3L5 8l5 5"/>
+      </svg>
+      Back
+    </a>
+
+    <!-- Page header -->
+    <h1 class="page-title">Component Showcase</h1>
+    <p class="page-subtitle">UI primitives and visual patterns from the sj-design system</p>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 1 — STAT CARDS
+    ════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-label">Stat Cards</div>
+
+      <div class="stat-grid">
+        <div class="stat-card glass tint-blue">
+          <div class="stat-icon">✦</div>
+          <div class="stat-value" data-target="98" data-suffix="%">
+            <span class="num">0</span><span class="suffix">%</span>
+          </div>
+          <div class="stat-label">Quality Score</div>
+          <div class="stat-sublabel">Across all renders</div>
+        </div>
+
+        <div class="stat-card glass tint-orange">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-value" data-target="24" data-decimal="1" data-suffix="s">
+            <span class="num">0.0</span><span class="suffix">s</span>
+          </div>
+          <div class="stat-label">Avg Render Time</div>
+          <div class="stat-sublabel">Per slide deck</div>
+        </div>
+
+        <div class="stat-card glass tint-purple">
+          <div class="stat-icon">◆</div>
+          <div class="stat-value" data-target="12" data-suffix="k">
+            <span class="num">0</span><span class="suffix">k</span>
+          </div>
+          <div class="stat-label">Slides Generated</div>
+          <div class="stat-sublabel">And counting</div>
+        </div>
+
+        <div class="stat-card glass tint-green">
+          <div class="stat-icon">◎</div>
+          <div class="stat-value" data-target="0" data-prefix="$">
+            <span class="prefix">$</span><span class="num">0</span>
+          </div>
+          <div class="stat-label">Hosting Cost</div>
+          <div class="stat-sublabel">Pure CDN, no server</div>
+        </div>
+      </div>
+
+      <button class="stat-replay" id="replayBtn" onclick="runCountUp()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2v4H9"/><path d="M13 6A6 6 0 1 1 6.5 2.1"/>
+        </svg>
+        Replay Animation
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 2 — BENTO GRID
+    ════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-label">Glass Bento Grid</div>
+
+      <div class="bento-grid">
+
+        <!-- Large: slide preview -->
+        <div class="bento-card glass bento-large">
+          <div class="slide-preview">
+            <div class="slide-preview-eyebrow">sj-design system</div>
+            <div class="slide-preview-title">Apple-grade presentations,<br>generated by Claude</div>
+            <div class="slide-preview-body">
+              Self-contained HTML decks with GSAP animations, glass morphism, and
+              pixel-perfect typography — no build step required.
+            </div>
+            <div class="slide-preview-tags">
+              <span class="slide-tag">GSAP 3</span>
+              <span class="slide-tag">Glass UI</span>
+              <span class="slide-tag">SF Pro</span>
+              <span class="slide-tag">Vanilla HTML</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medium: code snippet -->
+        <div class="bento-card glass bento-med">
+          <div class="code-card-label">stat-card.css</div>
+          <div class="code-block"><span class="tok-comment">/* Glass stat card */</span>
+<span class="tok-prop">.stat-card</span> {
+  <span class="tok-keyword">background</span>: <span class="tok-string">var(--glass-bg)</span>;
+  <span class="tok-keyword">border</span>: <span class="tok-val">1px</span> solid <span class="tok-string">var(--glass-bdr)</span>;
+  <span class="tok-keyword">border-radius</span>: <span class="tok-fn">clamp</span>(<span class="tok-val">14px,1.6vw,22px</span>);
+  <span class="tok-keyword">backdrop-filter</span>: <span class="tok-fn">blur</span>(<span class="tok-val">20px</span>);
+}
+
+<span class="tok-prop">.stat-value</span> {
+  <span class="tok-keyword">font-size</span>: <span class="tok-val">3rem</span>;
+  <span class="tok-keyword">font-weight</span>: <span class="tok-val">700</span>;
+  <span class="tok-keyword">letter-spacing</span>: <span class="tok-val">-0.03em</span>;
+}</div>
+        </div>
+
+        <!-- Small: bento stat -->
+        <div class="bento-card glass bento-small">
+          <div class="bento-stat-icon">🚀</div>
+          <div class="bento-stat-value">18</div>
+          <div class="bento-stat-label">Deck themes available</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 3 — TYPOGRAPHY SCALE
+    ════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-label">Typography Scale</div>
+
+      <div class="type-card glass">
+        <div class="type-row">
+          <div class="type-meta">60px · 700</div>
+          <div class="type-display">Display</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta">40px · 700</div>
+          <div class="type-h1">Heading One</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta">28px · 600</div>
+          <div class="type-h2">Heading Two</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta">20px · 600</div>
+          <div class="type-h3">Heading Three</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta">16px · 400</div>
+          <div class="type-body">Body — The quick brown fox jumps over the lazy dog. Glass morphism, fluid grids, and micro-interactions define this system.</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta">13px · 400</div>
+          <div class="type-caption">Caption — Supporting text, labels, timestamps. Rendered in var(--label-2) for visual hierarchy throughout the system.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 4 — COLOR PALETTE
+    ════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-label">Color Palette</div>
+
+      <div class="palette-row">
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#0a0a0f; box-shadow:0 4px 16px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(255,255,255,0.14);" data-hex="#0a0a0f"></div>
+          <div class="swatch-label">bg-0</div>
+        </div>
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#111118; box-shadow:0 4px 16px rgba(0,0,0,0.5),inset 0 0 0 1px rgba(255,255,255,0.12);" data-hex="#111118"></div>
+          <div class="swatch-label">bg-1</div>
+        </div>
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#2997ff;" data-hex="#2997ff"></div>
+          <div class="swatch-label">Accent</div>
+        </div>
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#5e5ce6;" data-hex="#5e5ce6"></div>
+          <div class="swatch-label">Purple</div>
+        </div>
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#30d158;" data-hex="#30d158"></div>
+          <div class="swatch-label">Green</div>
+        </div>
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#ff9f0a;" data-hex="#ff9f0a"></div>
+          <div class="swatch-label">Orange</div>
+        </div>
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#ff453a;" data-hex="#ff453a"></div>
+          <div class="swatch-label">Red</div>
+        </div>
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#f5f5f7; border-color:rgba(0,0,0,0.08);" data-hex="#f5f5f7"></div>
+          <div class="swatch-label">Label 1</div>
+        </div>
+        <div class="swatch-item">
+          <div class="swatch-circle" style="background:#8e8e93;" data-hex="#8e8e93"></div>
+          <div class="swatch-label">Label 2</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 5 — BUTTONS
+    ════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-label">Interactive Buttons</div>
+
+      <div class="btn-section-wrapper glass" id="btnSection">
+
+        <div class="btn-theme-row">
+          <span class="btn-theme-label" id="themeLabel">Dark Mode</span>
+          <div class="toggle-track" id="themeToggle" onclick="toggleTheme()">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+
+        <div class="btn-variant-label" id="lbl-primary">Primary</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="pulseBtn(this)">Get Started</button>
+          <button class="btn btn-primary" onclick="pulseBtn(this)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M8 1v14M1 8h14"/>
+            </svg>
+            New Deck
+          </button>
+        </div>
+
+        <div class="btn-variant-label" id="lbl-secondary">Secondary — Glass</div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="pulseBtn(this)">Learn More</button>
+          <button class="btn btn-secondary" onclick="pulseBtn(this)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="8" r="6.5"/>
+              <path d="M8 5v3.5L10 10"/>
+            </svg>
+            View History
+          </button>
+        </div>
+
+        <div class="btn-variant-label" id="lbl-ghost">Ghost</div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="pulseBtn(this)">Cancel</button>
+          <button class="btn btn-ghost" onclick="pulseBtn(this)">Dismiss</button>
+        </div>
+
+        <div class="btn-variant-label" id="lbl-destructive">Destructive</div>
+        <div class="btn-row">
+          <button class="btn btn-destructive" onclick="pulseBtn(this)">Delete</button>
+          <button class="btn btn-destructive" onclick="pulseBtn(this)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 4h12M5 4V2.5A1.5 1.5 0 016.5 1h3A1.5 1.5 0 0111 2.5V4M6 7v5M10 7v5M3 4l1 9.5A1 1 0 005 14.5h6a1 1 0 001-1L13 4"/>
+            </svg>
+            Remove All
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="footer">sj-design · Apple-grade presentation system</div>
+  </div><!-- /page -->
+
+  <script>
+    /* ── Count-up ────────────────────────────────────────── */
+    function runCountUp() {
+      const cards = document.querySelectorAll('.stat-card');
+      cards.forEach((card, i) => {
+        const valEl    = card.querySelector('.stat-value');
+        const numEl    = card.querySelector('.num');
+        const target   = parseFloat(valEl.dataset.target);
+        const isDecimal = valEl.dataset.decimal === '1';
+
+        numEl.textContent = isDecimal ? '0.0' : '0';
+
+        const obj = { val: 0 };
+        gsap.to(obj, {
+          val: target,
+          duration: 1.25,
+          delay: i * 0.1,
+          ease: 'power2.out',
+          onUpdate() {
+            numEl.textContent = isDecimal
+              ? obj.val.toFixed(1)
+              : Math.round(obj.val);
+          }
+        });
+
+        gsap.from(card, {
+          y: 28, opacity: 0,
+          duration: 0.65,
+          delay: i * 0.08,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity'
+        });
+      });
+    }
+
+    /* ── Button pulse + ripple ──────────────────────────── */
+    function pulseBtn(btn) {
+      gsap.timeline()
+        .to(btn, { scale: 0.91, duration: 0.1,  ease: 'power2.in' })
+        .to(btn, { scale: 1,    duration: 0.45, ease: 'elastic.out(1.2,0.5)' });
+
+      const ripple = document.createElement('div');
+      ripple.className = 'btn-ripple';
+      ripple.style.left = (btn.offsetWidth  / 2) + 'px';
+      ripple.style.top  = (btn.offsetHeight / 2) + 'px';
+      btn.appendChild(ripple);
+
+      gsap.timeline({ onComplete: () => ripple.remove() })
+        .to(ripple, { scale: 5.5, opacity: 0.32, duration: 0.12, ease: 'power1.out' })
+        .to(ripple, { opacity: 0, duration: 0.4,  ease: 'power2.out' });
+    }
+
+    /* ── Theme toggle ───────────────────────────────────── */
+    let isLight = false;
+    function toggleTheme() {
+      isLight = !isLight;
+      document.getElementById('btnSection').classList.toggle('light-mode', isLight);
+      document.getElementById('themeToggle').classList.toggle('active', isLight);
+      document.getElementById('themeLabel').textContent = isLight ? 'Light Mode' : 'Dark Mode';
+
+      ['lbl-primary','lbl-secondary','lbl-ghost','lbl-destructive'].forEach(id => {
+        gsap.to(document.getElementById(id), {
+          color: isLight ? '#636366' : '#8e8e93',
+          duration: 0.3
+        });
+      });
+    }
+
+    /* ── Swatch click — pop + copy ──────────────────────── */
+    let copyToast = null;
+    document.querySelectorAll('.swatch-circle').forEach(sw => {
+      sw.addEventListener('click', () => {
+        gsap.timeline()
+          .to(sw, { scale: 0.84, duration: 0.1,  ease: 'power2.in' })
+          .to(sw, { scale: 1,    duration: 0.5,  ease: 'elastic.out(1.3,0.5)' });
+
+        const hex = sw.dataset.hex;
+        navigator.clipboard?.writeText(hex).then(() => {
+          showCopyToast(hex);
+        }).catch(() => showCopyToast(hex));
+      });
+    });
+
+    function showCopyToast(hex) {
+      if (copyToast) { copyToast.remove(); copyToast = null; }
+      const el = document.createElement('div');
+      el.className = 'swatch-copied';
+      el.textContent = `Copied ${hex}`;
+      document.body.appendChild(el);
+      copyToast = el;
+
+      gsap.timeline({ onComplete: () => { el.remove(); copyToast = null; } })
+        .from(el, { y: 12, opacity: 0, duration: 0.25, ease: 'power3.out' })
+        .to(el,   { opacity: 0, duration: 0.3, ease: 'power2.in' }, '+=1.4');
+    }
+
+    /* ── Scroll-reveal ──────────────────────────────────── */
+    function initReveal() {
+      const targets = document.querySelectorAll(
+        '.bento-card, .type-card, .palette-row, .btn-section-wrapper'
+      );
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          gsap.fromTo(entry.target,
+            { y: 32, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', clearProps: 'transform,opacity' }
+          );
+          io.unobserve(entry.target);
+        });
+      }, { threshold: 0.07 });
+
+      targets.forEach(el => {
+        el.style.opacity = '0';
+        io.observe(el);
+      });
+    }
+
+    /* ── Init ───────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+      gsap.from(['.back-nav', '.page-title', '.page-subtitle'], {
+        y: 18, opacity: 0, duration: 0.65, stagger: 0.08, ease: 'power3.out'
+      });
+
+      runCountUp();
+      initReveal();
+    });
+  </script>
+</body>
+</html>

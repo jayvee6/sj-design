@@ -66,18 +66,27 @@ def render_slide(slide: dict, index: int) -> str:
     slide_type = slide.get("type", "content")
     active_class = " active" if index == 0 else ""
     dispatch = {
-        "title": _render_title,
-        "content": _render_content,
-        "quote": _render_quote,
+        "title":      _render_title,
+        "content":    _render_content,
+        "quote":      _render_quote,
         "two-column": _render_two_column,
-        "stats": _render_stats,
-        "media": _render_media,
-        "gallery": _render_gallery,
-        "closing": _render_closing,
+        "stats":      _render_stats,
+        "media":      _render_media,
+        "gallery":    _render_gallery,
+        "closing":    _render_closing,
+        "family":     _render_family,
     }
     renderer = dispatch.get(slide_type, _render_content)
-    inner = renderer(slide)
-    return f'<div class="slide slide-{slide_type}{active_class}" data-index="{index}">{inner}\n</div>'
+    inner    = renderer(slide)
+
+    # Optional photo-tiles background layer (any slide type)
+    tiles_html = _render_photo_tiles(slide.get("photo_tiles", []))
+
+    return (
+        f'<div class="slide slide-{slide_type}{active_class}" '
+        f'data-index="{index}" data-type="{slide_type}">'
+        f'{tiles_html}{inner}\n</div>'
+    )
 
 
 def _eyebrow(slide: dict) -> str:
@@ -270,6 +279,90 @@ def _render_closing(slide: dict) -> str:
   </div>"""
 
 
+def _render_photo_tiles(tiles: list) -> str:
+    """Render a .photo-tiles background layer from a list of tile dicts.
+
+    Each tile dict supports:
+      src        — image path or URL (local paths are base64-embedded)
+      depth      — float 0.5–1.8, drives parallax magnitude  (default 1.0)
+      width      — CSS width  (default "16vw")
+      height     — CSS height (default "18vw")
+      top / left — CSS position inside the -40px bleed container
+      rotation   — degrees, -9 to +9  (default 0)
+    """
+    if not tiles:
+        return ""
+    parts = ['<div class="photo-tiles">']
+    for tile in tiles:
+        src = tile.get("src", "")
+        if src and not src.startswith(("http://", "https://", "data:")):
+            src = _local_to_data_uri(src)
+        depth    = tile.get("depth", 1.0)
+        width    = tile.get("width",  "16vw")
+        height   = tile.get("height", "18vw")
+        top      = tile.get("top",  "")
+        left     = tile.get("left", "")
+        rotation = tile.get("rotation", 0)
+        style = f"width:{width}; height:{height}; transform:rotate({rotation}deg);"
+        if top:  style += f" top:{top};"
+        if left: style += f" left:{left};"
+        parts.append(
+            f'  <img src="{src}" class="photo-tile" '
+            f'data-depth="{depth}" style="{style}" loading="lazy" alt="">'
+        )
+    parts.append("</div>")
+    return "\n".join(parts)
+
+
+def _render_family(slide: dict) -> str:
+    """4-column grid of portrait family photo cards with Ken Burns + crossfade.
+
+    JSON spec:
+      {
+        "type": "family",
+        "eyebrow": "Optional label",
+        "heading": "Optional headline",
+        "cards": [
+          {
+            "name": "The Smiths",
+            "caption": "San Francisco, 2024",
+            "photos": ["photo1.jpg", "photo2.jpg", "photo3.jpg"]
+          }
+        ]
+      }
+    """
+    cards_html = ""
+    for card in slide.get("cards", []):
+        name    = _esc(card.get("name", ""))
+        caption = _esc(card.get("caption", ""))
+        photos  = card.get("photos", [])
+        imgs    = ""
+        for i, p in enumerate(photos):
+            src = p
+            if src and not src.startswith(("http://", "https://", "data:")):
+                src = _local_to_data_uri(src)
+            imgs += f'\n        <img src="{src}" loading="lazy" alt="{name}">'
+        cards_html += f"""
+    <div class="stat-card family-card">
+      <div class="photo-show">{imgs}
+      </div>
+      <div class="family-overlay">
+        <div class="family-name">{name}</div>
+        <p class="family-caption">{caption}</p>
+      </div>
+    </div>"""
+
+    eyebrow_html = _eyebrow(slide)
+    heading = f'<h2 class="headline">{_esc(slide["heading"])}</h2>' if slide.get("heading") else ""
+    return f"""
+  <div class="slide-inner">
+    {eyebrow_html}
+    {heading}
+    <div class="stats-grid stats-grid--family">{cards_html}
+    </div>
+  </div>"""
+
+
 # ── Builder ────────────────────────────────────────────────────────────────────
 
 def build(spec: dict, output_path: str) -> None:
@@ -296,7 +389,10 @@ def build(spec: dict, output_path: str) -> None:
         "twin-peaks", "embarcadero", "muir-woods", "the-mission", "santa-cruz",
         "sausalito", "half-moon-bay", "redwood", "the-richmond", "nob-hill", "haight",
     }
+    VALID_TRANSITIONS = {"slide", "fade", "cube", "iris", "particles"}
+    transition = spec.get("transition", "slide")
     html = html.replace("{{THEME}}", theme if theme in VALID_THEMES else "dark")
+    html = html.replace("{{TRANSITION}}", transition if transition in VALID_TRANSITIONS else "slide")
     html = html.replace("{{SLIDES}}", slides_html)
     html = html.replace("{{SLIDE_COUNT}}", str(slide_count))
 

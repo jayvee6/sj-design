@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{{THEME}}">
+<html lang="en" data-theme="{{THEME}}" data-transition="{{TRANSITION}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,9 @@
 
   <!-- GSAP — industry-standard animation engine -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <!-- Pluggable slide transitions (slide · fade · cube · iris · particles) -->
+  <script src="assets/transitions.js"></script>
 
   <style>
     /* ─── Retro Apple fonts ──────────────────────────────────────── */
@@ -948,6 +951,102 @@
       font-size:   clamp(10px, 0.9vw, 13px);
       color:       var(--label-2);
       font-weight: 400;
+    }
+
+    /* ─── Family photo card ──────────────────────────────────────── */
+    /* Variant of stat-card — portrait 3:4 bento cell with a full-bleed
+       photo slideshow and a bottom gradient caption overlay. */
+    .family-card {
+      overflow:      hidden;
+      padding:       0;
+      border-radius: clamp(14px, 1.6vw, 22px);
+      aspect-ratio:  3 / 4;
+      position:      relative;
+      min-width:     0;
+    }
+
+    /* The photo-show fills the card and stacks its children as layers */
+    .photo-show {
+      position: absolute;
+      inset:    0;
+      background: #0a0a0a;
+    }
+
+    .photo-show img {
+      position:   absolute;
+      inset:      0;
+      width:      100%;
+      height:     100%;
+      object-fit: cover;
+      opacity:    0;
+      will-change: opacity, transform;
+    }
+
+    .photo-show img:first-child { opacity: 1; }
+
+    /* Bottom gradient + text overlay */
+    .family-overlay {
+      position:        absolute;
+      inset:           0;
+      background:      linear-gradient(to top,
+                         rgba(0,0,0,0.80) 0%,
+                         rgba(0,0,0,0.30) 35%,
+                         transparent      55%);
+      display:         flex;
+      flex-direction:  column;
+      justify-content: flex-end;
+      padding:         clamp(12px, 1.4vw, 20px);
+      z-index:         1;
+    }
+
+    .family-name {
+      font-size:   clamp(14px, 1.4vw, 20px);
+      font-weight: 700;
+      color:       #ffffff;
+      line-height: 1.2;
+      margin-bottom: 3px;
+    }
+
+    .family-caption {
+      font-size:   clamp(12px, 1.1vw, 16px);
+      color:       rgba(255, 255, 255, 0.82);
+      line-height: 1.4;
+      font-weight: 400;
+    }
+
+    /* 4-column grid variant for family slides */
+    .stats-grid--family {
+      grid-template-columns: repeat(4, 1fr);
+      align-items:           start;
+      grid-auto-rows:        auto;
+    }
+
+    /* ─── Photo tiles background ─────────────────────────────────── */
+    /* Decorative tiled photos that bleed 40px outside the slide edges
+       for an immersive feel. Sits at z-index:0, below slide content. */
+    .photo-tiles {
+      position:       absolute;
+      inset:          -40px;
+      overflow:       hidden;
+      pointer-events: none;
+      z-index:        0;
+    }
+
+    .photo-tile {
+      position:      absolute;
+      object-fit:    cover;
+      border-radius: clamp(6px, 0.8vw, 10px);
+      border:        1.5px solid rgba(255, 255, 255, 0.14);
+      box-shadow:    0 4px 20px rgba(0,0,0,0.55),
+                     inset 0 1px 0 rgba(255,255,255,0.10);
+      opacity:       0.20;
+      will-change:   transform;
+    }
+
+    /* Slide content must sit above the photo tiles */
+    .slide:has(.photo-tiles) .slide-inner {
+      position: relative;
+      z-index:  1;
     }
 
     /* ─── Progress bar ───────────────────────────────────────────── */
@@ -2519,37 +2618,18 @@
 
     const from = slides[current];
     const to   = slides[next];
-    const dx   = dir * 36;
-
     _stopGallery(from);      // stop Ken Burns on outgoing slide
     resetSlide(to);          // hide incoming slide's children before visible
 
-    // Outgoing slide
-    gsap.to(from, {
-      opacity: 0,
-      x: -dx,
-      duration: 0.28,
-      ease: EASE_SOFT,
-      onComplete() {
-        from.classList.remove('active');
-        gsap.set(from, { clearProps: 'x,opacity' });
-      }
+    // ── Pluggable transition engine ────────────────────────────────
+    // Switch effect by setting data-transition="<name>" on <html>.
+    // Built-in names: slide (default) · fade · cube · iris · particles
+    // Register custom effects: SJTransitions.register('my-fx', fn)
+    const _fx = document.documentElement.dataset.transition || 'slide';
+    SJTransitions.run(_fx, from, to, dir, {
+      onComplete:     () => { animating = false; },
+      onContentReady: () => { animateIn(to); },
     });
-
-    // Incoming slide — starts offset, snaps to 0
-    gsap.set(to, { opacity: 1, x: dx * 0.6 });
-    to.classList.add('active');
-
-    gsap.to(to, {
-      x: 0,
-      duration: 0.35,
-      ease: EASE_OUT,
-      delay: 0.12,
-      onComplete() { animating = false; }
-    });
-
-    // Animate content in after slide starts arriving
-    setTimeout(() => animateIn(to), 100);
 
     // Haight theme: emoji explosion on every slide transition
     if (document.documentElement.dataset.theme === 'haight') emojiExplosion();
@@ -2635,6 +2715,12 @@
   // Liquid glass physics — runs on all themes, progressive enhancement
   initLiquidGlass();
 
+  // Family photo cards — Ken Burns + crossfade (no-op if none present)
+  initFamilyCards();
+
+  // Mouse parallax — drives all [data-depth] elements (no-op if none)
+  initParallax();
+
   // Perlin atmosphere — theme-conditional
   const _THEME = document.documentElement.dataset.theme || 'dark';
   initGobos();      // Perlin blob colors adapt per theme
@@ -2699,6 +2785,70 @@
   setTimeout(() => {
     if (!hintDismissed) gsap.to(document.getElementById('hint'), { opacity: 0, duration: 0.6 });
   }, 4000);
+
+  // ── Family card photo animation ──────────────────────────────────
+  // Starts a Ken Burns + crossfade loop on every .photo-show element.
+  // Runs globally so animation continues in background slides too.
+  function _kenBurns(img) {
+    const scale = 1.06 + Math.random() * 0.07;
+    const tx    = (Math.random() - 0.5) * 10;
+    const ty    = (Math.random() - 0.5) * 7;
+    gsap.fromTo(img,
+      { scale: 1, x: 0, y: 0 },
+      { scale, x: tx, y: ty, duration: 6, ease: 'none' }
+    );
+  }
+
+  function initFamilyCards() {
+    document.querySelectorAll('.photo-show').forEach(show => {
+      const imgs = Array.from(show.querySelectorAll('img'));
+      if (!imgs.length) return;
+
+      _kenBurns(imgs[0]);
+      if (imgs.length < 2) return;
+
+      let active = 0;
+      setInterval(() => {
+        const outgoing = imgs[active];
+        active = (active + 1) % imgs.length;
+        const incoming = imgs[active];
+
+        // Reset incoming transform before starting its Ken Burns
+        gsap.set(incoming, { scale: 1, x: 0, y: 0 });
+        _kenBurns(incoming);
+
+        gsap.to(incoming, { opacity: 1, duration: 1.1, ease: 'power1.inOut' });
+        gsap.to(outgoing, { opacity: 0, duration: 1.1, ease: 'power1.inOut' });
+      }, 4200);
+    });
+  }
+
+  // ── Mouse-driven parallax ────────────────────────────────────────
+  // All elements with [data-depth] shift relative to cursor position.
+  // Higher depth values (1.6–1.8) move more (appear closer);
+  // lower values (0.5–0.8) drift gently (appear further away).
+  // The GSAP ticker lerps a smoothed cursor so motion feels organic.
+  function initParallax() {
+    let tx = 0, ty = 0, cx = 0, cy = 0;
+
+    window.addEventListener('mousemove', e => {
+      tx = (e.clientX / window.innerWidth  - 0.5) * 2;
+      ty = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    gsap.ticker.add(() => {
+      cx += (tx - cx) * 0.07;   // smoothed X (soft, slightly laggy follow)
+      cy += (ty - cy) * 0.07;   // smoothed Y
+
+      document.querySelectorAll('[data-depth]').forEach(el => {
+        const depth = parseFloat(el.dataset.depth) || 1;
+        gsap.set(el, {
+          x: cx * depth * 18,   // asymmetric multipliers feel more natural
+          y: cy * depth * 11,
+        });
+      });
+    });
+  }
 
 }());
 </script>

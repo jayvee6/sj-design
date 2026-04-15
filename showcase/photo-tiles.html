@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Tiles + Parallax — sj-design Showcase</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font:      -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      --mono:      "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      --bg-0:      #0a0a0f;
+      --bg-1:      #111118;
+      --label-1:   #f5f5f7;
+      --label-2:   #8e8e93;
+      --accent:    #2997ff;
+      --glass-bg:  rgba(255,255,255,0.06);
+      --glass-bdr: rgba(255,255,255,0.10);
+      --sep:       rgba(255,255,255,0.08);
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg-0);
+      color: var(--label-1);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Ambient page glow ────────────────────────────────── */
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 55% 35% at 15%  8%,  rgba(255,160,60,0.07)  0%, transparent 60%),
+        radial-gradient(ellipse 45% 30% at 85% 85%,  rgba(170,90,220,0.055) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 25% at 50% 50%,  rgba(41,151,255,0.035) 0%, transparent 60%);
+    }
+
+    .page { position: relative; z-index: 1; }
+
+    /* ── Back link ──────────────────────────────────────────── */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 14px clamp(20px,3vw,40px);
+      font-size: 14px; font-weight: 500;
+      color: var(--accent); text-decoration: none;
+      letter-spacing: -0.01em; opacity: 0.85;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    /* ── Page header ────────────────────────────────────────── */
+    .page-header {
+      padding: clamp(8px,2vh,20px) clamp(20px,5vw,72px) clamp(28px,5vh,52px);
+    }
+    .page-eyebrow {
+      font-size: clamp(10px,1vw,12px); font-weight: 600;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 12px;
+    }
+    .page-title {
+      font-size: clamp(28px,5vw,60px); font-weight: 700;
+      letter-spacing: -0.035em; line-height: 1.02; margin-bottom: 12px;
+    }
+    .page-desc {
+      font-size: clamp(14px,1.4vw,17px); color: var(--label-2);
+      line-height: 1.6; max-width: 540px;
+    }
+
+    /* ── Main layout ────────────────────────────────────────── */
+    .stage {
+      padding: 0 clamp(20px,5vw,72px) 80px;
+      display: flex; flex-direction: column; gap: 48px;
+    }
+
+    .section-label {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--label-2); margin-bottom: 16px;
+    }
+
+    /* ── Demo container (shared) ────────────────────────────── */
+    .demo-box {
+      border-radius: 18px; overflow: hidden;
+      border: 1px solid var(--glass-bdr);
+      position: relative; background: var(--bg-1);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       SECTION 1 — Hero demo
+    ──────────────────────────────────────────────────────── */
+    .hero-demo { height: clamp(340px,44vh,520px); }
+
+    /* Dark vignette */
+    .hero-demo::after {
+      content: ''; position: absolute; inset: 0; z-index: 2;
+      border-radius: inherit; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 115%, rgba(0,0,0,0.72) 0%, transparent 65%),
+        radial-gradient(ellipse 100% 42% at 50% 0%,   rgba(0,0,0,0.52) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 100% at   0% 50%, rgba(0,0,0,0.32) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 100% at 100% 50%, rgba(0,0,0,0.32) 0%, transparent 55%);
+    }
+
+    /* Photo tiles layer */
+    .photo-tiles {
+      position: absolute; inset: -40px;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+
+    /* Individual tile */
+    .tile {
+      position: absolute; border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.3);
+      will-change: transform; overflow: hidden;
+    }
+
+    /* Depth label overlay */
+    .tile-depth-label {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.95); text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.38); border-radius: inherit;
+      opacity: 0; transition: opacity 0.25s; pointer-events: none;
+      font-family: var(--mono);
+    }
+    .show-depth .tile-depth-label { opacity: 1; }
+
+    /* Hero text */
+    .hero-content {
+      position: absolute; inset: 0; z-index: 3;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; gap: 10px; padding: 24px;
+    }
+    .hero-hint {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+    .hero-headline {
+      font-size: clamp(24px,4vw,50px); font-weight: 700;
+      letter-spacing: -0.03em; line-height: 1.06;
+    }
+    .hero-sub {
+      font-size: clamp(12px,1.2vw,15px);
+      color: rgba(255,255,255,0.5); line-height: 1.55;
+      max-width: 300px;
+    }
+    .hero-badge {
+      margin-top: 10px;
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px;
+      background: var(--glass-bg); border: 1px solid var(--glass-bdr);
+      border-radius: 100px;
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.65);
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #34c759; box-shadow: 0 0 6px rgba(52,199,89,0.7);
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       SECTION 2 — Depth visualization
+    ──────────────────────────────────────────────────────── */
+    .depth-row {
+      display: flex; gap: 12px; align-items: flex-end;
+    }
+    .depth-slice {
+      flex: 1; display: flex; flex-direction: column; gap: 10px; align-items: center;
+    }
+    .depth-stage {
+      width: 100%; aspect-ratio: 3/4;
+      border-radius: 14px; overflow: hidden;
+      background: var(--bg-1); border: 1px solid var(--glass-bdr);
+      position: relative; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .depth-tile-wrap {
+      position: absolute; inset: -20px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .depth-solo-tile {
+      width: 72%; aspect-ratio: 3/4; border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      will-change: transform; position: relative; flex-shrink: 0;
+    }
+    .depth-solo-tile .tile-depth-label { font-size: 14px; }
+    .depth-meta { text-align: center; }
+    .depth-value {
+      font-size: 15px; font-weight: 700;
+      font-family: var(--mono); color: var(--label-1); letter-spacing: -0.01em;
+    }
+    .depth-sub {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--label-2); margin-top: 2px;
+    }
+
+    @media (max-width: 640px) {
+      .depth-row { gap: 6px; }
+      .depth-value { font-size: 12px; }
+      .depth-sub { display: none; }
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       SECTION 3 — Controls
+    ──────────────────────────────────────────────────────── */
+    .controls-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-bdr);
+      border-radius: 18px; padding: 28px 32px;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      display: flex; flex-direction: column; gap: 22px;
+    }
+
+    .ctrl-row {
+      display: flex; align-items: center; gap: 20px;
+    }
+    .ctrl-label {
+      font-size: 13px; font-weight: 500;
+      color: var(--label-1); min-width: 170px; flex-shrink: 0;
+      display: flex; align-items: baseline; gap: 6px;
+    }
+    .ctrl-label code {
+      font-family: var(--mono); color: var(--accent); font-size: 12px; font-weight: 600;
+    }
+    .ctrl-track {
+      flex: 1; display: flex; align-items: center; gap: 10px;
+    }
+    .ctrl-track label {
+      font-size: 11px; color: var(--label-2); font-family: var(--mono);
+      white-space: nowrap; flex-shrink: 0;
+    }
+
+    /* Range input */
+    input[type=range] {
+      -webkit-appearance: none; appearance: none;
+      flex: 1; height: 4px; border-radius: 4px;
+      background: linear-gradient(
+        to right,
+        var(--accent) 0%,
+        var(--accent) var(--pct,50%),
+        rgba(255,255,255,0.12) var(--pct,50%),
+        rgba(255,255,255,0.12) 100%
+      );
+      outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.45), 0 0 0 2px rgba(255,255,255,0.15);
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      box-shadow: 0 1px 8px rgba(0,0,0,0.5), 0 0 0 3px rgba(41,151,255,0.45);
+      transform: scale(1.12);
+    }
+
+    /* Toggle */
+    .ctrl-toggle {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .toggle-switch {
+      position: relative; width: 44px; height: 26px; flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.11);
+      border-radius: 100px; border: 1px solid rgba(255,255,255,0.14);
+      transition: background 0.22s, border-color 0.22s; cursor: pointer;
+    }
+    .toggle-track::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      transition: transform 0.22s cubic-bezier(0.34,1.4,0.64,1);
+    }
+    .toggle-switch input:checked + .toggle-track {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .toggle-switch input:checked + .toggle-track::after {
+      transform: translateX(18px);
+    }
+    .toggle-info { display: flex; flex-direction: column; }
+    .toggle-text { font-size: 13px; font-weight: 500; color: var(--label-1); }
+    .toggle-sub {
+      font-size: 11px; color: var(--label-2); margin-top: 2px;
+      font-family: var(--mono);
+    }
+
+    .ctrl-sep { height: 1px; background: var(--sep); margin: 2px 0; }
+
+    /* Spec chips */
+    .spec-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .spec-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 11px;
+      background: rgba(41,151,255,0.08);
+      border: 1px solid rgba(41,151,255,0.18);
+      border-radius: 100px;
+      font-size: 11px; font-weight: 500; color: var(--accent);
+      font-family: var(--mono); letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<div class="page">
+
+  <!-- Back link -->
+  <a class="back-link" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Back
+  </a>
+
+  <!-- Page header -->
+  <header class="page-header">
+    <p class="page-eyebrow">sj-design — Component Showcase</p>
+    <h1 class="page-title">Photo Tiles + Parallax</h1>
+    <p class="page-desc">Scattered gradient tiles with depth-driven mouse parallax. Each tile has its own depth value — closer tiles drift farther, distant tiles barely move.</p>
+  </header>
+
+  <main class="stage">
+
+    <!-- ── Section 1: Full hero demo ── -->
+    <section>
+      <p class="section-label">01 — Full hero demo</p>
+      <div class="demo-box hero-demo" id="hero-demo">
+        <div class="photo-tiles" id="hero-tiles"></div>
+        <div class="hero-content">
+          <p class="hero-hint">Move your mouse to feel the parallax</p>
+          <h2 class="hero-headline">Golden hour<br>every hour.</h2>
+          <p class="hero-sub">Warm gradient tiles at different depths, each moving at its own pace.</p>
+          <div class="hero-badge">
+            <span class="badge-dot"></span>
+            Live parallax active
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Section 2: Depth visualization ── -->
+    <section>
+      <p class="section-label">02 — Depth visualization</p>
+      <div class="depth-row" id="depth-row"></div>
+    </section>
+
+    <!-- ── Section 3: Controls ── -->
+    <section>
+      <p class="section-label">03 — Controls</p>
+      <div class="controls-panel">
+
+        <div class="ctrl-row">
+          <span class="ctrl-label">Tile count <code id="lbl-count">14</code></span>
+          <div class="ctrl-track">
+            <label>6</label>
+            <input type="range" id="ctrl-count" min="6" max="20" value="14">
+            <label>20</label>
+          </div>
+        </div>
+
+        <div class="ctrl-row">
+          <span class="ctrl-label">Parallax strength <code id="lbl-strength">100%</code></span>
+          <div class="ctrl-track">
+            <label>0%</label>
+            <input type="range" id="ctrl-strength" min="0" max="100" value="100">
+            <label>100%</label>
+          </div>
+        </div>
+
+        <div class="ctrl-row">
+          <span class="ctrl-label">Rotation range <code id="lbl-rot">12°</code></span>
+          <div class="ctrl-track">
+            <label>0°</label>
+            <input type="range" id="ctrl-rot" min="0" max="20" value="12">
+            <label>20°</label>
+          </div>
+        </div>
+
+        <div class="ctrl-sep"></div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox" id="ctrl-depth">
+              <span class="toggle-track"></span>
+            </label>
+            <div class="toggle-info">
+              <span class="toggle-text">Show depth values</span>
+              <span class="toggle-sub">data-depth overlay on each tile</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ctrl-sep"></div>
+
+        <div class="spec-row">
+          <span class="spec-chip">lerp 0.07</span>
+          <span class="spec-chip">18px h-max</span>
+          <span class="spec-chip">11px v-max</span>
+          <span class="spec-chip">gsap.ticker</span>
+          <span class="spec-chip" id="chip-tiles">14 tiles</span>
+          <span class="spec-chip" id="chip-fps">—fps</span>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div><!-- /.page -->
+
+<script>
+(function () {
+'use strict';
+
+/* ═══════════════════════════════════════════════════════
+   PALETTE — warm-biased gradient strings
+═══════════════════════════════════════════════════════ */
+const PALETTES = [
+  'linear-gradient(135deg,#ff6b35 0%,#f7931e 40%,#ffcd3c 100%)',
+  'linear-gradient(150deg,#f7971e 0%,#ffd200 100%)',
+  'linear-gradient(125deg,#e8825a 0%,#e06c75 55%,#c56183 100%)',
+  'linear-gradient(140deg,#fceabb 0%,#f8b500 100%)',
+  'linear-gradient(135deg,#d4a5a5 0%,#e8c4b8 50%,#f0d9c8 100%)',
+  'linear-gradient(150deg,#a8c8a0 0%,#7daa8e 50%,#5e8a7c 100%)',
+  'linear-gradient(130deg,#ffe0b2 0%,#ffcc80 50%,#ffa726 100%)',
+  'linear-gradient(135deg,#fbe9e7 0%,#ffab91 50%,#ff7043 100%)',
+  'linear-gradient(140deg,#f8bbd0 0%,#f48fb1 50%,#ec407a 100%)',
+  'linear-gradient(130deg,#dcedc8 0%,#aed581 50%,#8bc34a 100%)',
+  'linear-gradient(145deg,#ffe0cc 0%,#ffb380 50%,#ff8c42 100%)',
+  'linear-gradient(135deg,#fff3e0 0%,#ffe0b2 40%,#ffcc80 100%)',
+  'linear-gradient(140deg,#fceabb 0%,#fcb045 50%,#fd7e14 100%)',
+  'linear-gradient(130deg,#fad961 0%,#f76b1c 100%)',
+  'linear-gradient(135deg,#f3e5f5 0%,#e1bee7 50%,#ce93d8 100%)',
+  'linear-gradient(145deg,#b39ddb 0%,#9575cd 50%,#7e57c2 100%)',
+];
+
+/* Seeded deterministic PRNG (mulberry32) */
+function makeRng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s += 0x6d2b79f5;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t ^= t + Math.imul(t ^ t >>> 7, 61 | t);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ═══════════════════════════════════════════════════════
+   TILE BUILDER
+═══════════════════════════════════════════════════════ */
+function buildTiles(container, count, rotRange, seed) {
+  container.innerHTML = '';
+  const rng = makeRng(seed);
+
+  for (let i = 0; i < count; i++) {
+    const depth  = +(0.5 + rng() * 1.3).toFixed(2); // 0.50–1.80
+    const pal    = PALETTES[Math.floor(rng() * PALETTES.length)];
+    const isPort = rng() > 0.42; // 58% portrait
+    const w      = 80  + Math.floor(rng() * 121);   // 80–200px
+    const h      = isPort
+                    ? Math.floor(w * (1.1  + rng() * 0.6))
+                    : Math.floor(w * (0.55 + rng() * 0.35));
+    const left   = -8  + rng() * 108; // % — bleeds off edges
+    const top    = -8  + rng() * 108;
+    const rot    = (rng() * 2 - 1) * rotRange;
+
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.dataset.depth = depth;
+    Object.assign(tile.style, {
+      width:      w + 'px',
+      height:     h + 'px',
+      left:       left.toFixed(1) + '%',
+      top:        top.toFixed(1)  + '%',
+      background: pal,
+      transform:  `rotate(${rot.toFixed(2)}deg)`,
+    });
+
+    const label = document.createElement('div');
+    label.className = 'tile-depth-label';
+    label.textContent = depth;
+    tile.appendChild(label);
+
+    container.appendChild(tile);
+  }
+}
+
+function rebuildHeroTiles() {
+  buildTiles(
+    document.getElementById('hero-tiles'),
+    +ctrlCount.value,
+    +ctrlRot.value,
+    42 // fixed seed for reproducibility
+  );
+  chipTiles.textContent = ctrlCount.value + ' tiles';
+}
+
+/* ═══════════════════════════════════════════════════════
+   DEPTH VISUALIZATION (Section 2)
+═══════════════════════════════════════════════════════ */
+const DEPTH_STEPS = [0.5, 0.8, 1.0, 1.4, 1.8];
+const DEPTH_PALS  = [PALETTES[0], PALETTES[2], PALETTES[5], PALETTES[10], PALETTES[7]];
+const DEPTH_LABELS = ['far', 'mid-far', 'mid', 'near', 'close'];
+
+function buildDepthRow() {
+  const row = document.getElementById('depth-row');
+  row.innerHTML = '';
+
+  DEPTH_STEPS.forEach((depth, i) => {
+    const slice = document.createElement('div');
+    slice.className = 'depth-slice';
+
+    const stage = document.createElement('div');
+    stage.className = 'depth-stage';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'depth-tile-wrap';
+
+    const tile = document.createElement('div');
+    tile.className = 'depth-solo-tile tile';
+    tile.dataset.depth = depth;
+    tile.style.background = DEPTH_PALS[i];
+    // Small rotation to give each a casual tilt
+    const rotSign = i % 2 === 0 ? -1 : 1;
+    tile.style.transform = `rotate(${rotSign * (3 + i * 1.4)}deg)`;
+
+    const label = document.createElement('div');
+    label.className = 'tile-depth-label';
+    label.textContent = depth;
+    tile.appendChild(label);
+
+    wrap.appendChild(tile);
+    stage.appendChild(wrap);
+
+    const meta = document.createElement('div');
+    meta.className = 'depth-meta';
+    meta.innerHTML =
+      `<div class="depth-value">${depth}</div>` +
+      `<div class="depth-sub">${DEPTH_LABELS[i]}</div>`;
+
+    slice.appendChild(stage);
+    slice.appendChild(meta);
+    row.appendChild(slice);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   PARALLAX ENGINE
+   Raw mouse → lerp → GSAP.set per-tile each frame
+═══════════════════════════════════════════════════════ */
+let rawX = 0, rawY = 0;
+let lerpX = 0, lerpY = 0;
+const LERP = 0.07;
+
+window.addEventListener('mousemove', e => {
+  rawX = (e.clientX / innerWidth  - 0.5) * 2; // –1 … +1
+  rawY = (e.clientY / innerHeight - 0.5) * 2;
+});
+
+/* Touch support */
+window.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  rawX = (t.clientX / innerWidth  - 0.5) * 2;
+  rawY = (t.clientY / innerHeight - 0.5) * 2;
+}, { passive: true });
+
+gsap.ticker.add(() => {
+  lerpX += (rawX - lerpX) * LERP;
+  lerpY += (rawY - lerpY) * LERP;
+
+  const s  = +ctrlStrength.value / 100;
+  const hB = 18 * s;
+  const vB = 11 * s;
+
+  // Hero tiles
+  document.querySelectorAll('#hero-tiles .tile').forEach(el => {
+    const d = +el.dataset.depth;
+    gsap.set(el, { x: lerpX * d * hB, y: lerpY * d * vB });
+  });
+
+  // Depth-slice tiles
+  document.querySelectorAll('#depth-row .depth-solo-tile').forEach(el => {
+    const d = +el.dataset.depth;
+    gsap.set(el, { x: lerpX * d * hB, y: lerpY * d * vB });
+  });
+});
+
+/* ═══════════════════════════════════════════════════════
+   CONTROLS
+═══════════════════════════════════════════════════════ */
+const ctrlCount    = document.getElementById('ctrl-count');
+const ctrlStrength = document.getElementById('ctrl-strength');
+const ctrlRot      = document.getElementById('ctrl-rot');
+const ctrlDepth    = document.getElementById('ctrl-depth');
+const lblCount     = document.getElementById('lbl-count');
+const lblStrength  = document.getElementById('lbl-strength');
+const lblRot       = document.getElementById('lbl-rot');
+const chipTiles    = document.getElementById('chip-tiles');
+const chipFps      = document.getElementById('chip-fps');
+
+/* Keep CSS gradient fill in sync with slider thumb position */
+function syncRangeFill(inp) {
+  const min = +inp.min, max = +inp.max, val = +inp.value;
+  inp.style.setProperty('--pct', ((val - min) / (max - min) * 100).toFixed(1) + '%');
+}
+
+ctrlCount.addEventListener('input', () => {
+  lblCount.textContent = ctrlCount.value;
+  syncRangeFill(ctrlCount);
+  rebuildHeroTiles();
+});
+
+ctrlStrength.addEventListener('input', () => {
+  lblStrength.textContent = ctrlStrength.value + '%';
+  syncRangeFill(ctrlStrength);
+});
+
+ctrlRot.addEventListener('input', () => {
+  lblRot.textContent = ctrlRot.value + '°';
+  syncRangeFill(ctrlRot);
+  rebuildHeroTiles();
+});
+
+ctrlDepth.addEventListener('change', () => {
+  const on = ctrlDepth.checked;
+  document.getElementById('hero-demo').classList.toggle('show-depth', on);
+  document.getElementById('depth-row').classList.toggle('show-depth', on);
+});
+
+/* ═══════════════════════════════════════════════════════
+   FPS COUNTER
+═══════════════════════════════════════════════════════ */
+let fpsFrames = 0, fpsLast = performance.now();
+gsap.ticker.add(() => {
+  fpsFrames++;
+  const now = performance.now();
+  if (now - fpsLast >= 1000) {
+    chipFps.textContent = Math.round(fpsFrames * 1000 / (now - fpsLast)) + 'fps';
+    fpsFrames = 0;
+    fpsLast = now;
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+[ctrlCount, ctrlStrength, ctrlRot].forEach(syncRangeFill);
+rebuildHeroTiles();
+buildDepthRow();
+
+/* Entrance animation */
+const E = 'cubic-bezier(0.16,1,0.3,1)';
+gsap.fromTo('.page-eyebrow', { opacity:0, y:8  }, { opacity:1, y:0, duration:0.55, ease:E, delay:0.10 });
+gsap.fromTo('.page-title',   { opacity:0, y:18 }, { opacity:1, y:0, duration:0.70, ease:E, delay:0.20 });
+gsap.fromTo('.page-desc',    { opacity:0, y:12 }, { opacity:1, y:0, duration:0.60, ease:E, delay:0.32 });
+gsap.fromTo('.hero-demo',    { opacity:0, y:24, scale:0.98 }, { opacity:1, y:0, scale:1, duration:0.80, ease:E, delay:0.42 });
+gsap.fromTo('.hero-content', { opacity:0 }, { opacity:1, duration:0.60, ease:'power2.out', delay:0.85 });
+
+}());
+</script>
+</body>
+</html>

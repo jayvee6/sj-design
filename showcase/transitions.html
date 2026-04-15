@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slide Transitions — sj-design</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-0: #0a0a0f;
+      --bg-1: #111118;
+      --label-1: #f5f5f7;
+      --label-2: #8e8e93;
+      --accent: #2997ff;
+      --glass-bg: rgba(255,255,255,0.06);
+      --glass-bdr: rgba(255,255,255,0.10);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg-0);
+      color: var(--label-1);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Ambient glow ─────────────────────────────────────── */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 10% 0%,  rgba(41,151,255,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 45% 30% at 90% 95%, rgba(94,92,230,0.06)  0%, transparent 60%);
+    }
+
+    /* ── Topbar ───────────────────────────────────────────── */
+    .topbar {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      padding: 22px 36px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px 7px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--glass-bdr);
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--label-2);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .back-link:hover {
+      color: var(--label-1);
+      border-color: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.09);
+    }
+
+    /* ── Page header ──────────────────────────────────────── */
+    .page-header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 4px 24px 44px;
+    }
+
+    .page-title {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 1.06;
+      margin-bottom: 10px;
+    }
+
+    .page-subtitle {
+      font-size: 1rem;
+      color: var(--label-2);
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Deck area ────────────────────────────────────────── */
+    .deck-area {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 0 24px;
+    }
+
+    /* Arrow buttons */
+    .arrow-btn {
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--glass-bdr);
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--label-2);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.18s cubic-bezier(0.34,1.4,0.64,1);
+      user-select: none;
+    }
+    .arrow-btn:hover:not(:disabled) {
+      color: var(--label-1);
+      border-color: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.1);
+      transform: scale(1.08);
+    }
+    .arrow-btn:active:not(:disabled) { transform: scale(0.94); }
+    .arrow-btn:disabled { opacity: 0.3; cursor: default; }
+
+    /* Deck viewport */
+    #deck-viewport {
+      position: relative;
+      width: min(800px, 100%);
+      aspect-ratio: 16 / 9;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #08080d;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.07), 0 32px 80px rgba(0,0,0,0.6);
+      perspective: 1400px;
+    }
+
+    /* Slides */
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      opacity: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .slide.active { opacity: 1; }
+
+    .slide-title {
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: rgba(255,255,255,0.95);
+      text-align: center;
+      text-shadow: 0 2px 24px rgba(0,0,0,0.5);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .slide-sub {
+      font-size: clamp(0.8rem, 1.6vw, 1.05rem);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: rgba(255,255,255,0.52);
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Slide gradients */
+    #slide-0 { background: linear-gradient(140deg, #0e1c3a 0%, #1a3460 45%, #0f3880 100%); }
+    #slide-1 { background: linear-gradient(140deg, #1a0a2e 0%, #2d1265 45%, #4a1a9a 100%); }
+    #slide-2 { background: linear-gradient(140deg, #001f1a 0%, #004d38 45%, #006c50 100%); }
+
+    /* ── Dot nav ──────────────────────────────────────────── */
+    .dot-nav {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s cubic-bezier(0.34,1.4,0.64,1);
+      border: none;
+      padding: 0;
+    }
+    .dot.active {
+      background: var(--accent);
+      transform: scale(1.4);
+    }
+    .dot:hover:not(.active) { background: rgba(255,255,255,0.4); }
+
+    /* ── Picker section ───────────────────────────────────── */
+    .picker-section {
+      position: relative;
+      z-index: 1;
+      padding: 48px 24px 0;
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--label-2);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .picker-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .t-card {
+      flex: 1 1 140px;
+      max-width: 168px;
+      padding: 18px 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--glass-bdr);
+      background: var(--glass-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      cursor: pointer;
+      text-align: center;
+      transition:
+        transform 0.22s cubic-bezier(0.34,1.4,0.64,1),
+        border-color 0.18s,
+        background 0.18s,
+        box-shadow 0.18s;
+      user-select: none;
+    }
+    .t-card:hover { transform: scale(1.03); }
+    .t-card.active {
+      border-color: var(--accent);
+      background: rgba(41,151,255,0.1);
+      box-shadow: 0 0 0 1px rgba(41,151,255,0.25), 0 8px 32px rgba(41,151,255,0.12);
+    }
+
+    .t-card-icon {
+      font-size: 1.75rem;
+      line-height: 1;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .t-card-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--label-1);
+      margin-bottom: 5px;
+    }
+
+    .t-card-desc {
+      font-size: 0.72rem;
+      color: var(--label-2);
+      letter-spacing: -0.005em;
+      line-height: 1.4;
+    }
+
+    /* ── Code panel ───────────────────────────────────────── */
+    .code-section {
+      position: relative;
+      z-index: 1;
+      padding: 32px 24px 80px;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .code-box {
+      background: var(--bg-1);
+      border: 1px solid var(--glass-bdr);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 18px;
+      border-bottom: 1px solid var(--glass-bdr);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .code-lbl {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--label-2);
+    }
+
+    .code-tag {
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      font-family: "SF Mono", "Fira Code", Menlo, monospace;
+    }
+
+    .code-body {
+      padding: 20px 22px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", Menlo, monospace;
+      font-size: 0.82rem;
+      line-height: 1.72;
+      color: #c9d1d9;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* Syntax tokens */
+    .kw   { color: #ff7b72; }
+    .fn   { color: #d2a8ff; }
+    .str  { color: #a5d6ff; }
+    .cm   { color: #8b949e; font-style: italic; }
+    .num  { color: #79c0ff; }
+    .prop { color: #ffa657; }
+
+    /* ── Entrance animations ──────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-header   { animation: fadeUp 0.7s 0.05s cubic-bezier(0.16,1,0.3,1) both; }
+    .deck-area     { animation: fadeUp 0.7s 0.15s cubic-bezier(0.16,1,0.3,1) both; }
+    .dot-nav       { animation: fadeUp 0.7s 0.20s cubic-bezier(0.16,1,0.3,1) both; }
+    .picker-section{ animation: fadeUp 0.7s 0.28s cubic-bezier(0.16,1,0.3,1) both; }
+    .code-section  { animation: fadeUp 0.7s 0.36s cubic-bezier(0.16,1,0.3,1) both; }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<!-- ── Topbar ─────────────────────────────────────────────── -->
+<nav class="topbar">
+  <a class="back-link" href="index.html">← Back</a>
+</nav>
+
+<!-- ── Page header ────────────────────────────────────────── -->
+<header class="page-header">
+  <h1 class="page-title">Slide Transitions</h1>
+  <p class="page-subtitle">Five cinematic transitions — vanilla JS + GSAP. Click a card to select, then navigate the deck.</p>
+</header>
+
+<!-- ── Deck ───────────────────────────────────────────────── -->
+<div class="deck-area">
+  <button class="arrow-btn" id="btn-prev" aria-label="Previous slide">‹</button>
+
+  <div id="deck-viewport">
+    <div class="slide active" id="slide-0">
+      <span class="slide-title">Motion Language</span>
+      <span class="slide-sub">How slides move shapes how ideas land</span>
+    </div>
+    <div class="slide" id="slide-1">
+      <span class="slide-title">Five Transitions</span>
+      <span class="slide-sub">Slide · Fade · Cube · Iris · Particles</span>
+    </div>
+    <div class="slide" id="slide-2">
+      <span class="slide-title">Yours to Use</span>
+      <span class="slide-sub">Drop any transition into any sj-design deck</span>
+    </div>
+  </div>
+
+  <button class="arrow-btn" id="btn-next" aria-label="Next slide">›</button>
+</div>
+
+<!-- ── Dot nav ────────────────────────────────────────────── -->
+<div class="dot-nav" id="dot-nav">
+  <button class="dot active" data-idx="0" aria-label="Go to slide 1"></button>
+  <button class="dot"        data-idx="1" aria-label="Go to slide 2"></button>
+  <button class="dot"        data-idx="2" aria-label="Go to slide 3"></button>
+</div>
+
+<!-- ── Transition picker ──────────────────────────────────── -->
+<section class="picker-section">
+  <p class="section-label">Choose a transition</p>
+  <div class="picker-row" id="picker-row">
+
+    <button class="t-card active" data-t="slide">
+      <span class="t-card-icon">↔</span>
+      <div class="t-card-name">Slide</div>
+      <div class="t-card-desc">Classic push — outgoing exits left, incoming enters right</div>
+    </button>
+
+    <button class="t-card" data-t="fade">
+      <span class="t-card-icon">◌</span>
+      <div class="t-card-name">Fade</div>
+      <div class="t-card-desc">Soft cross-dissolve — opacity eases between slides</div>
+    </button>
+
+    <button class="t-card" data-t="cube">
+      <span class="t-card-icon">⬡</span>
+      <div class="t-card-name">Cube</div>
+      <div class="t-card-desc">3-D rotateY hinge — GSAP perspective transform</div>
+    </button>
+
+    <button class="t-card" data-t="iris">
+      <span class="t-card-icon">◎</span>
+      <div class="t-card-name">Iris</div>
+      <div class="t-card-desc">Expanding circle wipe via CSS clip-path</div>
+    </button>
+
+    <button class="t-card" data-t="particles">
+      <span class="t-card-icon">✦</span>
+      <div class="t-card-name">Particles</div>
+      <div class="t-card-desc">Canvas shard dissolve — glass tiles scatter outward</div>
+    </button>
+
+  </div>
+</section>
+
+<!-- ── Code panel ─────────────────────────────────────────── -->
+<section class="code-section">
+  <div class="code-box">
+    <div class="code-header">
+      <span class="code-lbl">Key implementation</span>
+      <span class="code-tag" id="code-tag">slide</span>
+    </div>
+    <pre class="code-body" id="code-body"></pre>
+  </div>
+</section>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════════════ */
+const TOTAL = 3;  // number of slides
+
+const SNIPPETS = {
+  slide:
+`<span class="cm">// Push: outgoing exits left, incoming enters from right</span>
+<span class="fn">gsap</span>.<span class="fn">set</span>(toEl,   { x: dir * <span class="num">36</span> * <span class="num">0.6</span>, opacity: <span class="num">0</span> });
+<span class="fn">gsap</span>.<span class="fn">to</span>(fromEl, { x: -(dir * <span class="num">36</span>), opacity: <span class="num">0</span>,
+  duration: <span class="num">0.3</span>, ease: <span class="str">'power2.inOut'</span> });
+<span class="fn">gsap</span>.<span class="fn">to</span>(toEl,   { x: <span class="num">0</span>, opacity: <span class="num">1</span>,
+  duration: <span class="num">0.35</span>, ease: <span class="str">'power2.out'</span>,
+  <span class="prop">onComplete</span>: done });`,
+
+  fade:
+`<span class="cm">// Cross-dissolve: outgoing fades out, incoming fades in</span>
+<span class="fn">gsap</span>.<span class="fn">set</span>(toEl, { opacity: <span class="num">0</span>, zIndex: <span class="num">2</span> });
+<span class="fn">gsap</span>.<span class="fn">to</span>(fromEl, { opacity: <span class="num">0</span>,
+  duration: <span class="num">0.3</span>, ease: <span class="str">'power2.inOut'</span> });
+<span class="fn">gsap</span>.<span class="fn">to</span>(toEl,   { opacity: <span class="num">1</span>,
+  duration: <span class="num">0.45</span>, delay: <span class="num">0.05</span>, ease: <span class="str">'power2.out'</span>,
+  <span class="prop">onComplete</span>: done });`,
+
+  cube:
+`<span class="cm">// 3-D cube: deck has perspective:1400px; slides rotate on Y</span>
+<span class="kw">const</span> tl = <span class="fn">gsap</span>.<span class="fn">timeline</span>({ <span class="prop">onComplete</span>: done });
+tl.<span class="fn">set</span>(toEl, { rotateY: dir > <span class="num">0</span> ? <span class="num">90</span> : -<span class="num">90</span>, opacity: <span class="num">1</span> })
+  .<span class="fn">to</span>(fromEl, { rotateY: dir > <span class="num">0</span> ? -<span class="num">90</span> : <span class="num">90</span>,
+    opacity: <span class="num">0</span>, duration: <span class="num">0.5</span>, ease: <span class="str">'power2.inOut'</span> }, <span class="num">0</span>)
+  .<span class="fn">to</span>(toEl,   { rotateY: <span class="num">0</span>,
+    duration: <span class="num">0.5</span>, ease: <span class="str">'power2.out'</span> }, <span class="num">0</span>);`,
+
+  iris:
+`<span class="cm">// Iris wipe: CSS clip-path expands from center</span>
+toEl.style.transition = <span class="str">'none'</span>;
+toEl.style.clipPath   = <span class="str">'circle(0% at 50% 50%)'</span>;
+<span class="kw">void</span> toEl.offsetHeight;   <span class="cm">// force reflow — commit closed state</span>
+toEl.style.transition = <span class="str">'clip-path 0.8s cubic-bezier(0.16,1,0.3,1)'</span>;
+toEl.style.clipPath   = <span class="str">'circle(150% at 50% 50%)'</span>;
+<span class="cm">// outgoing fades at delay 0.35s</span>
+<span class="fn">gsap</span>.<span class="fn">to</span>(fromEl, { opacity: <span class="num">0</span>, duration: <span class="num">0.3</span>, delay: <span class="num">0.35</span> });`,
+
+  particles:
+`<span class="cm">// Canvas shard dissolve — 100 glass tiles scatter outward</span>
+<span class="kw">const</span> rect   = fromEl.<span class="fn">getBoundingClientRect</span>();
+<span class="kw">const</span> canvas = <span class="fn">makeOverlay</span>(rect); <span class="cm">// fixed, z-index 9999</span>
+<span class="kw">const</span> shards = <span class="fn">spawnShards</span>(canvas, <span class="num">100</span>);
+<span class="cm">// RAF loop: vy starts negative, gravity 0.28, friction</span>
+<span class="fn">requestAnimationFrame</span>(<span class="kw">function</span> <span class="fn">loop</span>() {
+  shards.<span class="fn">forEach</span>(s => { s.vy += <span class="num">0.28</span>; s.vx *= <span class="num">0.97</span>; });
+  <span class="kw">if</span> (allDead) { canvas.<span class="fn">remove</span>(); <span class="fn">done</span>(); }
+  <span class="kw">else</span> <span class="fn">requestAnimationFrame</span>(loop);
+});`,
+};
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let current     = 0;
+let activeT     = 'slide';
+let isAnimating = false;
+
+const deck   = document.getElementById('deck-viewport');
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dots   = Array.from(document.querySelectorAll('.dot'));
+const btnPrev= document.getElementById('btn-prev');
+const btnNext= document.getElementById('btn-next');
+const codeBody= document.getElementById('code-body');
+const codeTag = document.getElementById('code-tag');
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+updateSnippet();
+updateArrows();
+
+/* ═══════════════════════════════════════════════════════════
+   UI WIRING
+═══════════════════════════════════════════════════════════ */
+btnPrev.addEventListener('click', () => navigate(-1));
+btnNext.addEventListener('click', () => navigate(+1));
+
+document.getElementById('dot-nav').addEventListener('click', e => {
+  const dot = e.target.closest('.dot');
+  if (!dot || isAnimating) return;
+  const target = parseInt(dot.dataset.idx, 10);
+  if (target === current) return;
+  navigate(target > current ? 1 : -1, target);
+});
+
+document.getElementById('picker-row').addEventListener('click', e => {
+  const card = e.target.closest('.t-card');
+  if (!card) return;
+  document.querySelectorAll('.t-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  activeT = card.dataset.t;
+  updateSnippet();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  navigate(+1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    navigate(-1);
+});
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATE
+═══════════════════════════════════════════════════════════ */
+function navigate(dir, targetIdx) {
+  if (isAnimating) return;
+  const to = targetIdx !== undefined ? targetIdx : current + dir;
+  if (to < 0 || to >= TOTAL) return;
+
+  isAnimating = true;
+  const fromEl = slides[current];
+  const toEl   = slides[to];
+
+  // Ensure toEl is visible but behind
+  gsap.set(toEl, { opacity: 1, x: 0, rotateY: 0, zIndex: 1 });
+  toEl.classList.add('active');
+
+  const done = () => {
+    // Clean up fromEl
+    fromEl.classList.remove('active');
+    gsap.set(fromEl, { clearProps: 'all', opacity: 0, zIndex: 0 });
+    fromEl.style.clipPath = '';
+    fromEl.style.transition = '';
+    // Clean up toEl
+    gsap.set(toEl, { clearProps: 'all', opacity: 1, zIndex: 0 });
+    toEl.style.clipPath = '';
+    toEl.style.transition = '';
+
+    current = to;
+    isAnimating = false;
+    updateDots();
+    updateArrows();
+  };
+
+  // Set z layering
+  gsap.set(fromEl, { zIndex: 2 });
+  gsap.set(toEl,   { zIndex: 1 });
+
+  switch (activeT) {
+    case 'slide':     doSlide(fromEl, toEl, dir, done);     break;
+    case 'fade':      doFade(fromEl, toEl, done);           break;
+    case 'cube':      doCube(fromEl, toEl, dir, done);      break;
+    case 'iris':      doIris(fromEl, toEl, done);           break;
+    case 'particles': doParticles(fromEl, toEl, done);      break;
+    default:          doFade(fromEl, toEl, done);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   1. SLIDE — push with subtle parallax
+═══════════════════════════════════════════════════════════ */
+function doSlide(fromEl, toEl, dir, done) {
+  gsap.set(toEl,   { x: dir * 36 * 0.6, opacity: 0 });
+  gsap.to(fromEl, {
+    x: -(dir * 36), opacity: 0,
+    duration: 0.3, ease: 'power2.inOut'
+  });
+  gsap.to(toEl, {
+    x: 0, opacity: 1,
+    duration: 0.35, ease: 'power2.out',
+    onComplete: done
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   2. FADE — cross-dissolve
+═══════════════════════════════════════════════════════════ */
+function doFade(fromEl, toEl, done) {
+  gsap.set(toEl, { opacity: 0, zIndex: 2 });
+  gsap.set(fromEl, { zIndex: 1 });
+  gsap.to(fromEl, {
+    opacity: 0,
+    duration: 0.3, ease: 'power2.inOut'
+  });
+  gsap.to(toEl, {
+    opacity: 1,
+    duration: 0.45, delay: 0.05, ease: 'power2.out',
+    onComplete: done
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   3. CUBE — GSAP 3-D rotateY
+═══════════════════════════════════════════════════════════ */
+function doCube(fromEl, toEl, dir, done) {
+  deck.style.perspective = '1400px';
+  gsap.set(fromEl, { rotateY: 0,                       opacity: 1, zIndex: 2, transformOrigin: 'center center' });
+  gsap.set(toEl,   { rotateY: dir > 0 ? 90 : -90,      opacity: 1, zIndex: 1, transformOrigin: 'center center' });
+
+  const tl = gsap.timeline({
+    onComplete: () => {
+      deck.style.perspective = '';
+      done();
+    }
+  });
+
+  tl.to(fromEl, {
+    rotateY: dir > 0 ? -90 : 90,
+    opacity: 0,
+    duration: 0.5,
+    ease: 'power2.inOut'
+  }, 0)
+  .to(toEl, {
+    rotateY: 0,
+    duration: 0.5,
+    ease: 'power2.out'
+  }, 0);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   4. IRIS — CSS clip-path circle wipe
+═══════════════════════════════════════════════════════════ */
+function doIris(fromEl, toEl, done) {
+  // toEl sits on top, starts closed
+  gsap.set(toEl, { zIndex: 3, opacity: 1 });
+  gsap.set(fromEl, { zIndex: 1, opacity: 1 });
+
+  toEl.style.transition = 'none';
+  toEl.style.clipPath   = 'circle(0% at 50% 50%)';
+
+  // Force reflow — browser must commit the closed state before
+  // re-enabling transitions, or both style writes batch together
+  // and the animation never plays.
+  void toEl.offsetHeight;
+
+  toEl.style.transition = 'clip-path 0.8s cubic-bezier(0.16,1,0.3,1)';
+  toEl.style.clipPath   = 'circle(150% at 50% 50%)';
+
+  // Fade outgoing after iris is half-open
+  gsap.to(fromEl, { opacity: 0, duration: 0.3, delay: 0.35 });
+
+  toEl.addEventListener('transitionend', function onEnd(e) {
+    if (e.propertyName !== 'clip-path') return;
+    toEl.removeEventListener('transitionend', onEnd);
+    done();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   5. PARTICLES — canvas glass shard dissolve
+   Physics-based RAF loop; 100 shards scatter upward then fall.
+═══════════════════════════════════════════════════════════ */
+function doParticles(fromEl, toEl, done) {
+  // Show incoming slide immediately underneath
+  gsap.set(toEl,   { opacity: 1, zIndex: 1 });
+  gsap.set(fromEl, { opacity: 0, zIndex: 0 });   // hide original; canvas takes over
+
+  // Build canvas overlay pinned to deck-viewport
+  const rect    = deck.getBoundingClientRect();
+  const deckRect= deck.getBoundingClientRect();
+  const canvas  = document.createElement('canvas');
+  canvas.width  = deck.offsetWidth;
+  canvas.height = deck.offsetHeight;
+  Object.assign(canvas.style, {
+    position: 'absolute',
+    inset: '0',
+    zIndex: '9999',
+    pointerEvents: 'none',
+    borderRadius: 'inherit',
+  });
+  deck.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const W   = canvas.width;
+  const H   = canvas.height;
+
+  // Shard colors sampled from fromEl's gradient
+  const slideColors = [
+    ['#0e1c3a', '#1a3460', '#0f3880'],   // slide 0
+    ['#1a0a2e', '#2d1265', '#4a1a9a'],   // slide 1
+    ['#001f1a', '#004d38', '#006c50'],   // slide 2
+  ];
+  const fromIdx = slides.indexOf(fromEl);
+  const stops   = slideColors[fromIdx % slideColors.length];
+
+  // Spawn 100 shards at random positions within the canvas
+  const COUNT   = 100;
+  const shards  = [];
+
+  for (let i = 0; i < COUNT; i++) {
+    const px = Math.random() * W;
+    const py = Math.random() * H;
+
+    // Color: interpolate along gradient stops based on x-position
+    const t    = px / W;
+    const seg  = t < 0.5 ? 0 : 1;
+    const lt   = seg === 0 ? t * 2 : (t - 0.5) * 2;
+    const color= lerpHex(stops[seg], stops[seg + 1], lt);
+
+    // Shard size: small rectangles, randomized
+    const sw   = 18 + Math.random() * 28;
+    const sh   = 12 + Math.random() * 20;
+    const angle= (Math.random() - 0.5) * 0.8;   // slight rotation
+
+    // Physics: initial velocity (upward burst + random lateral)
+    const speed = 2.5 + Math.random() * 4;
+    const theta = -Math.PI / 2 + (Math.random() - 0.5) * 1.4; // mostly up
+    const vx    = Math.cos(theta) * speed;
+    const vy    = Math.sin(theta) * speed;
+
+    shards.push({
+      x: px, y: py, vx, vy,
+      w: sw, h: sh,
+      angle,
+      va: (Math.random() - 0.5) * 0.06,
+      alpha: 1,
+      color,
+      specular: Math.random() > 0.5,
+      dead: false,
+    });
+  }
+
+  const GRAVITY   = 0.28;
+  const FRICTION  = 0.97;
+  const FADE_RATE = 0.022;
+
+  let rafId;
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+
+    let allDead = true;
+
+    shards.forEach(s => {
+      if (s.dead) return;
+
+      // Physics step
+      s.vy    += GRAVITY;
+      s.vx    *= FRICTION;
+      s.x     += s.vx;
+      s.y     += s.vy;
+      s.angle += s.va;
+      s.alpha -= FADE_RATE;
+
+      if (s.alpha <= 0) { s.dead = true; return; }
+
+      allDead = false;
+
+      // Draw shard
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, s.alpha);
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.angle);
+      ctx.fillStyle = s.color;
+      ctx.fillRect(-s.w / 2, -s.h / 2, s.w, s.h);
+
+      // Glass specular strip
+      if (s.specular) {
+        ctx.globalAlpha = Math.max(0, s.alpha * 0.35);
+        ctx.fillStyle   = 'rgba(255,255,255,0.9)';
+        ctx.fillRect(-s.w / 2, -s.h / 2, s.w, s.h * 0.28);
+      }
+
+      // Accent tint overlay on ~20% of shards
+      if (s.accent) {
+        ctx.globalAlpha = Math.max(0, s.alpha * 0.2);
+        ctx.fillStyle   = '#2997ff';
+        ctx.fillRect(-s.w / 2, -s.h / 2, s.w, s.h);
+      }
+
+      ctx.restore();
+    });
+
+    if (allDead) {
+      canvas.remove();
+      done();
+    } else {
+      rafId = requestAnimationFrame(loop);
+    }
+  }
+
+  // Tag ~20% of shards as accent-tinted
+  shards.forEach(s => { s.accent = Math.random() > 0.8; });
+
+  rafId = requestAnimationFrame(loop);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+function lerpHex(a, b, t) {
+  const pa  = parseInt(a.replace('#', ''), 16);
+  const pb  = parseInt(b.replace('#', ''), 16);
+  const ra  = (pa >> 16) & 0xff, ga = (pa >> 8) & 0xff, ba = pa & 0xff;
+  const rb  = (pb >> 16) & 0xff, gb = (pb >> 8) & 0xff, bb = pb & 0xff;
+  const r   = Math.round(ra + (rb - ra) * t);
+  const g   = Math.round(ga + (gb - ga) * t);
+  const bv  = Math.round(ba + (bb - ba) * t);
+  return `rgb(${r},${g},${bv})`;
+}
+
+function updateDots() {
+  dots.forEach((d, i) => d.classList.toggle('active', i === current));
+}
+
+function updateArrows() {
+  btnPrev.disabled = current === 0;
+  btnNext.disabled = current === TOTAL - 1;
+}
+
+function updateSnippet() {
+  codeBody.innerHTML = SNIPPETS[activeT] || '';
+  codeTag.textContent = activeT;
+}
+</script>
+</body>
+</html>

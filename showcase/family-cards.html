@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Photo Cards — sj-design</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-0: #0a0a0f;
+      --bg-1: #111118;
+      --label-1: #f5f5f7;
+      --label-2: #8e8e93;
+      --accent: #2997ff;
+      --glass-bg: rgba(255,255,255,0.06);
+      --glass-bdr: rgba(255,255,255,0.10);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      --radius-card: clamp(14px, 1.6vw, 22px);
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg-0);
+      color: var(--label-1);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Ambient glow ─────────────────────────────────────────── */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 55% 35% at 15% 5%,  rgba(41,151,255,0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 45% 30% at 85% 85%, rgba(94,92,230,0.07)  0%, transparent 60%),
+        radial-gradient(ellipse 40% 25% at 70% 15%, rgba(255,100,120,0.05) 0%, transparent 55%);
+    }
+
+    /* ── Page shell ───────────────────────────────────────────── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── Back button ──────────────────────────────────────────── */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      padding: 7px 14px 7px 10px;
+      border: 1px solid rgba(41,151,255,0.22);
+      border-radius: 20px;
+      background: rgba(41,151,255,0.07);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: background 0.2s, border-color 0.2s;
+      margin-bottom: 36px;
+    }
+    .back-btn:hover {
+      background: rgba(41,151,255,0.14);
+      border-color: rgba(41,151,255,0.4);
+    }
+    .back-btn svg { flex-shrink: 0; }
+
+    /* ── Page header ──────────────────────────────────────────── */
+    .page-header { margin-bottom: 48px; }
+    .page-header h1 {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #f5f5f7 0%, rgba(245,245,247,0.6) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-header p {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: var(--label-2);
+      line-height: 1.5;
+      max-width: 500px;
+    }
+
+    /* ── Section label ────────────────────────────────────────── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--label-2);
+      margin-bottom: 16px;
+    }
+
+    /* ── Card grid ────────────────────────────────────────────── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 60px;
+    }
+    @media (max-width: 700px) {
+      .card-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 420px) {
+      .card-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Detail section ───────────────────────────────────────── */
+    .detail-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 56px;
+    }
+    .detail-section .detail-card-wrap {
+      width: 100%;
+      max-width: 300px;
+    }
+    .hover-hint {
+      font-size: 0.78rem;
+      color: var(--label-2);
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hover-hint::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(41,151,255,0.7);
+    }
+
+    /* ── Controls panel ───────────────────────────────────────── */
+    .controls-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-bdr);
+      border-radius: 18px;
+      padding: 24px 28px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px 40px;
+      align-items: center;
+    }
+
+    .ctrl-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 160px;
+    }
+    .ctrl-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--label-2);
+    }
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .ctrl-value {
+      font-size: 0.82rem;
+      color: var(--label-1);
+      min-width: 32px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 160px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--glass-bdr);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(41,151,255,0.25);
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 0 5px rgba(41,151,255,0.35);
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 16px; height: 16px;
+      border: none;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* toggle */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle-track {
+      width: 40px; height: 22px;
+      border-radius: 11px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid var(--glass-bdr);
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle-track.on {
+      background: var(--accent);
+      border-color: transparent;
+    }
+    .toggle-knob {
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      transition: transform 0.2s;
+    }
+    .toggle-track.on .toggle-knob {
+      transform: translateX(18px);
+    }
+    .toggle-label-text {
+      font-size: 0.88rem;
+      color: var(--label-1);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       FAMILY CARD COMPONENT
+    ═══════════════════════════════════════════════════════════ */
+    .family-card {
+      overflow: hidden;
+      padding: 0;
+      border-radius: var(--radius-card);
+      aspect-ratio: 3 / 4;
+      position: relative;
+      border: 1px solid var(--glass-bdr);
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(255,255,255,0.04) inset;
+      cursor: default;
+    }
+
+    .photo-show {
+      position: absolute;
+      inset: 0;
+    }
+
+    .photo-layer {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+    .photo-layer:first-child { opacity: 1; }
+
+    .family-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.80) 0%, transparent 55%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .family-name {
+      font-weight: 700;
+      font-size: clamp(14px, 2vw, 20px);
+      color: #fff;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    .family-caption {
+      margin-top: 4px;
+      font-size: clamp(12px, 1.4vw, 16px);
+      color: rgba(255,255,255,0.82);
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+
+    /* ── Dot indicators ───────────────────────────────────────── */
+    .photo-dots {
+      position: absolute;
+      bottom: 56px;
+      left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .photo-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transition: background 0.3s, transform 0.3s;
+    }
+    .photo-dot.active {
+      background: #fff;
+      transform: scale(1.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<div class="page">
+
+  <!-- Back -->
+  <a href="index.html" class="back-btn">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Back
+  </a>
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Family Photo Cards</h1>
+    <p>Portrait-aspect glass bento cards with Ken Burns parallax and smooth crossfade transitions.</p>
+  </div>
+
+  <!-- Section 1: Card grid -->
+  <p class="section-label">Card Grid — 4 Families</p>
+  <div class="card-grid" id="cardGrid">
+
+    <!-- 1. The Johnsons — warm oranges/golds -->
+    <div class="family-card" data-family="johnsons"
+         data-layers='[
+           "linear-gradient(145deg,#7a3a0a 0%,#c97a2a 40%,#f5c84e 100%)",
+           "linear-gradient(160deg,#8a4210 0%,#e0923a 50%,#fad870 100%)",
+           "linear-gradient(130deg,#6a3008 0%,#b56828 45%,#eab840 100%)"
+         ]'
+         data-name="The Johnsons"
+         data-caption="Summer 2024">
+    </div>
+
+    <!-- 2. The Garcias — cool teals/blues -->
+    <div class="family-card" data-family="garcias"
+         data-layers='[
+           "linear-gradient(145deg,#083a50 0%,#0d7a94 45%,#38c4d4 100%)",
+           "linear-gradient(160deg,#0a4a64 0%,#1490a8 50%,#4ad0da 100%)",
+           "linear-gradient(130deg,#062c40 0%,#0b6880 45%,#2ab0c2 100%)"
+         ]'
+         data-name="The Garcias"
+         data-caption="Lake Tahoe">
+    </div>
+
+    <!-- 3. The Nguyens — deep reds/purples -->
+    <div class="family-card" data-family="nguyens"
+         data-layers='[
+           "linear-gradient(145deg,#3a0a28 0%,#8c2060 45%,#c84080 100%)",
+           "linear-gradient(160deg,#480c30 0%,#a02870 50%,#d84e8c 100%)",
+           "linear-gradient(130deg,#2c0820 0%,#781848 45%,#b03070 100%)"
+         ]'
+         data-name="The Nguyens"
+         data-caption="Holiday Season">
+    </div>
+
+    <!-- 4. The Patels — blush/rose -->
+    <div class="family-card" data-family="patels"
+         data-layers='[
+           "linear-gradient(145deg,#8a3050 0%,#cc7090 45%,#f0b4c4 100%)",
+           "linear-gradient(160deg,#963858 0%,#d87898 50%,#f5bece 100%)",
+           "linear-gradient(130deg,#7a2848 0%,#bc6488 45%,#e8a8b8 100%)"
+         ]'
+         data-name="The Patels"
+         data-caption="Anniversary">
+    </div>
+
+  </div>
+
+  <!-- Section 2: Detail card -->
+  <p class="section-label">Single Card — Detail View</p>
+  <div class="detail-section">
+    <div class="detail-card-wrap">
+      <div class="family-card" id="detailCard"
+           data-layers='[
+             "linear-gradient(145deg,#7a3a0a 0%,#c97a2a 40%,#f5c84e 100%)",
+             "linear-gradient(160deg,#8a4210 0%,#e0923a 50%,#fad870 100%)",
+             "linear-gradient(130deg,#6a3008 0%,#b56828 45%,#eab840 100%)"
+           ]'
+           data-name="The Johnsons"
+           data-caption="Summer 2024">
+      </div>
+    </div>
+    <p class="hover-hint">Hover to pause crossfade</p>
+  </div>
+
+  <!-- Section 3: Controls -->
+  <p class="section-label">Controls</p>
+  <div class="controls-panel">
+
+    <div class="ctrl-group">
+      <div class="ctrl-label">Speed</div>
+      <div class="ctrl-row">
+        <input type="range" id="speedSlider" min="1000" max="8000" step="100" value="4200">
+        <span class="ctrl-value" id="speedValue">4.2s</span>
+      </div>
+    </div>
+
+    <div class="ctrl-group">
+      <div class="ctrl-label">Ken Burns</div>
+      <label class="toggle-wrap" id="kbToggle">
+        <div class="toggle-track on" id="kbTrack">
+          <div class="toggle-knob"></div>
+        </div>
+        <span class="toggle-label-text">Enabled</span>
+      </label>
+    </div>
+
+    <div class="ctrl-group">
+      <div class="ctrl-label">Crossfade</div>
+      <label class="toggle-wrap" id="cfToggle">
+        <div class="toggle-track on" id="cfTrack">
+          <div class="toggle-knob"></div>
+        </div>
+        <span class="toggle-label-text">Enabled</span>
+      </label>
+    </div>
+
+  </div>
+
+</div><!-- /page -->
+
+<script>
+/* ================================================================
+   FAMILY CARD ENGINE
+================================================================ */
+
+const state = {
+  intervalMs: 4200,
+  kenBurns:   true,
+  crossfade:  true,
+};
+
+const cardInstances = [];
+
+function rand(min, max) { return min + Math.random() * (max - min); }
+
+/* ----------------------------------------------------------------
+   buildCard(el)
+   Reads data-layers, injects photo divs + overlay + dots,
+   wires GSAP Ken Burns & crossfade interval.
+   Returns an instance with pause / resume / rebuildTimers / resetKenBurns.
+---------------------------------------------------------------- */
+function buildCard(el) {
+  const layers  = JSON.parse(el.dataset.layers);
+  const name    = el.dataset.name    || '';
+  const caption = el.dataset.caption || '';
+
+  // Build inner DOM
+  const photoShow = document.createElement('div');
+  photoShow.className = 'photo-show';
+
+  const layerEls = layers.map((bg, i) => {
+    const div = document.createElement('div');
+    div.className = 'photo-layer';
+    div.style.background = bg;
+    if (i > 0) div.style.opacity = '0';
+    photoShow.appendChild(div);
+    return div;
+  });
+
+  // Dots
+  const dotsEl = document.createElement('div');
+  dotsEl.className = 'photo-dots';
+  const dotEls = layers.map((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'photo-dot' + (i === 0 ? ' active' : '');
+    dotsEl.appendChild(d);
+    return d;
+  });
+
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'family-overlay';
+  overlay.innerHTML = `<div class="family-name">${name}</div><div class="family-caption">${caption}</div>`;
+
+  el.appendChild(photoShow);
+  el.appendChild(dotsEl);
+  el.appendChild(overlay);
+
+  let currentIdx = 0;
+  let intervalId = null;
+  let kbTweens   = [];
+  let paused     = false;
+
+  // ── Ken Burns ─────────────────────────────────────────────────
+  function startKenBurns(layerEl) {
+    // Kill any existing tween on this element
+    gsap.killTweensOf(layerEl, 'scale,x,y');
+
+    if (!state.kenBurns) {
+      gsap.set(layerEl, { scale: 1, x: 0, y: 0 });
+      return;
+    }
+
+    gsap.fromTo(layerEl,
+      { scale: 1, x: 0, y: 0 },
+      {
+        scale: 1.08 + rand(0, 0.06),
+        x:     rand(-10, 10),
+        y:     rand(-7, 7),
+        duration: 6,
+        ease: 'none',
+      }
+    );
+  }
+
+  // ── Update dots ───────────────────────────────────────────────
+  function updateDots(idx) {
+    dotEls.forEach((d, i) => d.classList.toggle('active', i === idx));
+  }
+
+  // ── Advance ───────────────────────────────────────────────────
+  function advance() {
+    if (!state.crossfade) return;
+
+    const prevIdx = currentIdx;
+    currentIdx    = (currentIdx + 1) % layerEls.length;
+    const prev    = layerEls[prevIdx];
+    const next    = layerEls[currentIdx];
+
+    gsap.set(next, { scale: 1, x: 0, y: 0, opacity: 0 });
+    gsap.to(next, { opacity: 1, duration: 1.1, ease: 'power1.inOut' });
+    gsap.to(prev, { opacity: 0, duration: 1.1, ease: 'power1.inOut' });
+
+    startKenBurns(next);
+    updateDots(currentIdx);
+  }
+
+  // ── Timer ─────────────────────────────────────────────────────
+  function startInterval() {
+    if (intervalId) clearInterval(intervalId);
+    if (!state.crossfade) return;
+    intervalId = setInterval(() => {
+      if (!paused) advance();
+    }, state.intervalMs);
+  }
+
+  function stopInterval() {
+    if (intervalId) { clearInterval(intervalId); intervalId = null; }
+  }
+
+  // ── Kick-start ────────────────────────────────────────────────
+  startKenBurns(layerEls[0]);
+  startInterval();
+
+  // ── Public API ────────────────────────────────────────────────
+  return {
+    el,
+    pause()  { paused = true;  },
+    resume() { paused = false; },
+    rebuildTimers() { startInterval(); },
+    resetKenBurns() {
+      // Apply/remove Ken Burns from whichever layer is currently visible
+      layerEls.forEach((l, i) => {
+        if (!state.kenBurns) {
+          gsap.killTweensOf(l, 'scale,x,y');
+          gsap.set(l, { scale: 1, x: 0, y: 0 });
+        } else if (i === currentIdx) {
+          startKenBurns(l);
+        }
+      });
+    },
+  };
+}
+
+/* ================================================================
+   INIT
+================================================================ */
+document.querySelectorAll('.family-card').forEach(el => {
+  cardInstances.push(buildCard(el));
+});
+
+/* ================================================================
+   DETAIL CARD — hover pause
+================================================================ */
+const detailCard = document.getElementById('detailCard');
+const detailInst = cardInstances.find(i => i.el === detailCard);
+
+detailCard.addEventListener('mouseenter', () => {
+  if (detailInst) detailInst.pause();
+  detailCard.style.outline = '2px solid rgba(41,151,255,0.45)';
+  detailCard.style.outlineOffset = '3px';
+});
+detailCard.addEventListener('mouseleave', () => {
+  if (detailInst) detailInst.resume();
+  detailCard.style.outline = '';
+  detailCard.style.outlineOffset = '';
+});
+
+/* ================================================================
+   CONTROLS
+================================================================ */
+
+// Speed
+const speedSlider = document.getElementById('speedSlider');
+const speedValue  = document.getElementById('speedValue');
+speedSlider.addEventListener('input', () => {
+  state.intervalMs = parseInt(speedSlider.value, 10);
+  speedValue.textContent = (state.intervalMs / 1000).toFixed(1) + 's';
+  cardInstances.forEach(i => i.rebuildTimers());
+});
+
+// Ken Burns
+const kbTrack = document.getElementById('kbTrack');
+document.getElementById('kbToggle').addEventListener('click', () => {
+  state.kenBurns = !state.kenBurns;
+  kbTrack.classList.toggle('on', state.kenBurns);
+  kbTrack.nextElementSibling.textContent = state.kenBurns ? 'Enabled' : 'Disabled';
+  cardInstances.forEach(i => i.resetKenBurns());
+});
+
+// Crossfade
+const cfTrack = document.getElementById('cfTrack');
+document.getElementById('cfToggle').addEventListener('click', () => {
+  state.crossfade = !state.crossfade;
+  cfTrack.classList.toggle('on', state.crossfade);
+  cfTrack.nextElementSibling.textContent = state.crossfade ? 'Enabled' : 'Disabled';
+  cardInstances.forEach(i => i.rebuildTimers());
+});
+</script>
+</body>
+</html>

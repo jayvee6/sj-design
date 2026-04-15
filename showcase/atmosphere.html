@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atmospheric FX — sj-design showcase</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-0:      #0a0a0f;
+      --bg-1:      #111118;
+      --label-1:   #f5f5f7;
+      --label-2:   #8e8e93;
+      --accent:    #2997ff;
+      --glass-bg:  rgba(255,255,255,0.06);
+      --glass-bdr: rgba(255,255,255,0.10);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg-0);
+      font-family: var(--font);
+      color: var(--label-1);
+      overflow: hidden;
+    }
+
+    /* ── Atmosphere layers ─────────────────────────────── */
+    #layer-gobo    { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    #layer-star    { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    #layer-bokeh   { position: fixed; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+    #layer-fog     { position: fixed; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+    #layer-grain   { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+
+    /* ── Central card ──────────────────────────────────── */
+    #stage {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .hero-card {
+      width: min(500px, 88vw);
+      padding: 40px 48px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-bdr);
+      border-radius: 24px;
+      box-shadow:
+        0 20px 80px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.14),
+        inset 1px 0 0 rgba(41,151,255,0.10),
+        inset 0 -1px 0 rgba(0,0,0,0.08);
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+    }
+
+    /* Specular highlight */
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(ellipse 80% 40% at 40% 18%,
+        rgba(255,255,255,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Edge refraction rim */
+    .hero-card::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 25px;
+      background: linear-gradient(135deg,
+        rgba(255,255,255,0.18) 0%,
+        transparent 40%,
+        transparent 60%,
+        rgba(41,151,255,0.12) 100%);
+      pointer-events: none;
+    }
+
+    .hero-card h1 {
+      font-size: clamp(24px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -0.028em;
+      color: var(--label-1);
+      position: relative;
+      z-index: 1;
+      margin-bottom: 10px;
+    }
+
+    .hero-card p {
+      font-size: clamp(12px, 1.6vw, 16px);
+      color: var(--label-2);
+      letter-spacing: 0.04em;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-card .accent-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin: 0 4px;
+      vertical-align: middle;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* ── Controls panel ────────────────────────────────── */
+    #controls {
+      position: fixed;
+      top: 50%;
+      right: 24px;
+      transform: translateY(-50%);
+      z-index: 100;
+      width: 260px;
+      background: rgba(17,17,24,0.85);
+      border: 1px solid var(--glass-bdr);
+      border-radius: 18px;
+      padding: 20px;
+      backdrop-filter: blur(24px) saturate(150%);
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      box-shadow: 0 16px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      max-height: 92vh;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    #controls::-webkit-scrollbar { display: none; }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--label-2);
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .fx-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .fx-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .fx-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--label-1);
+    }
+
+    /* Toggle pill */
+    .toggle {
+      position: relative;
+      width: 38px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 11px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.10);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .toggle input:checked + .toggle-track {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s cubic-bezier(0.16,1,0.3,1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .toggle input:checked + .toggle-track::after {
+      transform: translateX(16px);
+    }
+
+    /* Sliders */
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .slider-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--label-2);
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.14);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(41,151,255,0.5);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      box-shadow: 0 0 6px rgba(41,151,255,0.5);
+    }
+
+    /* Back link */
+    #back {
+      position: fixed;
+      top: 18px;
+      left: 20px;
+      z-index: 110;
+      font-size: 13px;
+      color: var(--label-2);
+      text-decoration: none;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--glass-bdr);
+      border-radius: 8px;
+      padding: 6px 12px;
+      transition: background 0.15s, color 0.15s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    #back:hover { background: rgba(255,255,255,0.12); color: var(--label-1); }
+
+    /* Divider */
+    .panel-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.07);
+      margin: -4px 0;
+    }
+
+    /* Fog layer base style */
+    .fog-band {
+      position: absolute;
+      bottom: -10%;
+      left: -20%;
+      width: 140%;
+      height: 45%;
+      background: radial-gradient(ellipse at 50% 100%,
+        rgba(160,180,220,0.18) 0%,
+        rgba(120,140,190,0.10) 40%,
+        transparent 75%);
+      transform-origin: bottom center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- SVG grain filter (hidden) -->
+<svg style="position:fixed;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <defs>
+    <filter id="grain-f" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence id="grain-turb" type="turbulence" baseFrequency="0.65"
+        numOctaves="3" seed="0" stitchTiles="stitch" result="n"/>
+      <feColorMatrix type="saturate" values="0" in="n"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- Atmosphere layers -->
+<div id="layer-gobo" aria-hidden="true"></div>
+<div id="layer-star" aria-hidden="true"></div>
+<div id="layer-bokeh" aria-hidden="true"></div>
+<div id="layer-fog" aria-hidden="true">
+  <div class="fog-band" id="fog-band-1"></div>
+  <div class="fog-band" id="fog-band-2" style="bottom:-15%;opacity:0.7;height:38%"></div>
+</div>
+<div id="layer-grain" aria-hidden="true"></div>
+
+<!-- Stage (central hero card) -->
+<div id="stage">
+  <div class="hero-card">
+    <h1>Atmospheric FX</h1>
+    <p>Perlin noise<span class="accent-dot"></span>Bokeh<span class="accent-dot"></span>Fog<span class="accent-dot"></span>Grain<span class="accent-dot"></span>Glass</p>
+  </div>
+</div>
+
+<!-- Back link -->
+<a href="index.html" id="back">← Back</a>
+
+<!-- Controls -->
+<div id="controls">
+  <div class="panel-title">Atmospheric Effects</div>
+
+  <!-- Starfield -->
+  <div class="fx-row" id="fx-star">
+    <div class="fx-header">
+      <span class="fx-label">✦ Starfield</span>
+      <label class="toggle"><input type="checkbox" id="tog-star" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="slider-row">
+      <div class="slider-meta"><span>Star count</span><span id="val-stars">120</span></div>
+      <input type="range" id="sl-stars" min="20" max="300" value="120">
+    </div>
+  </div>
+
+  <div class="panel-divider"></div>
+
+  <!-- Bokeh -->
+  <div class="fx-row" id="fx-bokeh">
+    <div class="fx-header">
+      <span class="fx-label">◎ Bokeh</span>
+      <label class="toggle"><input type="checkbox" id="tog-bokeh" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="slider-row">
+      <div class="slider-meta"><span>Count</span><span id="val-bokeh-count">10</span></div>
+      <input type="range" id="sl-bokeh-count" min="4" max="20" value="10">
+    </div>
+    <div class="slider-row">
+      <div class="slider-meta"><span>Blur</span><span id="val-bokeh-blur">40px</span></div>
+      <input type="range" id="sl-bokeh-blur" min="20" max="80" value="40">
+    </div>
+  </div>
+
+  <div class="panel-divider"></div>
+
+  <!-- Gobos -->
+  <div class="fx-row" id="fx-gobo">
+    <div class="fx-header">
+      <span class="fx-label">⬡ Gobos (Perlin blobs)</span>
+      <label class="toggle"><input type="checkbox" id="tog-gobo" checked><span class="toggle-track"></span></label>
+    </div>
+  </div>
+
+  <div class="panel-divider"></div>
+
+  <!-- Fog -->
+  <div class="fx-row" id="fx-fog">
+    <div class="fx-header">
+      <span class="fx-label">~ Fog</span>
+      <label class="toggle"><input type="checkbox" id="tog-fog" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="slider-row">
+      <div class="slider-meta"><span>Opacity</span><span id="val-fog">28%</span></div>
+      <input type="range" id="sl-fog" min="0" max="60" value="28">
+    </div>
+  </div>
+
+  <div class="panel-divider"></div>
+
+  <!-- Grain -->
+  <div class="fx-row" id="fx-grain">
+    <div class="fx-header">
+      <span class="fx-label">⠿ Film Grain</span>
+      <label class="toggle"><input type="checkbox" id="tog-grain" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="slider-row">
+      <div class="slider-meta"><span>Intensity</span><span id="val-grain">7%</span></div>
+      <input type="range" id="sl-grain" min="0" max="20" value="7">
+    </div>
+  </div>
+
+  <div class="panel-divider"></div>
+
+  <!-- Liquid Glass -->
+  <div class="fx-row">
+    <div class="fx-header">
+      <span class="fx-label">◈ Liquid Glass</span>
+      <label class="toggle"><input type="checkbox" id="tog-glass" checked><span class="toggle-track"></span></label>
+    </div>
+    <div style="font-size:11px;color:var(--label-2);line-height:1.5;margin-top:2px;">
+      backdrop-filter blur · specular ::before · edge refraction ::after · inset border glow
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Perlin noise (2D gradient noise, self-contained) ─────────────
+  const _p = new Uint8Array(512);
+  (function () {
+    const t = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) t[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [t[i], t[j]] = [t[j], t[i]];
+    }
+    _p.set(t); _p.set(t, 256);
+  }());
+
+  function _fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function _lerp(a, b, t) { return a + t * (b - a); }
+  function _grad(h, x, y) {
+    const v = h & 3;
+    return v === 0 ? x + y : v === 1 ? -x + y : v === 2 ? x - y : -x - y;
+  }
+  function pnoise(x, y) {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    x -= Math.floor(x); y -= Math.floor(y);
+    const u = _fade(x), v = _fade(y);
+    const a = _p[X] + Y, b = _p[X + 1] + Y;
+    return _lerp(
+      _lerp(_grad(_p[a],     x,     y),   _grad(_p[b],     x - 1, y),   u),
+      _lerp(_grad(_p[a + 1], x,     y - 1), _grad(_p[b + 1], x - 1, y - 1), u), v);
+  }
+
+  // ── State ─────────────────────────────────────────────────────────
+  const state = {
+    star:  { on: true, count: 120 },
+    bokeh: { on: true, count: 10, blur: 40 },
+    gobo:  { on: true },
+    fog:   { on: true, opacity: 0.28 },
+    grain: { on: true, intensity: 0.07 },
+    glass: { on: true },
+  };
+
+  // ── Gobos ─────────────────────────────────────────────────────────
+  const goboLayer = document.getElementById('layer-gobo');
+  const GOBO_CFG = [
+    { color: 'rgba(10,132,255,0.22)',   sz: 58, blur: 130, range: 22 },
+    { color: 'rgba(88,86,214,0.17)',    sz: 48, blur: 110, range: 18 },
+    { color: 'rgba(0,199,190,0.13)',    sz: 42, blur: 100, range: 24 },
+    { color: 'rgba(41,151,255,0.10)',   sz: 36, blur:  90, range: 20 },
+  ];
+  const blobs = GOBO_CFG.map(({ color, sz, blur, range }) => {
+    const el = document.createElement('div');
+    Object.assign(el.style, {
+      position: 'fixed', width: sz + 'vw', height: sz + 'vw',
+      borderRadius: '50%',
+      background: `radial-gradient(circle, ${color}, transparent 70%)`,
+      filter: `blur(${blur}px)`,
+      pointerEvents: 'none', willChange: 'transform',
+      top: '0', left: '0',
+    });
+    goboLayer.appendChild(el);
+    return {
+      el,
+      ox: Math.random() * 100, oy: Math.random() * 100,
+      cx: 15 + Math.random() * 70, cy: 15 + Math.random() * 70,
+      range,
+    };
+  });
+
+  gsap.ticker.add(time => {
+    if (!state.gobo.on) return;
+    const t = time * 0.038;
+    blobs.forEach(({ el, ox, oy, cx, cy, range }) => {
+      const px = cx + pnoise(t + ox, oy) * range;
+      const py = cy + pnoise(ox, t + oy * 1.3) * range;
+      gsap.set(el, { x: px + 'vw', y: py + 'vh', xPercent: -50, yPercent: -50 });
+    });
+  });
+
+  // ── Starfield ─────────────────────────────────────────────────────
+  const starLayer = document.getElementById('layer-star');
+  let starEls = [];
+  let starTweens = [];
+
+  function buildStars(count) {
+    starTweens.forEach(t => t.kill());
+    starEls.forEach(e => e.remove());
+    starEls = []; starTweens = [];
+
+    for (let i = 0; i < count; i++) {
+      const el  = document.createElement('div');
+      const sz  = 1 + Math.random() * 2.2;
+      const op  = 0.18 + Math.random() * 0.52;
+      Object.assign(el.style, {
+        position: 'absolute',
+        width: sz + 'px', height: sz + 'px',
+        borderRadius: '50%', background: '#ffffff',
+        left: Math.random() * 100 + '%',
+        top:  Math.random() * 100 + '%',
+        opacity: op,
+      });
+      starLayer.appendChild(el);
+      starEls.push(el);
+      starTweens.push(gsap.to(el, {
+        opacity: op * (0.15 + Math.random() * 0.65),
+        duration: 1.8 + Math.random() * 4.5,
+        repeat: -1, yoyo: true, ease: 'sine.inOut',
+        delay: Math.random() * 6,
+      }));
+    }
+  }
+  buildStars(state.star.count);
+
+  // ── Bokeh ─────────────────────────────────────────────────────────
+  const bokehLayer = document.getElementById('layer-bokeh');
+  const BOKEH_COLORS = [
+    'rgba(10,132,255,0.85)', 'rgba(88,86,214,0.75)',
+    'rgba(0,199,190,0.65)', 'rgba(255,255,255,0.55)', 'rgba(255,159,10,0.55)',
+  ];
+  let bokehEls = [];
+  let bokehTweens = [];
+
+  function buildBokeh(count, blurPx) {
+    bokehTweens.forEach(t => t.kill());
+    bokehEls.forEach(e => e.remove());
+    bokehEls = []; bokehTweens = [];
+
+    for (let i = 0; i < count; i++) {
+      const color = BOKEH_COLORS[Math.floor(Math.random() * BOKEH_COLORS.length)];
+      const sz  = 60 + Math.random() * 120;
+      const op  = 0.04 + Math.random() * 0.07;
+      const el  = document.createElement('div');
+      Object.assign(el.style, {
+        position: 'absolute',
+        width: sz + 'px', height: sz + 'px',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${color}, transparent 68%)`,
+        filter: `blur(${blurPx}px)`,
+        left: Math.random() * 100 + '%',
+        top:  Math.random() * 100 + '%',
+        opacity: op,
+        pointerEvents: 'none',
+        willChange: 'transform, opacity',
+      });
+      bokehLayer.appendChild(el);
+      bokehEls.push(el);
+      bokehTweens.push(gsap.to(el, {
+        x: (Math.random() - 0.5) * 220,
+        y: (Math.random() - 0.5) * 180,
+        opacity: op * (0.35 + Math.random() * 1.1),
+        duration: 9 + Math.random() * 16,
+        repeat: -1, yoyo: true, ease: 'sine.inOut',
+        delay: Math.random() * 9,
+      }));
+    }
+  }
+  buildBokeh(state.bokeh.count, state.bokeh.blur);
+
+  // ── Fog ───────────────────────────────────────────────────────────
+  const fogLayer   = document.getElementById('layer-fog');
+  const fogBand1   = document.getElementById('fog-band-1');
+  const fogBand2   = document.getElementById('fog-band-2');
+
+  gsap.to(fogBand1, { x: '8%', duration: 18, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to(fogBand2, { x: '-6%', duration: 22, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 4 });
+
+  function applyFogOpacity(val) {
+    gsap.set(fogLayer, { opacity: val });
+  }
+  applyFogOpacity(state.fog.opacity);
+
+  // ── Grain ─────────────────────────────────────────────────────────
+  const grainLayer = document.getElementById('layer-grain');
+  const grainSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  Object.assign(grainSVG.style, {
+    position: 'fixed', inset: '0', width: '100%', height: '100%',
+    opacity: String(state.grain.intensity), pointerEvents: 'none',
+  });
+  grainSVG.innerHTML = `
+    <rect width="100%" height="100%" filter="url(#grain-f)"/>`;
+  grainLayer.appendChild(grainSVG);
+
+  const grainTurb = document.getElementById('grain-turb');
+  let grainSeed = 0;
+  let grainInterval = setInterval(() => {
+    grainTurb.setAttribute('seed', (grainSeed = (grainSeed + 1) % 9999));
+  }, 83);
+
+  // ── Glass card ────────────────────────────────────────────────────
+  const heroCard = document.querySelector('.hero-card');
+
+  // ── Controls wiring ───────────────────────────────────────────────
+
+  // Starfield
+  document.getElementById('tog-star').addEventListener('change', e => {
+    state.star.on = e.target.checked;
+    gsap.to(starLayer, { opacity: state.star.on ? 1 : 0, duration: 0.5 });
+  });
+
+  const slStars = document.getElementById('sl-stars');
+  slStars.addEventListener('input', () => {
+    const v = parseInt(slStars.value);
+    document.getElementById('val-stars').textContent = v;
+    state.star.count = v;
+    buildStars(v);
+    if (!state.star.on) gsap.set(starLayer, { opacity: 0 });
+  });
+
+  // Bokeh
+  document.getElementById('tog-bokeh').addEventListener('change', e => {
+    state.bokeh.on = e.target.checked;
+    gsap.to(bokehLayer, { opacity: state.bokeh.on ? 1 : 0, duration: 0.5 });
+  });
+
+  const slBokehCount = document.getElementById('sl-bokeh-count');
+  slBokehCount.addEventListener('input', () => {
+    const v = parseInt(slBokehCount.value);
+    document.getElementById('val-bokeh-count').textContent = v;
+    state.bokeh.count = v;
+    buildBokeh(v, state.bokeh.blur);
+    if (!state.bokeh.on) gsap.set(bokehLayer, { opacity: 0 });
+  });
+
+  const slBokehBlur = document.getElementById('sl-bokeh-blur');
+  slBokehBlur.addEventListener('input', () => {
+    const v = parseInt(slBokehBlur.value);
+    document.getElementById('val-bokeh-blur').textContent = v + 'px';
+    state.bokeh.blur = v;
+    buildBokeh(state.bokeh.count, v);
+    if (!state.bokeh.on) gsap.set(bokehLayer, { opacity: 0 });
+  });
+
+  // Gobos
+  document.getElementById('tog-gobo').addEventListener('change', e => {
+    state.gobo.on = e.target.checked;
+    gsap.to(goboLayer, { opacity: state.gobo.on ? 1 : 0, duration: 0.5 });
+  });
+
+  // Fog
+  document.getElementById('tog-fog').addEventListener('change', e => {
+    state.fog.on = e.target.checked;
+    gsap.to(fogLayer, { opacity: state.fog.on ? state.fog.opacity : 0, duration: 0.6 });
+  });
+
+  const slFog = document.getElementById('sl-fog');
+  slFog.addEventListener('input', () => {
+    const pct = parseInt(slFog.value);
+    document.getElementById('val-fog').textContent = pct + '%';
+    state.fog.opacity = pct / 100;
+    if (state.fog.on) applyFogOpacity(state.fog.opacity);
+  });
+
+  // Grain
+  document.getElementById('tog-grain').addEventListener('change', e => {
+    state.grain.on = e.target.checked;
+    gsap.to(grainSVG, { opacity: state.grain.on ? state.grain.intensity : 0, duration: 0.4 });
+  });
+
+  const slGrain = document.getElementById('sl-grain');
+  slGrain.addEventListener('input', () => {
+    const pct = parseInt(slGrain.value);
+    document.getElementById('val-grain').textContent = pct + '%';
+    state.grain.intensity = pct / 100;
+    if (state.grain.on) gsap.set(grainSVG, { opacity: state.grain.intensity });
+  });
+
+  // Glass
+  document.getElementById('tog-glass').addEventListener('change', e => {
+    state.glass.on = e.target.checked;
+    if (state.glass.on) {
+      heroCard.style.backdropFilter = 'blur(20px) saturate(160%)';
+      heroCard.style.webkitBackdropFilter = 'blur(20px) saturate(160%)';
+      heroCard.style.background = 'var(--glass-bg)';
+    } else {
+      heroCard.style.backdropFilter = 'none';
+      heroCard.style.webkitBackdropFilter = 'none';
+      heroCard.style.background = 'rgba(17,17,24,0.92)';
+    }
+  });
+
+}());
+</script>
+</body>
+</html>
