@@ -9,14 +9,60 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
+    /* ─── Retro Apple fonts ──────────────────────────────────────── */
+    @font-face {
+      font-family: "ChicagoKare";
+      src: url("../../fonts/ChicagoKare-Regular.woff2") format("woff2");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Geneva-12";
+      src: url("../../fonts/geneva-12.woff2") format("woff2");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Monaco";
+      src: url("../../fonts/monacottf.woff2") format("woff2");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "LucidaGrande";
+      src: url("../../fonts/LucidaGrande.woff2") format("woff2");
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "LucidaGrande";
+      src: url("../../fonts/LucidaGrande-Bold.woff2") format("woff2");
+      font-weight: 700;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "AppleGaramond";
+      src: url("../../fonts/AppleGaramond.woff2") format("woff2");
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "AppleGaramond";
+      src: url("../../fonts/AppleGaramond-Light.woff2") format("woff2");
+      font-weight: 300;
+      font-display: swap;
+    }
+
     /* ─── Reset ──────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     /* ─── Design tokens ──────────────────────────────────────────── */
     :root {
-      --font:        -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-                     "Helvetica Neue", Arial, sans-serif;
-      --font-serif:  Georgia, "Times New Roman", serif;
+      --font:         -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                      "Helvetica Neue", Arial, sans-serif;
+      --font-serif:   Georgia, "Times New Roman", serif;
+      --font-chicago: "ChicagoKare", system-ui, sans-serif;
+      --font-geneva:  "Geneva-12", system-ui, sans-serif;
+      --font-lucida:  "LucidaGrande", "Lucida Grande", system-ui, sans-serif;
+      --font-garamond:"AppleGaramond", Georgia, serif;
+      --font-monaco:  "Monaco", "Menlo", monospace;
 
       /* Dark — Blue Hour: deep indigo night sky */
       --bg:          #060618;
