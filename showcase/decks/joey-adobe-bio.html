@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joey Villarreal · Adobe RenderTech</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font:        -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+
+      /* Initial: green (slide 0) — JS updates these per slide */
+      --accent:      #61bb46;
+      --accent-glow: rgba(97,187,70,0.40);
+      --label-1:     #ffffff;
+      --label-2:     rgba(255,255,255,0.58);
+      --label-3:     rgba(255,255,255,0.28);
+      --glass-bg:    rgba(255,255,255,0.07);
+      --glass-bdr:   rgba(255,255,255,0.14);
+      --fill-1:      rgba(255,255,255,0.04);
+      --sep:         rgba(255,255,255,0.10);
+    }
+
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    html { transition: background 0.7s cubic-bezier(0.16,1,0.3,1); }
+
+    body {
+      font-family: var(--font);
+      background: radial-gradient(ellipse at 38% 25%, #3d8a2a 0%, #204a18 28%, #102810 56%, #050c04 100%);
+      color: var(--label-1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: background 0.65s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    /* ── Atmosphere layers ─────────────────────────────────────────── */
+    #gobo-layer, #starfield, #bokeh-layer {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    #gobo-layer { overflow: visible; contain: layout style; }
+    #starfield, #bokeh-layer { contain: strict; }
+
+    /* ── Deck ──────────────────────────────────────────────────────── */
+    #deck {
+      position: relative;
+      z-index: 9;
+      width:  min(100vw, 177.78vh);
+      height: min(100vh, 56.25vw);
+      overflow: hidden;
+      perspective: 1400px;
+      perspective-origin: 50% 38%;
+    }
+
+    /* ── Slides ────────────────────────────────────────────────────── */
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: clamp(32px, 5.5%, 80px) clamp(48px, 8%, 120px);
+      opacity: 0; pointer-events: none;
+      will-change: opacity, transform;
+    }
+    .slide.active { opacity: 1; pointer-events: auto; }
+
+    .slide-inner {
+      width: 100%; max-width: 1080px; max-height: 100%;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      gap: clamp(12px, 1.8vw, 28px);
+    }
+    .slide-inner--center { align-items: center; text-align: center; }
+
+    /* ── Typography ────────────────────────────────────────────────── */
+    .eyebrow {
+      font-size:      clamp(11px, 1.1vw, 16px);
+      font-weight:    600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color:          var(--accent);
+      transition:     color 0.5s ease;
+    }
+
+    .headline {
+      font-size:      clamp(28px, 5.2vw, 76px);
+      font-weight:    700;
+      line-height:    1.02;
+      letter-spacing: -0.03em;
+      color:          var(--label-1);
+    }
+
+    .slide-title .headline {
+      font-size:      clamp(42px, 7.5vw, 110px);
+      font-weight:    800;
+      letter-spacing: -0.04em;
+      line-height:    0.96;
+    }
+
+    .closing-headline {
+      font-size:      clamp(36px, 6.5vw, 96px);
+      font-weight:    800;
+      letter-spacing: -0.04em;
+      line-height:    1.0;
+    }
+
+    .subheading {
+      font-family: var(--font);
+      font-size:   clamp(15px, 1.8vw, 26px);
+      font-weight: 300;
+      line-height: 1.5;
+      color:       var(--label-2);
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Bullets ────────────────────────────────────────────────────── */
+    .bullets { list-style: none; display: flex; flex-direction: column; gap: clamp(9px, 1.2vw, 18px); }
+
+    .bullets li {
+      font-family:  var(--font);
+      font-size:    clamp(14px, 1.8vw, 26px);
+      font-weight:  400;
+      line-height:  1.5;
+      color:        var(--label-1);
+      padding-left: clamp(16px, 1.6vw, 24px);
+      position:     relative;
+    }
+    .bullets li::before {
+      content: ''; position: absolute; left: 0; top: 0.68em;
+      width: clamp(4px, 0.4vw, 6px); height: clamp(4px, 0.4vw, 6px);
+      border-radius: 50%; background: var(--accent);
+      transition: background 0.5s ease;
+    }
+
+    .slide-note {
+      font-size:  clamp(11px, 1vw, 15px);
+      color:      var(--label-3);
+      margin-top: clamp(2px, 0.3vw, 6px);
+    }
+
+    /* ── Two-column ────────────────────────────────────────────────── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(14px, 2vw, 36px);
+    }
+    .slide-two-column { align-items: flex-start; }
+    .slide-two-column .bullets li { font-size: clamp(12px, 1.25vw, 18px); }
+
+    .col {
+      display: flex; flex-direction: column;
+      gap: clamp(6px, 0.7vw, 10px);
+      padding: clamp(16px, 2vw, 32px);
+      background: var(--glass-bg);
+      backdrop-filter: url(#lg-refract) blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-radius: clamp(12px, 1.4vw, 20px);
+      border: 1px solid var(--glass-bdr);
+      box-shadow:
+        inset 0 1.5px 0 rgba(255,255,255,0.38),
+        inset 1px 0 0 rgba(255,255,255,0.08),
+        inset -1px 0 0 rgba(255,255,255,0.04),
+        inset 0 -1.5px 0 rgba(0,0,0,0.18),
+        0 10px 40px rgba(0,0,0,0.45),
+        0 1px 2px rgba(0,0,0,0.22);
+      transition: border-color 0.5s ease, box-shadow 0.3s ease;
+    }
+    .col:hover {
+      box-shadow:
+        inset 0 1.5px 0 rgba(255,255,255,0.52),
+        inset 1px 0 0 rgba(255,255,255,0.14),
+        inset -1px 0 0 rgba(255,255,255,0.08),
+        inset 0 -1.5px 0 rgba(0,0,0,0.18),
+        0 18px 50px rgba(0,0,0,0.52),
+        0 3px 8px rgba(0,0,0,0.22);
+    }
+
+    .col-title {
+      font-size:      clamp(12px, 1.2vw, 18px);
+      font-weight:    600;
+      color:          var(--accent);
+      letter-spacing: 0.02em;
+      padding-bottom: clamp(4px, 0.5vw, 8px);
+      border-bottom:  1px solid var(--sep);
+      margin-bottom:  clamp(2px, 0.3vw, 4px);
+      transition:     color 0.5s ease;
+    }
+    .col-text {
+      font-family: var(--font);
+      font-size:   clamp(11px, 1.05vw, 15px);
+      line-height: 1.6;
+      color:       var(--label-2);
+    }
+
+    /* ── Stats bento ───────────────────────────────────────────────── */
+    .slide-stats .slide-inner {
+      gap: clamp(8px, 1vw, 16px);
+      justify-content: flex-start;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(8px, 1vw, 14px);
+      width: 100%;
+    }
+    .stats-grid--3 { grid-template-columns: repeat(3, 1fr); }
+
+    .stat-card {
+      display: flex; flex-direction: column; justify-content: flex-end;
+      gap: clamp(4px, 0.4vw, 6px);
+      padding: clamp(16px, 2vw, 28px);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-bdr);
+      border-radius: clamp(12px, 1.4vw, 20px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.12);
+      min-width: 0;
+      transition: border-color 0.5s ease;
+    }
+    .stat-card.span-2 { grid-column: span 2; }
+
+    .stat-label {
+      font-family:    var(--font);
+      font-size:      clamp(12px, 1.1vw, 16px);
+      font-weight:    600;
+      color:          var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition:     color 0.5s ease;
+    }
+    .stat-value {
+      font-size:      clamp(22px, 3.5vw, 52px);
+      font-weight:    700;
+      color:          var(--accent);
+      letter-spacing: -0.02em;
+      line-height:    1;
+      transition:     color 0.5s ease;
+    }
+    .stat-card.span-2 .stat-value { font-size: clamp(32px, 5.5vw, 80px); }
+    .stat-body {
+      font-family: var(--font);
+      font-size:   clamp(11px, 1.1vw, 16px);
+      font-weight: 400;
+      color:       var(--label-1);
+      line-height: 1.45;
+      margin-top:  clamp(2px, 0.3vw, 6px);
+    }
+    .stat-sublabel {
+      font-family: var(--font);
+      font-size:   clamp(9px, 0.8vw, 12px);
+      color:       var(--label-2);
+    }
+
+    /* ── Closing ───────────────────────────────────────────────────── */
+    .cta {
+      font-size:    clamp(16px, 1.8vw, 26px);
+      font-weight:  300;
+      color:        var(--label-2);
+      transition:   color 0.5s ease;
+      letter-spacing: 0.01em;
+    }
+    .contact {
+      font-family: var(--font);
+      font-size:   clamp(11px, 1vw, 15px);
+      color:       var(--label-3);
+    }
+
+    /* ── Progress bar ──────────────────────────────────────────────── */
+    #progress {
+      position: fixed; bottom: 0; left: 0;
+      height: 2px; width: 0%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+      transition: width 0.5s cubic-bezier(0.16,1,0.3,1), background 0.6s ease, box-shadow 0.6s ease;
+      z-index: 200;
+    }
+
+    /* ── Emoji rain ────────────────────────────────────────────────── */
+    #emoji-rain { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+    .emoji-rain-back { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+    .slide-closing .slide-inner { position: relative; z-index: 1; }
+    .emoji-particle { position: absolute; top: -80px; line-height: 1; user-select: none; will-change: transform, opacity; }
+    .emoji-particle.ep-front { font-size: clamp(22px, 3.2vw, 48px); }
+    .emoji-particle.ep-back  { font-size: clamp(12px, 1.8vw, 28px); filter: blur(1px); }
+
+    /* ── SF Fog ────────────────────────────────────────────────────── */
+    #sf-fog { position: fixed; inset: 0; pointer-events: none; z-index: 8; overflow: hidden; }
+    .fog-particle { position: absolute; line-height: 1; user-select: none; will-change: transform, opacity; }
+    .fog-deep { font-size: clamp(200px, 36vw, 500px); filter: blur(36px);
+      text-shadow: 0 0 80px rgba(255,255,255,0.06), 0 0 160px rgba(255,255,255,0.03); }
+    .fog-mid  { font-size: clamp(150px, 24vw, 340px); filter: blur(18px);
+      text-shadow: 0 0 50px rgba(255,255,255,0.05); }
+    .fog-near { font-size: clamp(90px,  16vw, 220px); filter: blur(7px);
+      text-shadow: 0 0 28px rgba(255,255,255,0.04); }
+
+    /* ── HUD ───────────────────────────────────────────────────────── */
+    #hud {
+      position: fixed; bottom: clamp(10px,1.2vw,18px); left: 0; right: 0;
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      align-items: center; padding: 0 clamp(16px,2vw,28px);
+      pointer-events: none; z-index: 200;
+    }
+    #hud-right { display: flex; align-items: center; justify-content: flex-end; gap: clamp(6px,1vw,14px); pointer-events: all; }
+    #nav-jumps { display: flex; gap: 3px; pointer-events: all; }
+    #counter   { text-align: center; }
+    #text-sizer { display: flex; gap: 3px; pointer-events: all; }
+
+    .hud-label {
+      font-size: clamp(9px,0.7vw,11px); color: var(--label-3);
+      letter-spacing: 0.06em; font-variant-numeric: tabular-nums;
+    }
+    .ts-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 5px; color: var(--label-3); font-family: inherit;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+      padding: 4px 9px; cursor: pointer; line-height: 1;
+      transition: background 0.18s, color 0.18s, border-color 0.18s;
+    }
+    .ts-btn:hover { background: rgba(255,255,255,0.12); color: var(--label-2); }
+    .ts-btn.ts-active { background: rgba(255,255,255,0.1); border-color: var(--accent); color: var(--accent); }
+
+    /* ── Word-split ────────────────────────────────────────────────── */
+    .wi { display: inline-block; }
+
+    /* ── Photo placeholder ─────────────────────────────────────────── */
+    .photo-placeholder {
+      border: 1px dashed rgba(255,255,255,0.18);
+      border-radius: clamp(10px,1.2vw,16px);
+      background: rgba(255,255,255,0.03);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.22);
+      font-family: var(--font);
+      font-size: clamp(9px,0.75vw,11px);
+      letter-spacing: 0.09em; text-transform: uppercase;
+      gap: 6px; font-weight: 500;
+    }
+    .photo-placeholder.circle {
+      border-radius: 50%;
+      width:  clamp(100px,13vw,180px);
+      height: clamp(100px,13vw,180px);
+    }
+    .photo-placeholder.hero-circle {
+      width:  clamp(120px,16vw,220px);
+      height: clamp(120px,16vw,220px);
+    }
+    .photo-placeholder img,
+    .photo-placeholder.filled {
+      border-radius: inherit;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .ph-icon { font-size: clamp(18px,2.2vw,32px); opacity: 0.35; }
+
+    /* ── Text size presets ─────────────────────────────────────────── */
+    .ts-sm .headline                     { font-size: clamp(22px,4.0vw,58px); }
+    .ts-sm .slide-title .headline        { font-size: clamp(32px,5.8vw,84px); }
+    .ts-sm .closing-headline             { font-size: clamp(28px,5vw,72px); }
+    .ts-sm .subheading                   { font-size: clamp(12px,1.4vw,20px); }
+    .ts-sm .bullets li                   { font-size: clamp(11px,1.5vw,22px); }
+    .ts-sm .col-title                    { font-size: clamp(11px,1.2vw,17px); }
+    .ts-sm .eyebrow                      { font-size: clamp(11px,1.2vw,17px); }
+
+    .ts-lg .headline                     { font-size: clamp(34px,6.2vw,92px); }
+    .ts-lg .slide-title .headline        { font-size: clamp(50px,9vw,132px); }
+    .ts-lg .closing-headline             { font-size: clamp(44px,7.8vw,116px); }
+    .ts-lg .subheading                   { font-size: clamp(18px,2.2vw,32px); }
+    .ts-lg .bullets li                   { font-size: clamp(17px,2.2vw,32px); }
+
+    .ts-xl .headline                     { font-size: clamp(38px,7.2vw,108px); }
+    .ts-xl .slide-title .headline        { font-size: clamp(56px,10.5vw,152px); }
+    .ts-xl .closing-headline             { font-size: clamp(50px,9vw,132px); }
+    .ts-xl .subheading                   { font-size: clamp(20px,2.6vw,36px); }
+    .ts-xl .bullets li                   { font-size: clamp(19px,2.6vw,38px); }
+
+    /* ── Portrait hint ─────────────────────────────────────────────── */
+    #portrait-hint {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.94); align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px; color: #fff;
+      font-family: var(--font); text-align: center; padding: 32px;
+    }
+    #portrait-hint p:first-child { font-size: 48px; }
+    #portrait-hint p:last-child  { font-size: 15px; opacity: 0.55; }
+    @media (orientation: portrait) and (max-width: 768px) { #portrait-hint { display: flex; } }
+
+    /* ── Photo shows (Ken Burns + crossfade) ────────────────────────── */
+    .hero-circle {
+      border-radius: 50%;
+      width:  clamp(120px,16vw,220px);
+      height: clamp(120px,16vw,220px);
+      overflow: hidden; flex-shrink: 0;
+      box-shadow: 0 0 0 3px var(--accent), 0 10px 44px rgba(0,0,0,0.56);
+      transition: box-shadow 0.5s ease;
+    }
+    .photo-show {
+      position: relative; overflow: hidden;
+      width: 100%; height: 100%;
+      border-radius: inherit;
+    }
+    .photo-show img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; object-fit: cover;
+      opacity: 0; will-change: transform, opacity;
+    }
+    .photo-show img:first-child { opacity: 1; }
+
+    /* ── Ambient slide photos ─────────────────────────────────────── */
+    .slide-ambient {
+      position: absolute; inset: 0;
+      pointer-events: none; overflow: hidden; z-index: 0;
+    }
+    .slide-ambient img {
+      position: absolute; object-fit: cover;
+      border-radius: clamp(8px,1vw,16px);
+      opacity: 0.10; filter: blur(0.5px) saturate(0.6);
+      will-change: transform;
+    }
+    .slide > .slide-inner { position: relative; z-index: 1; }
+
+    /* ── Photo show aspect ratios (prevent extreme crops) ───────────── */
+    .stat-card .photo-show {
+      aspect-ratio: 4 / 3;
+      height: auto !important;
+      width: 100%;
+    }
+    .col .photo-show {
+      aspect-ratio: 16 / 9;
+      height: auto !important;
+      width: 100%;
+    }
+
+    /* ── Portrait frame cards (family slide) ─────────────────────── */
+    .family-card {
+      position: relative;
+      overflow: hidden;
+      padding: 0 !important;
+      aspect-ratio: 3 / 4;
+      border-radius: clamp(14px, 1.6vw, 22px);
+    }
+    .family-card .photo-show {
+      position: absolute !important;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      aspect-ratio: unset !important;
+      border-radius: 0 !important;
+    }
+    .family-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: clamp(10px,1.2vw,18px) clamp(12px,1.4vw,20px) clamp(12px,1.4vw,18px);
+      background: linear-gradient(to top,
+        rgba(0,0,0,0.80) 0%,
+        rgba(0,0,0,0.50) 50%,
+        transparent 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .family-name {
+      font-size:      clamp(12px, 1.15vw, 16px);
+      font-weight:    700;
+      color:          #ffffff;
+      letter-spacing: 0.01em;
+    }
+    .family-caption {
+      font-size:   clamp(12px, 1.05vw, 15px);
+      font-weight: 400;
+      color:       rgba(255,255,255,0.82);
+      line-height: 1.45;
+    }
+
+    /* ── Photo tile mosaic ────────────────────────────────────────── */
+    .photo-tiles { position: absolute; inset: -40px; pointer-events: none; overflow: hidden; z-index: 0; }
+    .photo-tile {
+      position: absolute; object-fit: cover;
+      border-radius: clamp(6px,0.8vw,10px);
+      border: 1.5px solid rgba(255,255,255,0.14);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10);
+      will-change: transform; opacity: 0.20;
+    }
+
+    /* ── Pre-hide animatable children ─────────────────────────────── */
+    .slide .eyebrow, .slide .slide-icon, .slide .headline, .slide .subheading,
+    .slide .bullets li, .slide blockquote, .slide cite,
+    .slide .col, .slide .stat-card,
+    .slide .cta, .slide .contact, .slide .slide-note,
+    .slide .photo-placeholder, .slide .hero-circle { opacity: 0; }
+
+    /* ── Responsive ────────────────────────────────────────────────── */
+    @media (max-height:500px),(max-width:600px) {
+      .slide { padding: clamp(12px,3%,28px) clamp(16px,4%,48px); }
+      .slide-inner { gap: clamp(6px,1vw,12px); }
+      .headline { font-size: clamp(18px,4vw,40px) !important; }
+    }
+  </style>
+</head>
+
+<body>
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <filter id="lg-refract" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+      <feImage id="lg-dm" result="dm" preserveAspectRatio="none"/>
+      <feDisplacementMap id="lg-disp" in="SourceGraphic" in2="dm" scale="20" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<div id="gobo-layer"  aria-hidden="true"></div>
+<div id="starfield"   aria-hidden="true"></div>
+<div id="bokeh-layer" aria-hidden="true"></div>
+
+<div id="deck">
+
+<!-- ─── Slide 1 · Title · Green #61bb46 ──────────────────────────── -->
+<div class="slide slide-title active" data-index="0"
+     data-accent="#61bb46" data-glow="rgba(97,187,70,0.42)"
+     data-bg="radial-gradient(ellipse at 38% 25%, #3d8a2a 0%, #204a18 28%, #102810 56%, #050c04 100%)"
+     data-gobo="rgba(97,187,70,{o})">
+  <div class="slide-inner slide-inner--center">
+    <div class="hero-circle">
+      <div class="photo-show" data-crossfade-only>
+        <img src="assets/Me2026.jpeg" alt="Joey Villarreal">
+        <img src="assets/me.jpeg" alt="Joey">
+      </div>
+    </div>
+    <p class="eyebrow">Software Quality Engineer · Adobe</p>
+    <h1 class="headline">Joey Villarreal</h1>
+    <p class="subheading">Nice to meet you all</p>
+  </div>
+</div>
+
+<!-- ─── Slide 2 · Family · Yellow #fdb827 ────────────────────────── -->
+<div class="slide slide-stats" data-index="1"
+     data-accent="#fdb827" data-glow="rgba(253,184,39,0.42)"
+     data-bg="radial-gradient(ellipse at 30% 25%, #a87a18 0%, #63470d 28%, #372705 56%, #0e0a02 100%)"
+     data-gobo="rgba(253,184,39,{o})">
+  <div class="photo-tiles">
+    <img class="photo-tile" src="assets/theFamily.jpeg" data-depth="0.5" alt="" style="width:20vw;height:13vw;left:-2%;top:6%;transform:rotate(-7deg)">
+    <img class="photo-tile" src="assets/myFamily.jpeg" data-depth="0.8" alt="" style="width:15vw;height:10vw;left:1%;top:18%;transform:rotate(4deg)">
+    <img class="photo-tile" src="assets/baby1.jpeg" data-depth="1.1" alt="" style="width:13vw;height:17vw;right:-1%;top:18%;transform:rotate(6deg)">
+    <img class="photo-tile" src="assets/baby2.jpeg" data-depth="0.7" alt="" style="width:11vw;height:15vw;right:3%;top:42%;transform:rotate(-4deg)">
+    <img class="photo-tile" src="assets/MayaWithKokoroko1.jpeg" data-depth="0.9" alt="" style="width:17vw;height:11vw;left:3%;bottom:-1%;transform:rotate(8deg)">
+    <img class="photo-tile" src="assets/Luna.jpeg" data-depth="1.3" alt="" style="width:12vw;height:16vw;right:6%;bottom:0%;transform:rotate(-5deg)">
+  </div>
+  <div class="slide-inner">
+    <p class="eyebrow">Before we get into the work stuff</p>
+    <h2 class="headline">Meet the Family</h2>
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);align-items:start">
+      <div class="stat-card family-card">
+        <div class="photo-show">
+          <img src="assets/myFamily.jpeg" alt="Family" style="object-position:top">
+          <img src="assets/theFamily.jpeg" alt="The family" style="object-position:top">
+          <img src="assets/JoeyLinaGiantsGame.jpeg" alt="Joey and Lina" style="object-position:top">
+        </div>
+        <div class="family-overlay">
+          <span class="family-name">Lina</span>
+          <p class="family-caption">Immigration attorney ⚖️ — the reason our family runs as smoothly as it does 💪❤️</p>
+        </div>
+      </div>
+      <div class="stat-card family-card">
+        <div class="photo-show">
+          <img src="assets/MayaWithKokoroko1.jpeg" alt="Maya" style="object-position:top">
+          <img src="assets/MayaWithKokorokoSetlist.jpeg" alt="Maya at Kokoroko" style="object-position:top">
+        </div>
+        <div class="family-overlay">
+          <span class="family-name">Maya — 9</span>
+          <p class="family-caption">Taking singing lessons 🎤, loves art 🎨, and has genuinely great taste in music 🎵</p>
+        </div>
+      </div>
+      <div class="stat-card family-card">
+        <div class="photo-show">
+          <img src="assets/Luna.jpeg" alt="Luna" style="object-position:top">
+          <img src="assets/LunaGuitar.jpeg" alt="Luna with guitar" style="object-position:top">
+        </div>
+        <div class="family-overlay">
+          <span class="family-name">Luna — 5</span>
+          <p class="family-caption">Loves Lilo &amp; Stitch 🌊, wants to play guitar 🎸, and just got into Minecraft ⛏️</p>
+        </div>
+      </div>
+      <div class="stat-card family-card">
+        <div class="photo-show">
+          <img src="assets/baby1.jpeg" alt="Baby boy" style="object-position:top">
+          <img src="assets/baby2.jpeg" alt="Baby boy" style="object-position:top">
+        </div>
+        <div class="family-overlay">
+          <span class="family-name">Jose Luis Noor</span>
+          <p class="family-caption">Named after his grandfathers 🥹 born February 2025 👶 extremely chill, no notes 😌✨</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Slide 3 · Bay Area · Orange #f5821f · Karl lives here ────── -->
+<div class="slide slide-stats" data-index="2"
+     data-accent="#f5821f" data-glow="rgba(245,130,31,0.42)"
+     data-bg="radial-gradient(ellipse at 42% 25%, #a05418 0%, #5c2f0d 28%, #321a06 56%, #0c0602 100%)"
+     data-gobo="rgba(245,130,31,{o})">
+  <div class="slide-inner">
+    <p class="eyebrow">Ten years in the Bay</p>
+    <h2 class="headline">We Live to Eat &amp; Listen</h2>
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);align-items:start">
+      <div class="stat-card family-card">
+        <div class="photo-show">
+          <img src="assets/SwanOysterDepot.jpeg" alt="Food">
+          <img src="assets/JoeyLinaGiantsGame.jpeg" alt="Joey and Lina">
+          <img src="assets/JoeyLinaTameImpala.jpeg" alt="Date night">
+        </div>
+        <div class="family-overlay">
+          <span class="family-name">We live to eat</span>
+          <p class="family-caption">Brenda's French Soul Food 🍳 · R&amp;G Lounge 🦞 · Sotto Mare 🦀</p>
+        </div>
+      </div>
+      <div class="stat-card family-card">
+        <div class="photo-show">
+          <img src="assets/AppleParkGAGA.jpeg" alt="Lady Gaga at Apple Park">
+          <img src="assets/AppleParkGAGA2.jpeg" alt="Lady Gaga">
+        </div>
+        <div class="family-overlay">
+          <span class="family-name">Lady Gaga · Apple Park</span>
+          <p class="family-caption">A night we will never forget 🎤✨🏟️</p>
+        </div>
+      </div>
+      <div class="stat-card family-card">
+        <div class="photo-show">
+          <img src="assets/TameImpalaOakland.jpeg" alt="Tame Impala">
+          <img src="assets/TameImpalaOakland2.jpeg" alt="Tame Impala Oakland">
+        </div>
+        <div class="family-overlay">
+          <span class="family-name">Tame Impala · Oakland</span>
+          <p class="family-caption">Any excuse to be at the Fox or the Greek 🌀🎶🔮</p>
+        </div>
+      </div>
+      <div class="stat-card family-card">
+        <div class="photo-show">
+          <img src="assets/FoxTheaterThundercat.jpeg" alt="Fox Theater">
+          <img src="assets/FreddieAlc_SFshow.jpeg" alt="SF show">
+        </div>
+        <div class="family-overlay">
+          <span class="family-name">Always at a show</span>
+          <p class="family-caption">Hiatus Kaiyote, Kokoroko, Thundercat, Freddie Gibbs &amp; Alchemist — the good stuff 🎷🎸🎹🔥</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Slide 4 · Origin + Apple Retail · Apple Red #e03a3e ─────── -->
+<div class="slide slide-content" data-index="3"
+     data-accent="#e03a3e" data-glow="rgba(224,58,62,0.42)"
+     data-bg="radial-gradient(ellipse at 38% 25%, #922628 0%, #521415 28%, #2e0809 56%, #0c0203 100%)"
+     data-gobo="rgba(224,58,62,{o})">
+  <div class="slide-ambient">
+    <img src="assets/Joey2014.png" data-depth="1.6" alt=""
+      style="width:38vw;height:56vh;right:-4%;top:10%;object-position:center top;opacity:0.12;filter:blur(1px) saturate(0.5)">
+    <img src="assets/me.jpeg" data-depth="0.7" alt=""
+      style="width:18vw;height:26vh;right:28%;bottom:5%;opacity:0.07;filter:blur(2px) saturate(0.4)">
+  </div>
+  <div class="slide-inner">
+    <p class="eyebrow">Grew up in San Antonio</p>
+    <h2 class="headline">Radio, Television &amp; Film</h2>
+    <ul class="bullets">
+      <li>Studied RT&amp;F — fell in love with Pro Tools and Avid</li>
+      <li>At 27, packed my car and drove to Los Angeles</li>
+      <li>Got hired at the Apple Store in Santa Monica in 2011</li>
+      <li>Made Specialist → Mobile Tech → Genius in under a year</li>
+      <li>Transferred to Apple HQ in Sunnyvale in 2016</li>
+    </ul>
+    <p class="slide-note">A long way from San Antonio — still can't quite believe it.</p>
+  </div>
+</div>
+
+<!-- ─── Slide 5 · Developer Relations · Purple #963d97 ───────────── -->
+<div class="slide slide-two-column" data-index="4"
+     data-accent="#963d97" data-glow="rgba(150,61,151,0.42)"
+     data-bg="radial-gradient(ellipse at 38% 25%, #6b2870 0%, #3d1542 28%, #1e0820 56%, #080308 100%)"
+     data-gobo="rgba(150,61,151,{o})">
+  <div class="slide-ambient">
+    <img src="assets/JoeyAndTimCook2016.jpeg" data-depth="1.8" alt=""
+      style="width:30vw;height:40vh;right:-3%;top:8%;object-position:center top;opacity:0.13;filter:blur(0.5px) saturate(0.55)">
+    <img src="assets/AppReviewWorkFriends.jpeg" data-depth="0.6" alt=""
+      style="width:22vw;height:28vh;left:-2%;bottom:4%;opacity:0.09;filter:blur(1.5px) saturate(0.45)">
+    <img src="assets/wwdc1.jpeg" data-depth="1.2" alt=""
+      style="width:20vw;height:26vh;right:20%;bottom:2%;opacity:0.08;filter:blur(1px) saturate(0.4)">
+  </div>
+  <div class="slide-inner">
+    <p class="eyebrow">Developer Relations · 2016 to 2022</p>
+    <h2 class="headline">Inside the App Store</h2>
+    <div class="two-col">
+      <div class="col">
+        <h3 class="col-title">App Review</h3>
+        <ul class="bullets">
+          <li>Specialized in Spanish-language apps, games, and AR</li>
+          <li>Every app I reviewed had to earn its spot</li>
+        </ul>
+        <div style="margin-top:clamp(8px,1vw,14px)">
+          <h3 class="col-title">Technical Investigations</h3>
+          <ul class="bullets">
+            <li>Reverse-engineered apps to find out what they were really doing</li>
+            <li>Kept bad actors off the platform</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col">
+        <h3 class="col-title">Apple Arcade</h3>
+        <ul class="bullets">
+          <li>Helped build Apple Arcade's very first QA team</li>
+          <li>Started with nothing — built the whole process from scratch</li>
+        </ul>
+        <div style="margin-top:clamp(8px,1vw,14px)">
+          <h3 class="col-title">Also in this stretch</h3>
+          <ul class="bullets">
+            <li>Ran the WWDC App Store lab four years in a row</li>
+            <li>Evangelized Apple Silicon to AUv3, VST3 &amp; NLE plugin devs</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Slide 6 · SWE Compatibility · Blue #0A84FF ───────────────── -->
+<div class="slide slide-two-column" data-index="5"
+     data-accent="#0A84FF" data-glow="rgba(10,132,255,0.42)"
+     data-bg="radial-gradient(ellipse at 35% 25%, #1a4e8a 0%, #0e2e52 28%, #071828 56%, #030a14 100%)"
+     data-gobo="rgba(10,132,255,{o})">
+  <div class="slide-ambient">
+    <img src="assets/wwdc2.jpeg" data-depth="1.5" alt=""
+      style="width:28vw;height:38vh;right:-2%;top:6%;opacity:0.12;filter:blur(0.5px) saturate(0.55)">
+    <img src="assets/wwdc3.jpeg" data-depth="0.7" alt=""
+      style="width:20vw;height:28vh;right:18%;bottom:3%;opacity:0.08;filter:blur(1px) saturate(0.4)">
+    <img src="assets/SF2017.jpeg" data-depth="1.0" alt=""
+      style="width:18vw;height:24vh;left:-1%;bottom:8%;opacity:0.09;filter:blur(1.5px) saturate(0.4)">
+  </div>
+  <div class="slide-inner">
+    <p class="eyebrow">Software Engineering · 2022 to 2026</p>
+    <h2 class="headline">Shipping the OS, Porting Games</h2>
+    <div class="two-col">
+      <div class="col">
+        <h3 class="col-title">Compatibility Team</h3>
+        <ul class="bullets">
+          <li>Tested third-party apps against every pre-release OS build</li>
+          <li>Shipped HDR screenshot and screen recording</li>
+          <li>Framework modularization projects</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3 class="col-title">Game Porting Toolkit</h3>
+        <ul class="bullets">
+          <li>QA'd titles running on the Game Porting Toolkit</li>
+          <li>Death Stranding, Control, Cyberpunk 2077 — all on Mac</li>
+          <li>Also QA'd CodeWeavers CrossOver, which is built on GPT</li>
+          <li>Seeing those run natively still feels surreal</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Slide 7 · De Anza College · Indigo #4a20a0 ───────────────── -->
+<div class="slide slide-content" data-index="6"
+     data-accent="#7b5ea7" data-glow="rgba(123,94,167,0.42)"
+     data-bg="radial-gradient(ellipse at 42% 25%, #2e1470 0%, #1a0c42 28%, #0c0624 56%, #040210 100%)"
+     data-gobo="rgba(100,60,180,{o})">
+  <div class="slide-inner">
+    <p class="eyebrow">Meanwhile — going back to school</p>
+    <h2 class="headline">Intro to C++ at De Anza</h2>
+    <ul class="bullets">
+      <li>First time in a classroom in over 20 years</li>
+      <li>Declared Computer Science as my major</li>
+      <li>Honestly, starting this job has made me even more excited about it</li>
+    </ul>
+    <p class="slide-note">It's never too late to go back.</p>
+  </div>
+</div>
+
+<!-- ─── Slide 8 · Adobe RenderTech · Adobe Red #FF0000 ───────────── -->
+<div class="slide slide-content" data-index="7"
+     data-accent="#FF0000" data-glow="rgba(255,0,0,0.45)"
+     data-bg="radial-gradient(ellipse at 38% 25%, #b30000 0%, #680000 28%, #3a0000 56%, #0f0000 100%)"
+     data-gobo="rgba(255,0,0,{o})">
+  <div class="slide-inner">
+    <p class="eyebrow">April 2026</p>
+    <h2 class="headline">Adobe RenderTech</h2>
+    <ul class="bullets">
+      <li>This is the role I've been working toward without knowing it</li>
+      <li>Creative tools, rendering, performance — right in the intersection of everything I love</li>
+      <li>Coming from Apple with a QA and compatibility background, and bringing it all here</li>
+    </ul>
+    <p class="slide-note">Genuinely couldn't be more excited about what we're building.</p>
+  </div>
+</div>
+
+<!-- ─── Slide 9 · Thank You · Adobe Red #FF0000 ──────────────────── -->
+<div class="slide slide-closing" data-index="8"
+     data-accent="#FF0000" data-glow="rgba(255,0,0,0.45)"
+     data-bg="radial-gradient(ellipse at 35% 25%, #b30000 0%, #680000 28%, #3a0000 56%, #0f0000 100%)"
+     data-gobo="rgba(255,0,0,{o})">
+  <div class="emoji-rain-back"></div>
+  <div class="slide-inner slide-inner--center">
+    <div class="hero-circle">
+      <div class="photo-show" data-crossfade-only>
+        <img src="assets/Me2026.jpeg" alt="Joey Villarreal">
+        <img src="assets/me.jpeg" alt="Joey">
+      </div>
+    </div>
+    <h1 class="headline closing-headline">Thank you</h1>
+    <p class="cta">So grateful for this opportunity. Can't wait to get to know everyone.</p>
+  </div>
+</div>
+
+</div><!-- #deck -->
+
+<div id="progress"></div>
+<div id="sf-fog"     aria-hidden="true"></div>
+<div id="emoji-rain" aria-hidden="true"></div>
+
+<div id="portrait-hint" aria-live="polite">
+  <p>↻</p><p>Rotate your device for the best experience</p>
+</div>
+
+<div id="hud">
+  <div id="nav-jumps">
+    <button class="ts-btn" id="btn-first" title="First slide">⏮</button>
+    <button class="ts-btn" id="btn-last"  title="Last slide">⏭</button>
+    <button class="ts-btn ts-active" id="btn-rain"  title="Toggle emoji rain">🎉</button>
+  </div>
+  <span class="hud-label" id="counter">1 / 9</span>
+  <div id="hud-right">
+    <span class="hud-label" id="hint">← →&nbsp;&nbsp;F fullscreen</span>
+    <div id="text-sizer">
+      <button class="ts-btn" data-ts="sm">A−</button>
+      <button class="ts-btn ts-active" data-ts="md">A</button>
+      <button class="ts-btn" data-ts="lg">A+</button>
+      <button class="ts-btn" data-ts="xl">A++</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const TOTAL  = 9;
+  const slides = Array.from(document.querySelectorAll('.slide'));
+
+  const EASE_OUT    = 'cubic-bezier(0.16, 1, 0.3, 1)';
+  const EASE_SPRING = 'back.out(1.4)';
+  const EASE_SOFT   = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  const DUR = 0.58;
+
+  let current   = 0;
+  let animating = false;
+
+  // ── Slide theme data ─────────────────────────────────────────────
+  const THEMES = slides.map(s => ({
+    accent: s.dataset.accent,
+    glow:   s.dataset.glow,
+    bg:     s.dataset.bg,
+    gobo:   s.dataset.gobo,  // template string with {o} for opacity
+  }));
+
+  // ── Set per-slide colors ─────────────────────────────────────────
+  let _goboBlobEls = [];
+
+  function applyTheme(idx) {
+    const t = THEMES[idx];
+    const r = document.documentElement;
+    r.style.setProperty('--accent',      t.accent);
+    r.style.setProperty('--accent-glow', t.glow);
+    document.body.style.background = t.bg;
+    // Recolor gobo blobs
+    if (_goboBlobEls.length) {
+      const opacities = [0.38, 0.24, 0.15, 0.09];
+      _goboBlobEls.forEach((el, i) => {
+        const color = t.gobo.replace('{o}', opacities[i] || 0.08);
+        el.style.background = `radial-gradient(circle, ${color}, transparent 70%)`;
+      });
+    }
+  }
+
+  // ── Perlin noise ─────────────────────────────────────────────────
+  const _p = new Uint8Array(512);
+  (function () {
+    const t = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) t[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [t[i], t[j]] = [t[j], t[i]];
+    }
+    _p.set(t); _p.set(t, 256);
+  }());
+  function _fade(t) { return t*t*t*(t*(t*6-15)+10); }
+  function _lerp(a,b,t){ return a+t*(b-a); }
+  function _grad(h,x,y){ const v=h&3; return v===0?x+y:v===1?-x+y:v===2?x-y:-x-y; }
+  function pnoise(x,y) {
+    const X=Math.floor(x)&255, Y=Math.floor(y)&255;
+    x-=Math.floor(x); y-=Math.floor(y);
+    const u=_fade(x), v=_fade(y);
+    const a=_p[X]+Y, b=_p[X+1]+Y;
+    return _lerp(
+      _lerp(_grad(_p[a],x,y),      _grad(_p[b],x-1,y),   u),
+      _lerp(_grad(_p[a+1],x,y-1),  _grad(_p[b+1],x-1,y-1),u), v);
+  }
+
+  // ── Gobo blobs ───────────────────────────────────────────────────
+  function initGobos() {
+    const layer = document.getElementById('gobo-layer');
+    const CFG = [
+      { sz:58, blur:130, range:22 },
+      { sz:48, blur:110, range:18 },
+      { sz:40, blur:100, range:24 },
+      { sz:34, blur: 88, range:20 },
+    ];
+    const t0 = THEMES[0];
+    const ops = [0.38, 0.24, 0.15, 0.09];
+
+    _goboBlobEls = CFG.map(({ sz, blur, range }, i) => {
+      const color = t0.gobo.replace('{o}', ops[i]);
+      const el = document.createElement('div');
+      Object.assign(el.style, {
+        position:'fixed', width:sz+'vw', height:sz+'vw',
+        borderRadius:'50%',
+        background:`radial-gradient(circle, ${color}, transparent 70%)`,
+        filter:`blur(${blur}px)`, pointerEvents:'none',
+        willChange:'transform', top:'0', left:'0',
+        transition:'background 0.7s ease',
+      });
+      layer.appendChild(el);
+      return el;
+    });
+
+    const data = CFG.map(({ range }) => ({
+      ox: Math.random()*100, oy: Math.random()*100,
+      cx: 15+Math.random()*70, cy: 15+Math.random()*70, range,
+    }));
+
+    gsap.ticker.add(time => {
+      const t = time * 0.036;
+      data.forEach(({ ox, oy, cx, cy, range }, i) => {
+        const px = cx + pnoise(t+ox, oy) * range;
+        const py = cy + pnoise(ox, t+oy*1.3) * range;
+        gsap.set(_goboBlobEls[i], { x:px+'vw', y:py+'vh', xPercent:-50, yPercent:-50 });
+      });
+    });
+  }
+
+  // ── Starfield ────────────────────────────────────────────────────
+  function initStarfield() {
+    const layer = document.getElementById('starfield');
+    for (let i = 0; i < 90; i++) {
+      const el = document.createElement('div');
+      const sz = 1+Math.random()*2; const op = 0.15+Math.random()*0.5;
+      Object.assign(el.style, {
+        position:'absolute', width:sz+'px', height:sz+'px',
+        borderRadius:'50%', background:'#fff',
+        left:Math.random()*100+'%', top:Math.random()*100+'%', opacity:op,
+      });
+      layer.appendChild(el);
+      gsap.to(el, { opacity:op*(0.1+Math.random()*0.6), duration:2+Math.random()*5,
+        repeat:-1, yoyo:true, ease:'sine.inOut', delay:Math.random()*6 });
+    }
+  }
+
+  // ── Bokeh ────────────────────────────────────────────────────────
+  function initBokeh() {
+    const layer = document.getElementById('bokeh-layer');
+    for (let i = 0; i < 12; i++) {
+      const sz = 50+Math.random()*100; const blur = 16+Math.random()*30;
+      const op = 0.03+Math.random()*0.06;
+      const el = document.createElement('div');
+      Object.assign(el.style, {
+        position:'absolute', width:sz+'px', height:sz+'px',
+        borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(255,255,255,0.7), transparent 68%)',
+        filter:`blur(${blur}px)`,
+        left:Math.random()*100+'%', top:Math.random()*100+'%',
+        opacity:op, pointerEvents:'none', willChange:'transform,opacity',
+      });
+      layer.appendChild(el);
+      gsap.to(el, { x:(Math.random()-.5)*200, y:(Math.random()-.5)*160,
+        opacity:op*(0.3+Math.random()*1.2),
+        duration:10+Math.random()*18, repeat:-1, yoyo:true, ease:'sine.inOut', delay:Math.random()*10 });
+    }
+  }
+
+  // ── Fog (Karl) — Bay Area slide only ─────────────────────────────
+  // Slower durations: deep 160–260s, mid 120–190s, near 90–140s
+  const FOG_LAYERS = [
+    ['fog-deep',0.04,0.07,160,260,6],
+    ['fog-mid', 0.05,0.08,120,190,3],
+    ['fog-near',0.06,0.10, 90,140,1],
+  ];
+  const _fogPool = FOG_LAYERS.flatMap(([c,,,,,w])=>Array(w).fill(c));
+  const _fogActive = [];
+  let _fogRunning = false, _fogSpawnId = null, _fogTickerFn = null;
+
+  function _spawnCloud() {
+    const fog=document.getElementById('sf-fog');
+    const lc=_fogPool[Math.floor(Math.random()*_fogPool.length)];
+    const cfg=FOG_LAYERS.find(l=>l[0]===lc);
+    const [cls,mnOp,mxOp,mnD,mxD]=cfg;
+    const el=document.createElement('span');
+    el.className='fog-particle '+cls; el.textContent='☁️';
+    const fr=Math.random()>.18, sx=fr?108:-40, ex=fr?-42:110;
+    const y=Math.random()*92, dur=mnD+Math.random()*(mxD-mnD);
+    const op=mnOp+Math.random()*(mxOp-mnOp), ft=dur*.12;
+    const ox=Math.random()*100, oy=Math.random()*100;
+    const yr=cls==='fog-deep'?22:cls==='fog-mid'?36:52;
+    const ts=cls==='fog-deep'?.006:cls==='fog-mid'?.009:.013;
+    gsap.set(el,{left:sx+'vw',top:y+'vh',opacity:0}); fog.appendChild(el);
+    const entry={el,ox,oy,yr,ts,alive:true}; _fogActive.push(entry);
+    gsap.timeline({onComplete:()=>{entry.alive=false;el.remove();}})
+      .to(el,{opacity:op,duration:ft,ease:'power1.in'})
+      .to(el,{left:ex+'vw',duration:dur,ease:'none'},0)
+      .to(el,{opacity:0,duration:ft,ease:'power1.out'},`-=${ft}`);
+  }
+
+  function _showKarl() {
+    if (_fogRunning) return;
+    _fogRunning = true;
+    for(let i=0;i<5;i++) setTimeout(()=>{
+      const fog=document.getElementById('sf-fog');
+      const lc=_fogPool[Math.floor(Math.random()*_fogPool.length)];
+      const cfg=FOG_LAYERS.find(l=>l[0]===lc);
+      const [cls,mnOp,mxOp,mnD,mxD]=cfg;
+      const el=document.createElement('span');
+      el.className='fog-particle '+cls; el.textContent='☁️';
+      const x=Math.random()*100, y=Math.random()*92;
+      const dur=mnD+Math.random()*(mxD-mnD);
+      const op=(mnOp+Math.random()*(mxOp-mnOp))*.6;
+      const ox=Math.random()*100, oy=Math.random()*100;
+      const yr=cls==='fog-deep'?22:cls==='fog-mid'?36:52;
+      const ts=cls==='fog-deep'?.006:cls==='fog-mid'?.009:.013;
+      gsap.set(el,{left:x+'vw',top:y+'vh',opacity:op}); fog.appendChild(el);
+      const entry={el,ox,oy,yr,ts,alive:true}; _fogActive.push(entry);
+      gsap.to(el,{left:(x-40-Math.random()*40)+'vw',opacity:0,duration:dur,ease:'none',
+        onComplete:()=>{entry.alive=false;el.remove();}});
+    },i*400);
+    _fogSpawnId = setInterval(_spawnCloud, 12000);
+    _fogTickerFn = function(time) {
+      if(_fogActive.length>20) for(let i=_fogActive.length-1;i>=0;i--) if(!_fogActive[i].alive) _fogActive.splice(i,1);
+      _fogActive.forEach(({el,ox,oy,yr,ts,alive})=>{
+        if(!alive) return; gsap.set(el,{y:pnoise(time*ts+ox,oy)*yr});
+      });
+    };
+    gsap.ticker.add(_fogTickerFn);
+  }
+
+  function _hideKarl() {
+    if (!_fogRunning) return;
+    _fogRunning = false;
+    if (_fogSpawnId) { clearInterval(_fogSpawnId); _fogSpawnId = null; }
+    if (_fogTickerFn) { gsap.ticker.remove(_fogTickerFn); _fogTickerFn = null; }
+    _fogActive.slice().forEach(({el}) => gsap.to(el,{opacity:0,duration:2,onComplete:()=>el.remove()}));
+    _fogActive.length = 0;
+  }
+
+  // ── Emoji rain ───────────────────────────────────────────────────
+  const RAIN_EMOJIS = ['🎉','🎊','🥳','✨','🎈','🪅','🎆','🎇','💫','🌟','🍾','🥂','👏','🙌','💃','🕺','🎁','🎀'];
+  let _rainInterval=null, _rainBackEl=null, _rainOn=true;
+
+  function _spawnEmoji(isBack) {
+    const c=isBack?_rainBackEl:document.getElementById('emoji-rain');
+    if(!c) return;
+    const el=document.createElement('span');
+    el.className='emoji-particle '+(isBack?'ep-back':'ep-front');
+    el.textContent=RAIN_EMOJIS[Math.floor(Math.random()*RAIN_EMOJIS.length)];
+    const sx=Math.random()*105-2, drift=(Math.random()-.5)*(isBack?80:140);
+    const rot=(Math.random()-.5)*540;
+    const dur=isBack?4+Math.random()*2.8:2.8+Math.random()*2.4;
+    const maxOp=isBack?.38:1, scale=isBack?.4+Math.random()*.45:.7+Math.random()*.7;
+    const fh=isBack?c.offsetHeight+120:window.innerHeight+140;
+    gsap.set(el,{left:sx+'vw',top:'-80px',opacity:0,rotation:0,scale}); c.appendChild(el);
+    gsap.timeline({onComplete:()=>el.remove()})
+      .to(el,{opacity:maxOp,duration:.35,ease:'power2.out',delay:Math.random()*.3})
+      .to(el,{y:fh,x:drift,rotation:rot,duration:dur,ease:'none'},'<0.1')
+      .to(el,{opacity:0,duration:.7,ease:'power1.in'},`-=.85`);
+  }
+
+  function startRain(slide) {
+    stopRain();
+    _rainBackEl=slide?slide.querySelector('.emoji-rain-back'):null;
+    for(let i=0;i<22;i++) setTimeout(()=>_spawnEmoji(i%3===0),i*55);
+    _rainInterval=setInterval(()=>_spawnEmoji(Math.random()<.4),180);
+  }
+  function stopRain() {
+    if(_rainInterval){clearInterval(_rainInterval);_rainInterval=null;}
+    _rainBackEl=null;
+    document.querySelectorAll('.emoji-particle').forEach(el=>gsap.to(el,{opacity:0,duration:.4,onComplete:()=>el.remove()}));
+  }
+
+  // ── Word split ───────────────────────────────────────────────────
+  function splitWords(el) {
+    if(!el) return [];
+    if(el.dataset.ws) return Array.from(el.querySelectorAll('.wi'));
+    el.dataset.ws='1';
+    const nodes=Array.from(el.childNodes); el.innerHTML=''; const spans=[];
+    nodes.forEach(node=>{
+      if(node.nodeType===Node.ELEMENT_NODE){el.appendChild(node);return;}
+      node.textContent.split(/(\s+)/).forEach(part=>{
+        if(/^\s+$/.test(part)){el.appendChild(document.createTextNode(part));return;}
+        if(!part) return;
+        const s=document.createElement('span'); s.className='wi'; s.textContent=part;
+        el.appendChild(s); spans.push(s);
+      });
+    });
+    return spans;
+  }
+
+  // ── Animate slide in ─────────────────────────────────────────────
+  function animateIn(slide) {
+    const type=(Array.from(slide.classList).find(c=>c.startsWith('slide-')&&c!=='slide-inner')||'').replace('slide-','');
+    const tl=gsap.timeline();
+    const get=sel=>slide.querySelector(sel);
+    const getA=sel=>Array.from(slide.querySelectorAll(sel));
+
+    const eyebrow=get('.eyebrow'), headline=get('.headline'), sub=get('.subheading');
+    const bullets=getA('.bullets li'), cols=getA('.col');
+    const cta=get('.cta'), contact=get('.contact'), note=get('.slide-note');
+    const photo=get('.hero-circle')||get('.photo-placeholder'), statCards=getA('.stat-card');
+
+    const S=0.09;
+    const ft=(el,from,opts,pos)=>{
+      if(!el) return;
+      tl.fromTo(el,from,{y:0,x:0,scale:1,opacity:1,rotateX:0,...opts},pos);
+    };
+    const ftEyebrow=pos=>{
+      if(!eyebrow) return;
+      tl.fromTo(eyebrow,{opacity:1,clipPath:'inset(0 100% 0 0)'},
+        {opacity:1,clipPath:'inset(0 0% 0 0)',duration:.50,ease:EASE_OUT},pos);
+    };
+    const ftWords=(el,pos,yAmt=26)=>{
+      if(!el) return;
+      const words=splitWords(el);
+      tl.fromTo(el,{opacity:1,filter:'blur(8px)'},{opacity:1,filter:'blur(0px)',duration:DUR*1.15,ease:'power2.out'},pos);
+      if(words.length) tl.fromTo(words,{y:yAmt,opacity:0},{y:0,opacity:1,stagger:.06,duration:DUR*.95,ease:EASE_OUT},pos);
+    };
+
+    switch(type) {
+      case 'title':
+        if(photo) ft(photo,{y:-20,scale:.88,opacity:0},{duration:DUR*.85,ease:EASE_SPRING},0);
+        ftEyebrow(photo?.14:.06);
+        ftWords(headline,.22,34);
+        ft(sub,{y:18,opacity:0},{duration:DUR,ease:EASE_OUT},.40);
+        break;
+
+      case 'content':
+        ftEyebrow(0);
+        ftWords(headline,.12,22);
+        bullets.forEach((li,i)=>ft(li,{x:-16,opacity:0},{duration:DUR*.85,ease:EASE_OUT},.25+i*S));
+        ft(note,{opacity:0},{duration:DUR*.5,ease:EASE_SOFT},.25+bullets.length*S+.1);
+        break;
+
+      case 'two-column':
+        ftEyebrow(0);
+        ftWords(headline,.1,18);
+        ft(cols[0],{x:-40,opacity:0,rotateX:6,transformPerspective:1200},{duration:DUR,ease:EASE_OUT},.22);
+        ft(cols[1],{x: 40,opacity:0,rotateX:6,transformPerspective:1200},{duration:DUR,ease:EASE_OUT},.32);
+        bullets.forEach((li,i)=>ft(li,{y:8,opacity:0},{duration:DUR*.65,ease:EASE_OUT},.42+i*.07));
+        break;
+
+      case 'stats':
+        ftEyebrow(0);
+        ftWords(headline,.1,18);
+        statCards.forEach((c,i)=>ft(c,{y:26,scale:.94,opacity:0,rotateX:10,transformPerspective:900},{duration:DUR*1.05,ease:EASE_SPRING},.2+i*.09));
+        break;
+
+      case 'closing': {
+        if(photo) ft(photo,{y:-18,scale:.88,opacity:0},{duration:DUR*.8,ease:EASE_SPRING},0);
+        ftEyebrow(photo?.14:.06);
+        const words=splitWords(headline);
+        if(headline) tl.fromTo(headline,{opacity:1,filter:'blur(8px)'},{opacity:1,filter:'blur(0px)',duration:DUR*1.2,ease:'power2.out'},photo?.18:0);
+        if(words.length) tl.fromTo(words,{scale:.86,opacity:0,rotateX:10,transformPerspective:1000},
+          {scale:1,opacity:1,rotateX:0,stagger:.08,duration:DUR*1.15,ease:EASE_SPRING},photo?.18:0);
+        ft(cta,{y:18,opacity:0},{duration:DUR,ease:EASE_OUT},.36);
+        ft(contact,{opacity:0},{duration:DUR*.7,ease:EASE_SOFT},.52);
+        tl.call(()=>{ if(_rainOn&&slides[current]===slide) startRain(slide); },[],0.5);
+        break;
+      }
+
+      default: {
+        const all=[eyebrow,headline,sub,...bullets,...cols,cta,contact,note,photo].filter(Boolean);
+        all.forEach((el,i)=>ft(el,{y:12,opacity:0},{duration:DUR,ease:EASE_OUT},i*S));
+      }
+    }
+    return tl;
+  }
+
+  // ── Reset slide ──────────────────────────────────────────────────
+  const CHILD_SEL='.eyebrow,.slide-icon,.headline,.subheading,.bullets li,blockquote,cite,.col,.stat-card,.media-frame,.cta,.contact,.slide-note,.photo-placeholder,.hero-circle';
+  function resetSlide(slide) {
+    stopRain();
+    gsap.set(slide.querySelectorAll(CHILD_SEL),{opacity:0});
+    gsap.set(slide.querySelectorAll('.wi'),{y:26,opacity:0,scale:1});
+    gsap.set(slide.querySelectorAll('.headline,blockquote'),{filter:'none'});
+  }
+
+  // ── Navigate ─────────────────────────────────────────────────────
+  function goTo(next, dir) {
+    if(next<0||next>=TOTAL||animating) return;
+    animating=true;
+    const from=slides[current], to=slides[next], dx=dir*32;
+    resetSlide(to);
+    gsap.to(from,{opacity:0,x:-dx,duration:.26,ease:EASE_SOFT,
+      onComplete(){from.classList.remove('active');gsap.set(from,{clearProps:'x,opacity'});}});
+    gsap.set(to,{opacity:1,x:dx*.6}); to.classList.add('active');
+    gsap.to(to,{x:0,duration:.34,ease:EASE_OUT,delay:.10,
+      onComplete(){animating=false;}});
+    setTimeout(()=>animateIn(to),90);
+    if (next === 2) _showKarl();
+    else if (current === 2) _hideKarl();
+    current=next;
+    applyTheme(next);
+    updateHUD();
+  }
+
+  function updateHUD() {
+    document.getElementById('counter').textContent=`${current+1} / ${TOTAL}`;
+    document.getElementById('progress').style.width=`${((current+1)/TOTAL)*100}%`;
+  }
+
+  // ── Input handling ───────────────────────────────────────────────
+  let hintDismissed=false;
+  function dismissHint() {
+    if(hintDismissed) return; hintDismissed=true;
+    gsap.to(document.getElementById('hint'),{opacity:0,duration:.4});
+  }
+
+  document.addEventListener('keydown',e=>{
+    dismissHint();
+    switch(e.key){
+      case 'ArrowRight':case 'ArrowDown':case ' ':e.preventDefault();goTo(current+1,1);break;
+      case 'ArrowLeft':case 'ArrowUp':e.preventDefault();goTo(current-1,-1);break;
+      case 'f':case 'F':toggleFullscreen();break;
+      case 'Home':e.preventDefault();goTo(0,-1);break;
+      case 'End':e.preventDefault();goTo(TOTAL-1,1);break;
+    }
+  });
+
+  document.getElementById('deck').addEventListener('click',e=>{
+    dismissHint();
+    const r=e.currentTarget.getBoundingClientRect();
+    const f=(e.clientX-r.left)/r.width;
+    goTo(f>.42?current+1:current-1,f>.42?1:-1);
+  });
+
+  let t0x=0,t0y=0;
+  document.addEventListener('touchstart',e=>{t0x=e.touches[0].clientX;t0y=e.touches[0].clientY;},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-t0x, dy=e.changedTouches[0].clientY-t0y;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){dismissHint();goTo(current+(dx<0?1:-1),dx<0?1:-1);}
+  },{passive:true});
+
+  function toggleFullscreen(){
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(()=>{});
+    else document.exitFullscreen?.();
+  }
+
+  // ── HUD buttons ──────────────────────────────────────────────────
+  document.getElementById('btn-first').addEventListener('click',e=>{e.stopPropagation();if(current!==0)goTo(0,-1);});
+  document.getElementById('btn-last').addEventListener('click',e=>{e.stopPropagation();if(current!==TOTAL-1)goTo(TOTAL-1,1);});
+  document.getElementById('btn-rain').addEventListener('click',e=>{
+    e.stopPropagation();
+    _rainOn=!_rainOn;
+    document.getElementById('btn-rain').classList.toggle('ts-active',_rainOn);
+    const active=slides[current];
+    if(active.classList.contains('slide-closing')) _rainOn?startRain(active):stopRain();
+  });
+
+  const TS_CLASSES=['ts-sm','ts-md','ts-lg','ts-xl'];
+  function applyTextSize(size){
+    TS_CLASSES.forEach(c=>document.documentElement.classList.remove(c));
+    if(size!=='md') document.documentElement.classList.add(`ts-${size}`);
+    document.querySelectorAll('.ts-btn[data-ts]').forEach(b=>b.classList.toggle('ts-active',b.dataset.ts===size));
+    try{localStorage.setItem('pres-ts',size);}catch(e){}
+  }
+  document.querySelectorAll('.ts-btn[data-ts]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();applyTextSize(btn.dataset.ts);}));
+  try{const s=localStorage.getItem('pres-ts');if(s&&TS_CLASSES.includes(`ts-${s}`))applyTextSize(s);}catch(e){}
+  setTimeout(()=>{if(!hintDismissed)gsap.to(document.getElementById('hint'),{opacity:0,duration:.6});},4000);
+
+  // ── Ken Burns + crossfade photo shows ───────────────────────────
+  function _kenBurns(img) {
+    gsap.killTweensOf(img, 'scale,x,y');
+    const s=[1,-1];
+    const dx=s[Math.random()>.5?0:1]*(1.5+Math.random()*3.5);
+    const dy=s[Math.random()>.5?0:1]*(1+Math.random()*2.5);
+    gsap.fromTo(img,{scale:1.04,x:`${-dx}%`,y:`${-dy}%`},
+      {scale:1.13,x:`${dx}%`,y:`${dy}%`,duration:9+Math.random()*7,ease:'none'});
+  }
+  function _initOneShow(container) {
+    const imgs=Array.from(container.querySelectorAll('img'));
+    if(!imgs.length) return;
+    const kb = !container.dataset.crossfadeOnly;
+    gsap.set(imgs,{opacity:0}); gsap.set(imgs[0],{opacity:1});
+    if(kb) _kenBurns(imgs[0]);
+    if(imgs.length<2) return;
+    let idx=0;
+    const iv=4200+Math.random()*2400;
+    setInterval(()=>{
+      const prev=imgs[idx]; idx=(idx+1)%imgs.length;
+      if(kb) _kenBurns(imgs[idx]);
+      gsap.to(imgs[idx],{opacity:1,duration:1.9,ease:'power2.inOut'});
+      gsap.to(prev,{opacity:0,duration:1.9,delay:0.7,ease:'power2.inOut'});
+    },iv);
+  }
+  function initPhotoShows() {
+    document.querySelectorAll('.photo-show').forEach(_initOneShow);
+  }
+
+  // ── Parallax ─────────────────────────────────────────────────────
+  function initParallax() {
+    let tx=0,ty=0,cx=0,cy=0;
+    document.addEventListener('mousemove',e=>{
+      tx=(e.clientX/window.innerWidth-.5)*2;
+      ty=(e.clientY/window.innerHeight-.5)*2;
+    });
+    gsap.ticker.add(()=>{
+      cx+=(tx-cx)*0.07; cy+=(ty-cy)*0.07;
+      document.querySelectorAll('[data-depth]').forEach(el=>{
+        const d=parseFloat(el.dataset.depth||1);
+        gsap.set(el,{x:cx*d*18,y:cy*d*11});
+      });
+    });
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────
+  const first=slides[0];
+  first.classList.add('active');
+  gsap.set(first,{opacity:1});
+  resetSlide(first);
+  applyTheme(0);
+  animateIn(first);
+  updateHUD();
+  initGobos();
+  initStarfield();
+  initBokeh();
+  initPhotoShows();
+  initParallax();
+
+  // ── Liquid glass displacement map ────────────────────────────────
+  (function(){
+    const SIZE=256,EDGE=0.20;
+    function ss(x){x=Math.max(0,Math.min(1,x));return x*x*x*(x*(6*x-15)+10);}
+    function lip(x){x=Math.max(0,Math.min(1,x));const s=ss(x),cv=Math.sqrt(Math.max(0,1-(1-x)**2));return cv*(1-s)+(1-cv)*s;}
+    function ld(x){const h=0.0005;return(lip(Math.min(1,x+h))-lip(Math.max(0,x-h)))/(2*h);}
+    const c=document.createElement('canvas');c.width=c.height=SIZE;
+    const ctx=c.getContext('2d'),img=ctx.createImageData(SIZE,SIZE),d=img.data;
+    for(let py=0;py<SIZE;py++) for(let px=0;px<SIZE;px++){
+      const tl=Math.min(1,(px/(SIZE-1))/EDGE),tr=Math.min(1,((SIZE-1-px)/(SIZE-1))/EDGE);
+      const tt=Math.min(1,(py/(SIZE-1))/EDGE),tb=Math.min(1,((SIZE-1-py)/(SIZE-1))/EDGE);
+      let vx=0,vy=0;
+      if(tl<1)vx+=ld(tl);if(tr<1)vx-=ld(tr);
+      if(tt<1)vy+=ld(tt);if(tb<1)vy-=ld(tb);
+      const mag=Math.sqrt(vx*vx+vy*vy);if(mag>1){vx/=mag;vy/=mag;}
+      const i=(py*SIZE+px)*4;
+      d[i]=Math.round(128+vx*127);d[i+1]=Math.round(128+vy*127);d[i+2]=0;d[i+3]=255;
+    }
+    ctx.putImageData(img,0,0);
+    const fi=document.getElementById('lg-dm');if(fi)fi.setAttribute('href',c.toDataURL());
+  })();
+
+}());
+</script>
+</body>
+</html>

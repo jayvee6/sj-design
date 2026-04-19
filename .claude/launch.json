@@ -4,8 +4,8 @@
     {
       "name": "sj-design",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "7890", "--directory", "/Users/jdot/Documents/Development/sj-design"],
-      "port": 7890
+      "runtimeArgs": ["-m", "http.server", "7777"],
+      "port": 7777
     }
   ]
 }
