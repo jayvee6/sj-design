@@ -2,6 +2,8 @@
 
 A Claude Code skill that generates beautiful, animated HTML slide decks from natural language prompts. Describe what you need; get a self-contained `.html` file with cinematic animations, Apple design tokens, and physics-based glass refraction fills — ready to open in any browser.
 
+> Building native iOS under the Studio Joe design system? See [docs/swiftui-conventions.md](docs/swiftui-conventions.md) for the iOS 26 Liquid Glass mappings.
+
 ![Showcase](docs/screenshots/showcase-hero.png)
 
 ---
