@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emoji Concentric Waves — sj-design showcase</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #0a0a0f; color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / emoji visualizations
+    <strong>Concentric Waves</strong>
+  </div>
+  <canvas id="c"></canvas>
+
+  <script>
+    // ─── Emoji Concentric Waves ────────────────────────────────────────────
+    // 6 rings of emojis centered on the canvas. Ring N holds N*6 emojis
+    // (ring 0 is a single center emoji). Every other ring spins in the
+    // opposite direction. Each ring reads an older pulse value than the
+    // ring before it, so a bass hit "ripples" outward in time.
+    //
+    // Originally built as Mode 1 of the musicplayer-viz web app, driven by
+    // real FFT bass bins. Here we feed it a synthetic pulse so the effect
+    // runs standalone. Swap `computePulse(t)` for your own audio reader
+    // to make it reactive — the API is { bass, history }.
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+    const EMOJIS = ['🐻','🦊','🦁','🐱','🐶','🐼','🤖','🐲','🦄','🐷','🐰','🐵'];
+    const BASS_HISTORY_LEN = 16;
+    const bassHistory = new Array(BASS_HISTORY_LEN).fill(0);
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width  = window.innerWidth  * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width  = window.innerWidth  + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Synthetic pulse — punchy "kick + ghost notes" so the ring ripple
+    // reads even without music. Replace with a real audio frame to
+    // make the viz react to sound.
+    function computePulse(t) {
+      const kick  = Math.max(0, Math.sin(t * 2.2));
+      const ghost = Math.max(0, Math.sin(t * 5.1 + 1.3)) * 0.35;
+      const bass  = Math.min(1, Math.pow(kick, 2) * 0.9 + ghost);
+      bassHistory.unshift(bass);
+      bassHistory.pop();
+      return bass;
+    }
+
+    let waveSpin = 0;
+    const RINGS = 6;
+
+    function render(t) {
+      const W = window.innerWidth, H = window.innerHeight;
+      // Full clear — no trails. For a ghostly trail effect, fill with
+      // rgba(10,10,15,0.22) instead of clearRect.
+      ctx.clearRect(0, 0, W, H);
+
+      const bass = computePulse(t);
+      const cx = W / 2, cy = H / 2;
+      waveSpin += 0.008;  // 0.008 rad/frame ≈ gentle drift at 60fps
+
+      for (let ring = 0; ring < RINGS; ring++) {
+        // Ring 0 holds the live pulse; outer rings lag behind by ring*2
+        // frames so the ripple travels outward through time.
+        const delayedBass = ring === 0
+          ? bass
+          : bassHistory[Math.min(ring * 2, BASS_HISTORY_LEN - 1)];
+
+        const baseR = (ring + 1) * Math.min(W, H) * 0.09;
+        const r     = baseR * (1 + delayedBass * 0.45);
+        const count = ring === 0 ? 1 : ring * 6;       // 1, 6, 12, 18, 24, 30
+        const size  = 14 + ring * 3 + delayedBass * 18;
+        const dir   = ring % 2 === 0 ? 1 : -1;          // alternating spin
+
+        ctx.font = `${size}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        for (let j = 0; j < count; j++) {
+          const angle = (j / count) * Math.PI * 2 + waveSpin * dir;
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
+          const emoji = EMOJIS[(ring * 4 + j) % EMOJIS.length];
+          ctx.fillText(emoji, x, y);
+        }
+      }
+    }
+
+    let t0;
+    function frame(ts) {
+      if (!t0) t0 = ts;
+      render((ts - t0) / 1000);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

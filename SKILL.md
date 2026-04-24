@@ -265,6 +265,8 @@ Every presentation includes layered ambient effects that run throughout:
 - **Bokeh discs** — Blurred glowing circles that drift and breathe
 - **SF fog** — Three-depth-layer fog clouds (☁️ emoji, blurred) that drift right-to-left like the real marine layer; Perlin noise drives vertical curl
 
+**Emoji visualization techniques** (for hero slides, loading screens, closing moments, or any slide wanting a full-motion canvas): see [`references/emoji-visualizations.md`](references/emoji-visualizations.md) for three self-contained canvas-2D techniques — **Concentric Waves**, **Tunnel Vortex** (phyllotaxis), and **Fireworks** (themed parabolic-arc bursts). Each has a runnable demo in `showcase/` and a one-line hook to wire back to audio if you have it.
+
 ---
 
 ## HUD controls

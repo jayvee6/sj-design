@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emoji Fireworks — sj-design showcase</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #04060f; color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / emoji visualizations
+    <strong>Fireworks</strong>
+  </div>
+  <canvas id="c"></canvas>
+
+  <script>
+    // ─── Emoji Fireworks ───────────────────────────────────────────────────
+    // True parabolic-arc fireworks: each rocket is integrated with manual
+    // physics (gravity + per-frame velocity) so the trajectory is a real
+    // parabola, not a linear tween with easing. On reaching its randomly
+    // chosen explosion-Y it detonates into a themed radial burst.
+    //
+    // Each launch picks from THEMES — rocket emoji + matching debris set —
+    // so "rocket → sparkles", "heart → hearts", "pumpkin → ghosts" etc.
+    // read as thematically coherent. Z-depth is baked in per launch:
+    // farther rockets are smaller+dimmer+slower, near ones are 1.3× scale.
+    //
+    // Auto-fire: timer-driven here (every 1.8s) so it runs with no audio.
+    // To wire to music, call launch() from your beat detector and reset
+    // lastAutoFireT = t to suppress the idle timer on beat frames.
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+
+    const GRAVITY           = 520;   // px/s² — tuned for full-viewport canvas
+    const LAUNCH_SPEED_UNIT = 180;
+    const EXPLOSION_UNIT    = 260;
+    const ANGLE_RANGE_DEG   = 20;    // ±20° from vertical — mild visible arc
+
+    // Depth curves — 20% closer than "on the horizon" so the show reads
+    // as close-range spectacle, not pinprick distant lights.
+    const zToScale = z => 0.72 + z * 0.60;   // 0.72× .. 1.32×
+    const zToAlpha = z => 0.70 + z * 0.28;   // 0.70   .. 0.98
+
+    const HORIZON_Y_FRAC   = 0.90;   // launch from 90% down the canvas
+    const HORIZON_X_SPREAD = 0.22;   // ± 22% of canvas width
+    const APEX_MIN_FRAC    = 0.15;   // burst at most 15% from top
+    const APEX_MAX_FRAC    = 0.50;   // and no lower than 50% down
+
+    // Themes — adding more is zero-friction.
+    const THEMES = [
+      { rocket: '🚀', debris: ['✨','💥','🌟','🎉']       },
+      { rocket: '💘', debris: ['💖','💕','❤️','💗','💝']  },
+      { rocket: '🪄', debris: ['✨','🌟','💫','⭐','✴️']   },
+      { rocket: '🎃', debris: ['👻','🦇','🕸️','🕷️','🍬']  },
+      { rocket: '🍾', debris: ['🎉','🎊','🥂','🎈']       },
+      { rocket: '🌈', debris: ['🦄','💖','⭐','🌟','✨']   },
+      { rocket: '🌸', debris: ['🌼','🌺','🌷','🌻','🏵️']  },
+      { rocket: '👽', debris: ['🛸','⭐','🌙','🪐','💫']   },
+      { rocket: '🐙', debris: ['🐠','🐡','🐟','🐚','🌊']   },
+      { rocket: '🎊', debris: ['🎉','🎈','🥳','🪩','🍰']   },
+      { rocket: '🎄', debris: ['🎁','🎅','❄️','⛄','🎀']   },
+      { rocket: '🍄', debris: ['🌿','🍃','🌳','🌱','☘️']   },
+      { rocket: '⚡', debris: ['⭐','✨','💫','🌟','☄️']   },
+      { rocket: '🐉', debris: ['🔥','💥','✨','⚔️','🐲']   },
+    ];
+
+    const rand = (min, max) => min + Math.random() * (max - min);
+    const pickTheme = () => THEMES[(Math.random() * THEMES.length) | 0];
+
+    const rockets   = [];
+    const particles = [];
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width  = window.innerWidth  * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width  = window.innerWidth  + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function launch() {
+      const W = window.innerWidth, H = window.innerHeight;
+      if (W <= 1 || H <= 1) return;
+
+      const launchSpeed    = 7;
+      const explosionForce = 6;
+      const particleCount  = 50;
+      const yVariance      = 0.3;
+
+      const theme  = pickTheme();
+      const angleDeg = rand(90 - ANGLE_RANGE_DEG, 90 + ANGLE_RANGE_DEG);
+      const angleRad = angleDeg * Math.PI / 180;
+
+      // z-depth sampled once per launch — distant rockets move slower
+      // on screen for parallax consistency.
+      const z = Math.random();
+      const depthScale = zToScale(z);
+      const jitter = rand(0.85, 1.15) * depthScale;
+      const speed  = launchSpeed * LAUNCH_SPEED_UNIT * jitter;
+
+      const vx =  speed * Math.cos(angleRad);
+      const vy = -speed * Math.sin(angleRad);
+
+      const xSpread = HORIZON_X_SPREAD * (0.75 + z * 0.35);
+      const startX  = W * 0.5 + rand(-W * xSpread, W * xSpread);
+      const startY  = H * (HORIZON_Y_FRAC - (1 - z) * 0.03);
+
+      const apexMinY = H * APEX_MIN_FRAC;
+      const apexMaxY = H * APEX_MAX_FRAC;
+      const mid = (apexMinY + apexMaxY) * 0.5;
+      const half = (apexMaxY - apexMinY) * 0.5;
+      const explosionY = mid + rand(-1, 1) * half * yVariance;
+
+      rockets.push({
+        x: startX, y: startY, vx, vy,
+        explosionY, emoji: theme.rocket, theme, z, depthScale,
+        force: explosionForce, count: particleCount,
+      });
+    }
+
+    function spawnBurst(cx, cy, force, count, emojis, z, depthScale) {
+      const speed = force * EXPLOSION_UNIT * 0.1 * (0.80 + z * 0.35);
+      for (let i = 0; i < count; i++) {
+        const theta = (i / count) * Math.PI * 2 + rand(-0.12, 0.12);
+        const mag   = speed * rand(0.6, 1.3);
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(theta) * mag,
+          vy: Math.sin(theta) * mag - rand(20, 80),
+          age: 0, life: rand(1.2, 2.0),
+          emoji: emojis[(Math.random() * emojis.length) | 0],
+          size:  rand(26, 38) * depthScale,
+          z, depthScale,
+        });
+      }
+    }
+
+    let lastT = 0;
+    let lastAutoFireT = -999;
+    const IDLE_INTERVAL = 1.8;   // seconds between idle launches
+
+    function render(t) {
+      const W = window.innerWidth, H = window.innerHeight;
+      const dt = lastT === 0 ? (1 / 60) : Math.min(0.05, t - lastT);
+      lastT = t;
+
+      // Idle auto-fire. Hook your beat detector here: on isBeatNow, call
+      // launch() and set lastAutoFireT = t.
+      if (t - lastAutoFireT > IDLE_INTERVAL) {
+        launch();
+        lastAutoFireT = t;
+      }
+
+      // Translucent fill = short comet trails behind every particle.
+      ctx.fillStyle = 'rgba(4, 6, 16, 0.30)';
+      ctx.fillRect(0, 0, W, H);
+
+      // Rocket physics — true parabola via gravity accumulation.
+      for (let i = rockets.length - 1; i >= 0; i--) {
+        const r = rockets[i];
+        r.vy += GRAVITY * dt;
+        r.x  += r.vx * dt;
+        r.y  += r.vy * dt;
+        if (r.y <= r.explosionY) {
+          rockets.splice(i, 1);
+          spawnBurst(r.x, r.y, r.force, r.count, r.theme.debris, r.z, r.depthScale);
+        }
+      }
+
+      // Particle physics — reduced gravity (0.65×) so embers hang longer.
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.age += dt;
+        if (p.age >= p.life) { particles.splice(i, 1); continue; }
+        p.vy += GRAVITY * dt * 0.65;
+        p.x  += p.vx * dt;
+        p.y  += p.vy * dt;
+      }
+
+      // Draw — z-sorted so far items render behind near items.
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      const drawList = rockets.concat(particles);
+      drawList.sort((a, b) => a.z - b.z);
+
+      for (const item of drawList) {
+        const isRocket = !('life' in item);
+        if (isRocket) {
+          const size = 36 * item.depthScale;
+          ctx.globalAlpha = zToAlpha(item.z);
+          ctx.font = `${size}px -apple-system, system-ui, sans-serif`;
+          ctx.fillText(item.emoji, item.x, item.y);
+        } else {
+          const remaining = Math.max(0, 1 - item.age / item.life);
+          ctx.globalAlpha = remaining * remaining * zToAlpha(item.z);
+          ctx.font = `${item.size}px -apple-system, system-ui, sans-serif`;
+          ctx.fillText(item.emoji, item.x, item.y);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    let t0;
+    function frame(ts) {
+      if (!t0) t0 = ts;
+      render((ts - t0) / 1000);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
