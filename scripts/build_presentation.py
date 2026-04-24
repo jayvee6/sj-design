@@ -80,15 +80,16 @@ def render_slide(slide: dict, index: int) -> str:
     slide_type = slide.get("type", "content")
     active_class = " active" if index == 0 else ""
     dispatch = {
-        "title":      _render_title,
-        "content":    _render_content,
-        "quote":      _render_quote,
-        "two-column": _render_two_column,
-        "stats":      _render_stats,
-        "media":      _render_media,
-        "gallery":    _render_gallery,
-        "closing":    _render_closing,
-        "family":     _render_family,
+        "title":         _render_title,
+        "content":       _render_content,
+        "quote":         _render_quote,
+        "two-column":    _render_two_column,
+        "stats":         _render_stats,
+        "media":         _render_media,
+        "gallery":       _render_gallery,
+        "glass-gallery": _render_glass_gallery,
+        "closing":       _render_closing,
+        "family":        _render_family,
     }
     renderer = dispatch.get(slide_type, _render_content)
     inner    = renderer(slide)
@@ -96,10 +97,17 @@ def render_slide(slide: dict, index: int) -> str:
     # Optional photo-tiles background layer (any slide type)
     tiles_html = _render_photo_tiles(slide.get("photo_tiles", []))
 
+    # Optional corner emoji (any slide type) — parallax-aware via data-depth
+    corner_emoji = slide.get("corner_emoji", "")
+    corner_html = (
+        f'<div class="corner-emoji" data-depth="1.4">{_esc(corner_emoji)}</div>'
+        if corner_emoji else ""
+    )
+
     return (
         f'<div class="slide slide-{slide_type}{active_class}" '
         f'data-index="{index}" data-type="{slide_type}">'
-        f'{tiles_html}{inner}\n</div>'
+        f'{tiles_html}{corner_html}{inner}\n</div>'
     )
 
 
@@ -281,11 +289,75 @@ def _render_gallery(slide: dict) -> str:
   </div>"""
 
 
+def _render_glass_gallery(slide: dict) -> str:
+    """Grid of glass cards, each showing a full image (object-fit: contain).
+
+    Unlike the Ken Burns `gallery`, this renders every image at once as a
+    static grid. Good for comparison layouts and reference arcs where the
+    audience needs to see all images simultaneously. No crossfade, no crop.
+
+    Optional `columns` integer forces a fixed column count (1–6). Omit to
+    use the default auto-fit behavior that responds to viewport width.
+    """
+    srcs = slide.get("srcs", [])
+    cards_html = ""
+    for src in srcs:
+        if src and not src.startswith(("http://", "https://", "data:")):
+            src = _local_to_data_uri(src)
+        cards_html += (
+            f'\n      <div class="glass-image-card">'
+            f'<img src="{_esc(src)}" alt="" loading="lazy"></div>'
+        )
+
+    cols = slide.get("columns")
+    grid_style = ""
+    if isinstance(cols, int) and 1 <= cols <= 6:
+        grid_style = f' style="grid-template-columns: repeat({cols}, 1fr)"'
+
+    eyebrow_html = _eyebrow(slide)
+    heading = f'<h2 class="headline">{_esc(slide["heading"])}</h2>' if slide.get("heading") else ""
+    caption = f'<p class="media-caption">{_esc(slide["caption"])}</p>' if slide.get("caption") else ""
+
+    return f"""
+  <div class="slide-inner slide-inner--center">
+    {eyebrow_html}
+    {heading}
+    <div class="glass-gallery-grid"{grid_style}>{cards_html}
+    </div>
+    {caption}
+  </div>"""
+
+
 def _render_closing(slide: dict) -> str:
     cta = f'<p class="cta">{_esc(slide["cta"])}</p>' if slide.get("cta") else ""
     contact = f'<p class="contact">{_esc(slide["contact"])}</p>' if slide.get("contact") else ""
+
+    # Always emit both celebration elements so either HUD button
+    # (😅 emoji rain, 🎆 fireworks) can fire regardless of deck config.
+    # The presenter's live selection decides which one plays.
+    rain = slide.get("rain_emojis", [])
+    rain_attr = ""
+    if rain:
+        rain_attr = f' data-rain-emojis="{_esc(",".join(rain))}"'
+
+    # Themes shape: list of {"rocket": "🚀", "debris": ["✨","🌟"]}.
+    # Encoded on the canvas as data-firework-themes="🚀:✨,🌟|🪄:✨,⭐"
+    # because the attr can't be JSON without breaking escape rules.
+    themes = slide.get("firework_themes", [])
+    themes_attr = ""
+    if themes:
+        parts = []
+        for t in themes:
+            rocket = t.get("rocket", "")
+            debris = t.get("debris", [])
+            if rocket and debris:
+                parts.append(f"{rocket}:{','.join(debris)}")
+        if parts:
+            themes_attr = f' data-firework-themes="{_esc("|".join(parts))}"'
+
     return f"""
-  <div class="emoji-rain-back"></div>
+  <div class="emoji-rain-back"{rain_attr}></div>
+  <canvas class="firework-canvas"{themes_attr}></canvas>
   <div class="slide-inner slide-inner--center">
     <h1 class="headline closing-headline">{_esc(slide.get("heading", ""))}</h1>
     {cta}
@@ -391,6 +463,21 @@ def build(spec: dict, output_path: str) -> None:
     slides = spec.get("slides", [])
     if not slides:
         raise ValueError("Spec has no slides.")
+
+    # Derive the default emoji-rain pool from the deck's own content — every
+    # corner_emoji and icon field across all slides, deduplicated in first-
+    # seen order. Any closing slide without an explicit rain_emojis gets this
+    # derived pool so the rain feels native to the deck, not generic.
+    derived_pool = []
+    for s in slides:
+        for field in ("corner_emoji", "icon"):
+            v = s.get(field)
+            if v and v not in derived_pool:
+                derived_pool.append(v)
+    if derived_pool:
+        for s in slides:
+            if s.get("type") == "closing" and "rain_emojis" not in s:
+                s["rain_emojis"] = derived_pool
 
     slides_html = "\n".join(render_slide(s, i) for i, s in enumerate(slides))
     title = spec.get("title", "Presentation")

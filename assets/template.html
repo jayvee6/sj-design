@@ -838,6 +838,59 @@
       100% { transform: scale(1.00) translate( 2%,  -2%); }
     }
 
+    /* ── Corner emoji — large ambient ornament, bottom-right ───── */
+    /* Sits deep behind content as atmospheric decoration — low opacity,
+       soft blur, no drop shadow. Parallax.js drives transform via data-depth.
+       Matches studiojoe.dev's deco-emoji aesthetic (pool opacity ~0.12–0.20). */
+    .corner-emoji {
+      position:     absolute;
+      bottom:       clamp(24px, 5vh, 64px);
+      right:        clamp(24px, 5vw, 80px);
+      font-size:    clamp(140px, 20vw, 320px);
+      z-index:      0;
+      pointer-events: none;
+      opacity:      0.22;
+      filter:       blur(0.6px);
+      will-change:  transform;
+      line-height:  1;
+      user-select:  none;
+    }
+    /* Make sure slide content sits above the ambient emoji */
+    .slide > .slide-inner { position: relative; z-index: 1; }
+
+    /* ── Glass gallery — grid of full images in glass cards ────── */
+    .slide-glass-gallery .slide-inner {
+      gap:     clamp(8px, 1vw, 16px);
+      padding: clamp(10px, 1.5vh, 24px) clamp(10px, 1.8vw, 28px);
+    }
+    .glass-gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(180px, 22vw, 260px), 1fr));
+      gap: clamp(10px, 1.2vw, 18px);
+      width: 100%;
+      max-width: min(1260px, 96vw);
+      align-items: stretch;
+    }
+    .glass-image-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--glass-bdr);
+      border-radius: clamp(14px, 1.6vw, 22px);
+      box-shadow: var(--glass-shd);
+      padding: 0;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      position: relative;
+      min-width: 0;
+    }
+    .glass-image-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
     /* Dot indicators */
     .gallery-dots {
       display:         flex;
@@ -1085,6 +1138,16 @@
     .slide-closing .slide-inner {
       position: relative;
       z-index:  1;
+    }
+
+    /* Firework canvas — alternative closing-slide effect */
+    .firework-canvas {
+      position:       absolute;
+      inset:          0;
+      width:          100%;
+      height:         100%;
+      pointer-events: none;
+      z-index:        0;
     }
 
     .emoji-particle {
@@ -1416,7 +1479,8 @@
   <div id="nav-jumps">
     <button class="ts-btn" id="btn-first" title="Jump to first slide">⏮</button>
     <button class="ts-btn" id="btn-last"  title="Jump to last slide">⏭</button>
-    <button class="ts-btn" id="btn-emoji-toggle" title="Toggle emoji rain">😅</button>
+    <button class="ts-btn" id="btn-emoji-toggle"     title="Toggle emoji rain">😅</button>
+    <button class="ts-btn" id="btn-fireworks-toggle" title="Toggle fireworks">🎆</button>
   </div>
   <span class="hud-label" id="counter">1 / {{SLIDE_COUNT}}</span>
   <div id="hud-right">
@@ -2211,10 +2275,12 @@
   }
 
   // ── Emoji Rain ──────────────────────────────────────────────────
-  const RAIN_EMOJIS = ['🌉','🔑','💰','📈','🏡','🎉','✨','🎊','💫','🥂','🏠','💎'];
+  const RAIN_EMOJIS_DEFAULT = ['🌉','🔑','💰','📈','🏡','🎉','✨','🎊','💫','🥂','🏠','💎'];
+  let _rainPool          = RAIN_EMOJIS_DEFAULT;  // per-deck override via data-rain-emojis
   let _rainInterval      = null;
   let _rainBackEl        = null;   // .emoji-rain-back inside closing slide
   let _emojiRainEnabled  = false;  // off by default — toggle with 😅 button
+  let _fireworksEnabled  = false;  // off by default — toggle with 🎆 button
 
   function _spawnEmoji(isBack) {
     // Back-layer goes inside the slide (behind text); front goes on fixed overlay
@@ -2225,7 +2291,7 @@
 
     const el = document.createElement('span');
     el.className   = 'emoji-particle ' + (isBack ? 'ep-back' : 'ep-front');
-    el.textContent = RAIN_EMOJIS[Math.floor(Math.random() * RAIN_EMOJIS.length)];
+    el.textContent = _rainPool[Math.floor(Math.random() * _rainPool.length)];
 
     const startX = Math.random() * 105 - 2;
     const drift  = (Math.random() - 0.5) * (isBack ? 80 : 140);
@@ -2254,6 +2320,13 @@
     stopEmojiRain(); // always clear first — prevents stuck state from stale intervals
     _rainBackEl = slide ? slide.querySelector('.emoji-rain-back') : null;
 
+    // Per-deck override — data-rain-emojis on .emoji-rain-back
+    // e.g. data-rain-emojis="🤖,🦾,✨" (comma-separated)
+    const custom = _rainBackEl?.dataset.rainEmojis;
+    _rainPool = custom
+      ? custom.split(',').map(s => s.trim()).filter(Boolean)
+      : RAIN_EMOJIS_DEFAULT;
+
     // Initial burst — mix of front and back for instant depth
     for (let i = 0; i < 22; i++) {
       setTimeout(() => _spawnEmoji(i % 3 === 0), i * 55);
@@ -2268,6 +2341,158 @@
     document.querySelectorAll('.emoji-particle').forEach(el => {
       gsap.to(el, { opacity: 0, duration: 0.4, onComplete: () => el.remove() });
     });
+  }
+
+  // ── Fireworks — alternate closing-slide effect ─────────────────
+  // Timer-driven (no music dependency). Ported from musicplayer-viz
+  // viz/fireworks.js — kept the parabolic physics and themed debris,
+  // dropped the z-depth and beat-reactivity for deck simplicity.
+  const FIREWORK_THEMES_DEFAULT = [
+    { rocket: '🚀', debris: ['✨','💥','🌟','🎉'] },
+    { rocket: '💘', debris: ['💖','💕','❤️','💗','💝'] },
+    { rocket: '🪄', debris: ['✨','🌟','💫','⭐','✴️'] },
+    { rocket: '🍾', debris: ['🎉','🎊','🥂','🎈'] },
+    { rocket: '🌈', debris: ['🦄','💖','⭐','🌟','✨'] },
+    { rocket: '👽', debris: ['🛸','⭐','🌙','🪐','💫'] },
+    { rocket: '🎊', debris: ['🎉','🎈','🥳','🪩','🍰'] },
+    { rocket: '⚡', debris: ['⭐','✨','💫','🌟','☄️'] },
+  ];
+  const FW_GRAVITY        = 520;     // px/s²
+  const FW_LAUNCH_SPEED   = 1260;    // px/s base
+  const FW_EXPLOSION_UNIT = 260;     // burst particle speed unit
+  const FW_PARTICLE_COUNT = 50;
+  const FW_IDLE_INTERVAL  = 1.6;     // seconds between rockets
+
+  let _fwRaf      = null;
+  let _fwCanvas   = null;
+  let _fwCtx      = null;
+  let _fwRockets  = [];
+  let _fwParts    = [];
+  let _fwThemes   = FIREWORK_THEMES_DEFAULT;
+  let _fwLastT    = 0;
+  let _fwLastFire = -999;
+
+  function _fwResize() {
+    if (!_fwCanvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    _fwCanvas.width  = _fwCanvas.offsetWidth  * dpr;
+    _fwCanvas.height = _fwCanvas.offsetHeight * dpr;
+    _fwCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function _fwLaunch() {
+    if (!_fwCanvas) return;
+    const W = _fwCanvas.offsetWidth, H = _fwCanvas.offsetHeight;
+    if (W <= 1 || H <= 1) return;
+    const theme    = _fwThemes[(Math.random() * _fwThemes.length) | 0];
+    const angleDeg = 90 + (Math.random() - 0.5) * 40;  // ±20° from vertical
+    const angleRad = angleDeg * Math.PI / 180;
+    const speed    = FW_LAUNCH_SPEED * (0.85 + Math.random() * 0.3);
+    _fwRockets.push({
+      x: W * (0.25 + Math.random() * 0.5),
+      y: H * 0.92,
+      vx:  speed * Math.cos(angleRad),
+      vy: -speed * Math.sin(angleRad),
+      explosionY: H * (0.18 + Math.random() * 0.32),
+      emoji: theme.rocket,
+      theme,
+    });
+  }
+
+  function _fwBurst(cx, cy, emojis) {
+    const speed = 6 * FW_EXPLOSION_UNIT * 0.1;
+    for (let i = 0; i < FW_PARTICLE_COUNT; i++) {
+      const theta = (i / FW_PARTICLE_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+      const mag   = speed * (0.6 + Math.random() * 0.7);
+      _fwParts.push({
+        x: cx, y: cy,
+        vx: Math.cos(theta) * mag,
+        vy: Math.sin(theta) * mag - (20 + Math.random() * 60),
+        age: 0, life: 1.2 + Math.random() * 0.8,
+        emoji: emojis[(Math.random() * emojis.length) | 0],
+        size: 26 + Math.random() * 14,
+      });
+    }
+  }
+
+  function _fwTick(tMs) {
+    if (!_fwCtx) return;
+    const t  = tMs / 1000;
+    const dt = _fwLastT === 0 ? (1 / 60) : Math.min(0.05, t - _fwLastT);
+    _fwLastT = t;
+
+    if (t - _fwLastFire > FW_IDLE_INTERVAL) { _fwLaunch(); _fwLastFire = t; }
+
+    const W = _fwCanvas.offsetWidth, H = _fwCanvas.offsetHeight;
+    // Fully clear each frame so the slide's themed background shows through.
+    // (Upstream musicplayer-viz used a translucent dark fill for motion trails,
+    //  but that blackens the whole canvas and hides the deck's gradient.)
+    _fwCtx.clearRect(0, 0, W, H);
+
+    for (let i = _fwRockets.length - 1; i >= 0; i--) {
+      const r = _fwRockets[i];
+      r.vy += FW_GRAVITY * dt;
+      r.x  += r.vx * dt;
+      r.y  += r.vy * dt;
+      if (r.y <= r.explosionY) {
+        _fwRockets.splice(i, 1);
+        _fwBurst(r.x, r.y, r.theme.debris);
+      }
+    }
+    for (let i = _fwParts.length - 1; i >= 0; i--) {
+      const p = _fwParts[i];
+      p.age += dt;
+      if (p.age >= p.life) { _fwParts.splice(i, 1); continue; }
+      p.vy += FW_GRAVITY * dt * 0.65;
+      p.x  += p.vx * dt;
+      p.y  += p.vy * dt;
+    }
+
+    _fwCtx.textAlign    = 'center';
+    _fwCtx.textBaseline = 'middle';
+    for (const r of _fwRockets) {
+      _fwCtx.globalAlpha = 0.95;
+      _fwCtx.font = `36px -apple-system, system-ui, sans-serif`;
+      _fwCtx.fillText(r.emoji, r.x, r.y);
+    }
+    for (const p of _fwParts) {
+      const remaining = Math.max(0, 1 - p.age / p.life);
+      _fwCtx.globalAlpha = remaining * remaining;
+      _fwCtx.font = `${p.size}px -apple-system, system-ui, sans-serif`;
+      _fwCtx.fillText(p.emoji, p.x, p.y);
+    }
+    _fwCtx.globalAlpha = 1;
+    _fwRaf = requestAnimationFrame(_fwTick);
+  }
+
+  function startFireworks(slide) {
+    stopFireworks();
+    _fwCanvas = slide.querySelector('.firework-canvas');
+    if (!_fwCanvas) return;
+    _fwCtx = _fwCanvas.getContext('2d');
+
+    // Theme override: data-firework-themes="🚀:✨,💥,🌟|🪄:✨,⭐,💫"
+    const raw = _fwCanvas.dataset.fireworkThemes;
+    _fwThemes = raw ? raw.split('|').map(s => {
+      const [rocket, debrisStr] = s.split(':');
+      return { rocket, debris: debrisStr.split(',') };
+    }).filter(t => t.rocket && t.debris.length) : FIREWORK_THEMES_DEFAULT;
+
+    _fwResize();
+    window.addEventListener('resize', _fwResize);
+    _fwRockets.length = 0; _fwParts.length = 0;
+    _fwLastT = 0; _fwLastFire = -999;
+    _fwRaf = requestAnimationFrame(_fwTick);
+  }
+
+  function stopFireworks() {
+    if (_fwRaf) { cancelAnimationFrame(_fwRaf); _fwRaf = null; }
+    window.removeEventListener('resize', _fwResize);
+    if (_fwCtx && _fwCanvas) {
+      _fwCtx.clearRect(0, 0, _fwCanvas.offsetWidth, _fwCanvas.offsetHeight);
+    }
+    _fwCanvas = null; _fwCtx = null;
+    _fwRockets.length = 0; _fwParts.length = 0;
   }
 
   // ── SF Fog ──────────────────────────────────────────────────────
@@ -2560,6 +2785,18 @@
         tl.call(() => _startGallery(slide), [], 0.42);
         break;
 
+      case 'glass-gallery': {
+        ftEyebrow(0);
+        ftWords(headline, 0.08, 16);
+        const cards = Array.from(slide.querySelectorAll('.glass-image-card'));
+        if (cards.length) tl.fromTo(cards,
+          { y: 18, opacity: 0, scale: 0.94 },
+          { y: 0, opacity: 1, scale: 1, stagger: 0.07,
+            duration: DUR * 1.1, ease: EASE_SPRING }, 0.22);
+        ft(caption, { opacity: 0 }, { duration: DUR * 0.6, ease: EASE_SOFT }, 0.55);
+        break;
+      }
+
       case 'media':
         ftWords(headline, 0, 18);
         ft(frame,   { scale: 1.05, opacity: 0, filter: 'blur(8px)' },
@@ -2577,7 +2814,11 @@
           { scale: 1, opacity: 1, rotateX: 0, stagger: 0.08, duration: DUR * 1.15, ease: EASE_SPRING }, 0);
         ft(cta,     { y: 20, opacity: 0 }, { duration: DUR,        ease: EASE_OUT  }, 0.34);
         ft(contact, { opacity: 0 },        { duration: DUR * 0.75, ease: EASE_SOFT }, 0.50);
-        tl.call(() => { if (_emojiRainEnabled && slides[current] === slide) startEmojiRain(slide); }, [], 0.5);
+        tl.call(() => {
+          if (slides[current] !== slide) return;
+          if (_fireworksEnabled)      startFireworks(slide);
+          else if (_emojiRainEnabled) startEmojiRain(slide);
+        }, [], 0.5);
         break;
       }
 
@@ -2598,7 +2839,7 @@
   // previously-animated content (which has GSAP inline opacity:1).
   const CHILD_SEL = '.eyebrow, .slide-icon, .headline, .subheading, ' +
     '.bullets li, blockquote, cite, .quote-credit, .col, .stat-card, .media-frame, .gallery-frame, ' +
-    '.media-caption, .cta, .contact, .slide-note';
+    '.glass-image-card, .media-caption, .cta, .contact, .slide-note';
 
   function resetSlide(slide) {
     _stopGallery(slide);
@@ -2744,16 +2985,41 @@
     if (current !== TOTAL - 1) goTo(TOTAL - 1, 1);
   });
 
-  // ── Emoji rain toggle ─────────────────────────────────────────────
-  document.getElementById('btn-emoji-toggle').addEventListener('click', e => {
+  // ── Closing-slide effect toggles ─────────────────────────────────
+  // Two buttons, mutually exclusive — the presenter picks which effect
+  // runs on the closing slide. Each button toggles its own state and
+  // turns the other off so the visual never doubles up.
+  const _btnEmoji = document.getElementById('btn-emoji-toggle');
+  const _btnFw    = document.getElementById('btn-fireworks-toggle');
+
+  function _syncEffectButtons() {
+    _btnEmoji.classList.toggle('ts-active', _emojiRainEnabled);
+    _btnFw   .classList.toggle('ts-active', _fireworksEnabled);
+  }
+
+  function _applyClosingEffect() {
+    const activeSlide = slides[current];
+    if (!activeSlide || activeSlide.dataset.type !== 'closing') return;
+    stopEmojiRain();
+    stopFireworks();
+    if (_fireworksEnabled)      startFireworks(activeSlide);
+    else if (_emojiRainEnabled) startEmojiRain(activeSlide);
+  }
+
+  _btnEmoji.addEventListener('click', e => {
     e.stopPropagation();
     _emojiRainEnabled = !_emojiRainEnabled;
-    document.getElementById('btn-emoji-toggle').classList.toggle('ts-active', _emojiRainEnabled);
-    // If we're currently on the closing slide, start/stop immediately
-    const activeSlide = slides[current];
-    if (activeSlide && activeSlide.dataset.type === 'closing') {
-      _emojiRainEnabled ? startEmojiRain(activeSlide) : stopEmojiRain();
-    }
+    if (_emojiRainEnabled) _fireworksEnabled = false;  // mutual exclusion
+    _syncEffectButtons();
+    _applyClosingEffect();
+  });
+
+  _btnFw.addEventListener('click', e => {
+    e.stopPropagation();
+    _fireworksEnabled = !_fireworksEnabled;
+    if (_fireworksEnabled) _emojiRainEnabled = false;  // mutual exclusion
+    _syncEffectButtons();
+    _applyClosingEffect();
   });
 
   // ── Text size control ────────────────────────────────────────────
