@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heart Pulse — sj-design showcase</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: radial-gradient(ellipse at 50% 50%, #1a0614 0%, #04040a 70%);
+      color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / emoji formations
+    <strong>Heart Pulse</strong>
+  </div>
+  <canvas id="c"></canvas>
+
+  <!-- Optional shared helpers — inline fallbacks below kick in if they 404 -->
+  <script src="../../lib/canvas-size.js"></script>
+  <script src="../../lib/synthetic-pulse.js"></script>
+  <script src="../../lib/envelopes.js"></script>
+  <script>
+    // ─── Heart Pulse ──────────────────────────────────────────────────────
+    // 18 heart emojis positioned along the classic parametric heart curve:
+    //
+    //   x(u) = 16 · sin³(u)
+    //   y(u) = 13 · cos(u) − 5 · cos(2u) − 2 · cos(3u) − cos(4u)
+    //
+    // Uniform parameter sampling clusters emojis where the curve moves
+    // slowly (the lobes) and spreads them where it moves fast (the bottom
+    // point), so we instead distribute by **arc length** — each emoji sits
+    // at a u-value where the cumulative arc length is k/N of the total.
+    // The result: emojis read as evenly spaced along the heart's outline.
+    //
+    // The heart pulses:
+    //   scale(t)   = 1 + 0.25 · pulse
+    //   hue(t)     = baseHue + pulse · 50          (glow color shifts on beat)
+    //   size_k(t)  = 32 + 14 · pulse               (emojis grow too)
+    //
+    // A radial gradient behind the heart delivers the "hue shift" without
+    // Canvas 2D filter support — the hue cycles with time and jumps on
+    // every pulse. Emojis themselves are already colored hearts, so there's
+    // no per-glyph tint.
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+
+    // 18 heart variants — exactly one per emoji slot.
+    const EMOJIS = [
+      '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎',
+      '💔','💕','💞','💖','💗','💓','💘','💝','💟'
+    ];
+    const N = EMOJIS.length;
+
+    // Canvas sizing — prefers lib/canvas-size.js (SJCanvas).
+    if (window.SJCanvas) {
+      window.SJCanvas.fit(canvas, ctx);
+    } else {
+      const resize = () => {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width  = window.innerWidth  * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width  = window.innerWidth  + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      };
+      window.addEventListener('resize', resize);
+      resize();
+    }
+
+    // Heart curve — returns (x, y) in the curve's own coordinate space.
+    function heart(u) {
+      const s = Math.sin(u);
+      return {
+        x: 16 * s * s * s,
+        y: 13 * Math.cos(u) - 5 * Math.cos(2 * u) - 2 * Math.cos(3 * u) - Math.cos(4 * u),
+      };
+    }
+
+    // Precompute arc-length table, then pick N u-values with even spacing
+    // along the perimeter. Runs once at load.
+    const SAMPLES = 1200;
+    const emojiUs = (() => {
+      const us = new Float64Array(SAMPLES + 1);
+      const arc = new Float64Array(SAMPLES + 1);
+      let prev = heart(0);
+      us[0] = 0; arc[0] = 0;
+      for (let i = 1; i <= SAMPLES; i++) {
+        const u = (i / SAMPLES) * Math.PI * 2;
+        const p = heart(u);
+        const dx = p.x - prev.x, dy = p.y - prev.y;
+        arc[i] = arc[i - 1] + Math.sqrt(dx * dx + dy * dy);
+        us[i] = u;
+        prev = p;
+      }
+      const total = arc[SAMPLES];
+      const out = new Array(N);
+      for (let k = 0; k < N; k++) {
+        const target = (k / N) * total;
+        // Binary search for arc[lo] ≤ target < arc[hi].
+        let lo = 0, hi = SAMPLES;
+        while (lo < hi - 1) {
+          const mid = (lo + hi) >> 1;
+          if (arc[mid] <= target) lo = mid; else hi = mid;
+        }
+        const f = (target - arc[lo]) / (arc[hi] - arc[lo]);
+        out[k] = us[lo] + f * (us[hi] - us[lo]);
+      }
+      return out;
+    })();
+
+    // Pulse envelope — snappy attack, longer release so hearts "breathe in"
+    // fast then relax. Matches how a real heart pulse feels.
+    const pulseEnv = window.VizEnv
+      ? new window.VizEnv.Envelope({ attack: 0.012, release: 0.30 })
+      : null;
+    let fallbackPulse = 0;
+
+    function rawPulse(t) {
+      return window.SJPulse
+        ? window.SJPulse.kick(t)
+        : Math.min(
+            1,
+            Math.pow(Math.max(0, Math.sin(t * 2.2)), 2) * 0.9
+              + Math.max(0, Math.sin(t * 5.1 + 1.3)) * 0.35
+          );
+    }
+
+    function smoothPulse(t, dt) {
+      const raw = rawPulse(t);
+      if (pulseEnv) return pulseEnv.follow(raw, dt);
+      fallbackPulse += (raw - fallbackPulse) * Math.min(1, dt * 8);
+      return fallbackPulse;
+    }
+
+    // Heart curve bounding box is approx x ∈ [−16, 16], y ∈ [−17, 12.5].
+    // Visual centroid is around (0, −2.25) — translate by +2.25 in curve-y
+    // before rendering so the heart sits vertically centered on screen.
+    const HEART_CY_OFFSET = -2.25;
+    const HEART_MAX_EXTENT = 17;  // half-height; dominates over width (16)
+
+    function render(t, dt) {
+      const W = window.innerWidth, H = window.innerHeight;
+      ctx.clearRect(0, 0, W, H);
+
+      const pulse = smoothPulse(t, dt);
+      const cx = W / 2, cy = H / 2;
+
+      // Hue-shifting background glow — slow drift + beat-driven jump.
+      const hue = (t * 25 + pulse * 50) % 360;
+      const glowR = Math.min(W, H) * 0.42 * (1 + pulse * 0.35);
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+      grad.addColorStop(0, `hsla(${hue}, 75%, 55%, ${0.28 + pulse * 0.22})`);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Heart scaling — fit so the heart fills ~70% of the short side,
+      // then breathe up to +25% on peak pulse.
+      const baseScale  = Math.min(W, H) * 0.70 / (2 * HEART_MAX_EXTENT);
+      const scale      = baseScale * (1 + 0.25 * pulse);
+      const emojiSize  = 32 + pulse * 14;
+
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `${emojiSize}px -apple-system, system-ui, serif`;
+
+      for (let k = 0; k < N; k++) {
+        const p  = heart(emojiUs[k]);
+        const px = cx + p.x * scale;
+        // y is flipped (screen Y goes down); translate by the centroid offset.
+        const py = cy - (p.y - HEART_CY_OFFSET) * scale;
+        ctx.globalAlpha = 0.85 + pulse * 0.15;
+        ctx.fillText(EMOJIS[k], px, py);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    let t0, tPrev;
+    function frame(ts) {
+      if (t0 === undefined) { t0 = ts; tPrev = ts; }
+      const t  = (ts - t0)    / 1000;
+      const dt = Math.min(0.1, (ts - tPrev) / 1000);
+      tPrev = ts;
+      render(t, dt);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
