@@ -20,6 +20,7 @@ from urllib.parse import urlparse, parse_qs
 
 SCRIPT_DIR = Path(__file__).parent
 TEMPLATE_PATH = SCRIPT_DIR.parent / "assets" / "template.html"
+TRANSITIONS_PATH = SCRIPT_DIR.parent / "assets" / "transitions.js"
 
 
 # ── YouTube helpers ────────────────────────────────────────────────────────────
@@ -58,8 +59,21 @@ def detect_media_type(src: str) -> str:
 # ── Slide renderers ────────────────────────────────────────────────────────────
 
 def _esc(text: str) -> str:
-    """Minimal HTML escaping for text content."""
-    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    """HTML-escape text for use in element content or quoted attributes.
+
+    Escapes & < > " ' so the result is safe inside double- and single-quoted
+    attributes as well as text content. Quote escaping is essential because
+    many attributes (data-target, alt, etc.) receive _esc() output and a
+    literal " in user data would otherwise break the attribute.
+    """
+    return (
+        str(text)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
+    )
 
 
 def render_slide(slide: dict, index: int) -> str:
@@ -95,7 +109,7 @@ def _eyebrow(slide: dict) -> str:
 
 
 def _render_title(slide: dict) -> str:
-    icon = f'<p class="slide-icon">{slide["icon"]}</p>' if slide.get("icon") else ""
+    icon = f'<p class="slide-icon">{_esc(slide["icon"])}</p>' if slide.get("icon") else ""
     sub = f'<p class="subheading">{_esc(slide["subheading"])}</p>' if slide.get("subheading") else ""
     return f"""
   <div class="slide-inner slide-inner--center">
@@ -121,7 +135,7 @@ def _render_content(slide: dict) -> str:
 
 
 def _render_quote(slide: dict) -> str:
-    icon = f'<p class="slide-icon">{slide["icon"]}</p>' if slide.get("icon") else ""
+    icon = f'<p class="slide-icon">{_esc(slide["icon"])}</p>' if slide.get("icon") else ""
     eyebrow = _eyebrow(slide)
     if not eyebrow and slide.get("heading"):
         eyebrow = f'<p class="eyebrow">{_esc(slide["heading"])}</p>'
@@ -187,15 +201,15 @@ def _render_media(slide: dict) -> str:
     if media_type == "youtube":
         embed = youtube_to_embed(slide.get("src", src))
         media_html = (
-            f'<iframe src="{embed}" frameborder="0" '
+            f'<iframe src="{_esc(embed)}" frameborder="0" '
             f'allow="accelerometer; autoplay; clipboard-write; encrypted-media; '
             f'gyroscope; picture-in-picture" allowfullscreen></iframe>'
         )
     elif media_type == "video":
-        media_html = f'<video src="{src}" controls></video>'
+        media_html = f'<video src="{_esc(src)}" controls></video>'
     else:
         alt = _esc(slide.get("caption", ""))
-        media_html = f'<img src="{src}" alt="{alt}" loading="lazy">'
+        media_html = f'<img src="{_esc(src)}" alt="{alt}" loading="lazy">'
 
     heading = f'<h2 class="headline media-heading">{_esc(slide["heading"])}</h2>' if slide.get("heading") else ""
     caption = f'<p class="media-caption">{_esc(slide["caption"])}</p>' if slide.get("caption") else ""
@@ -243,7 +257,7 @@ def _render_gallery(slide: dict) -> str:
     for src in srcs:
         if src and not src.startswith(("http://", "https://", "data:")):
             src = _local_to_data_uri(src)
-        kb_slides_html += f'\n      <div class="kb-slide"><img src="{src}" alt="" loading="lazy"></div>'
+        kb_slides_html += f'\n      <div class="kb-slide"><img src="{_esc(src)}" alt="" loading="lazy"></div>'
 
     dots_html = ""
     if len(srcs) > 1:
@@ -307,8 +321,8 @@ def _render_photo_tiles(tiles: list) -> str:
         if top:  style += f" top:{top};"
         if left: style += f" left:{left};"
         parts.append(
-            f'  <img src="{src}" class="photo-tile" '
-            f'data-depth="{depth}" style="{style}" loading="lazy" alt="">'
+            f'  <img src="{_esc(src)}" class="photo-tile" '
+            f'data-depth="{depth}" style="{_esc(style)}" loading="lazy" alt="">'
         )
     parts.append("</div>")
     return "\n".join(parts)
@@ -341,7 +355,7 @@ def _render_family(slide: dict) -> str:
             src = p
             if src and not src.startswith(("http://", "https://", "data:")):
                 src = _local_to_data_uri(src)
-            imgs += f'\n        <img src="{src}" loading="lazy" alt="{name}">'
+            imgs += f'\n        <img src="{_esc(src)}" loading="lazy" alt="{name}">'
         cards_html += f"""
     <div class="stat-card family-card">
       <div class="photo-show">{imgs}
@@ -373,6 +387,7 @@ def build(spec: dict, output_path: str) -> None:
         )
 
     template = TEMPLATE_PATH.read_text(encoding="utf-8")
+
     slides = spec.get("slides", [])
     if not slides:
         raise ValueError("Spec has no slides.")
@@ -395,6 +410,18 @@ def build(spec: dict, output_path: str) -> None:
     html = html.replace("{{TRANSITION}}", transition if transition in VALID_TRANSITIONS else "slide")
     html = html.replace("{{SLIDES}}", slides_html)
     html = html.replace("{{SLIDE_COUNT}}", str(slide_count))
+
+    # Inline transitions.js after all template placeholders are resolved, so
+    # any {{…}} tokens that ever appear in the script wouldn't be substituted
+    # by the template engine. Falls back silently if the file is missing —
+    # the <script src="assets/transitions.js"></script> tag is then left
+    # intact for the caller to resolve.
+    if TRANSITIONS_PATH.exists():
+        transitions_js = TRANSITIONS_PATH.read_text(encoding="utf-8")
+        html = html.replace(
+            '<script src="assets/transitions.js"></script>',
+            f"<script>\n{transitions_js}\n</script>",
+        )
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
