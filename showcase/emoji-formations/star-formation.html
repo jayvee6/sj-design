@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Star Formation — sj-design showcase</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: radial-gradient(ellipse at 50% 50%, #0e1036 0%, #03030a 70%);
+      color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / emoji formations
+    <strong>Star Formation</strong>
+  </div>
+  <canvas id="c"></canvas>
+
+  <!-- Optional shared helpers — inline fallbacks below kick in if they 404 -->
+  <script src="../../lib/canvas-size.js"></script>
+  <script src="../../lib/synthetic-pulse.js"></script>
+  <script src="../../lib/envelopes.js"></script>
+  <script>
+    // ─── Star Formation ───────────────────────────────────────────────────
+    // 10 luminous emojis slide continuously around a 5-point star's
+    // perimeter. The star has 10 vertices — 5 outer tips and 5 inner
+    // notches — with the classic golden-ratio inner/outer ratio of 1/φ²
+    // ≈ 0.382. Emojis linearly interpolate between consecutive vertices,
+    // so they travel the straight edges (tip → notch → tip → notch → …).
+    //
+    //   vertex_k(t) at angle = (k/10)·2π − π/2 + phase(t)
+    //   radius_k   = R · (k odd ? 1/φ² : 1)
+    //   s_k(t)     = (t·ω + k) mod 10                    (k = 0..9)
+    //   pos_k(t)   = lerp(vertex_floor(s_k), vertex_ceil(s_k), frac(s_k))
+    //
+    // Gentle whole-star rotation via the phase term (0.10 rad/sec).
+    // Pulse effects:
+    //   outer R   → breathes +15% on peak
+    //   emoji size → +18px on peak
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+    const EMOJIS = ['⭐','🌟','💫','✨','🌠','⚡','🪄','💎','🔮','💠'];
+    const VERTS  = 10;
+    const R_RATIO = 0.382;  // 1 / φ² — golden inner/outer ratio
+
+    // Canvas sizing — prefers lib/canvas-size.js (SJCanvas).
+    if (window.SJCanvas) {
+      window.SJCanvas.fit(canvas, ctx);
+    } else {
+      const resize = () => {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width  = window.innerWidth  * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width  = window.innerWidth  + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      };
+      window.addEventListener('resize', resize);
+      resize();
+    }
+
+    const pulseEnv = window.VizEnv
+      ? new window.VizEnv.Envelope({ attack: 0.015, release: 0.28 })
+      : null;
+    let fallbackPulse = 0;
+
+    function rawPulse(t) {
+      return window.SJPulse
+        ? window.SJPulse.kick(t)
+        : Math.min(
+            1,
+            Math.pow(Math.max(0, Math.sin(t * 2.2)), 2) * 0.9
+              + Math.max(0, Math.sin(t * 5.1 + 1.3)) * 0.35
+          );
+    }
+
+    function smoothPulse(t, dt) {
+      const raw = rawPulse(t);
+      if (pulseEnv) return pulseEnv.follow(raw, dt);
+      fallbackPulse += (raw - fallbackPulse) * Math.min(1, dt * 8);
+      return fallbackPulse;
+    }
+
+    // Compute vertex k position in the star's own coord space (center = origin).
+    function starVertex(k, outerR, phase) {
+      const angle = (k / VERTS) * Math.PI * 2 - Math.PI / 2 + phase;
+      const r = (k % 2 === 0) ? outerR : outerR * R_RATIO;
+      return { x: r * Math.cos(angle), y: r * Math.sin(angle) };
+    }
+
+    const OMEGA = 0.55;     // vertices/sec — ~18s for full perimeter lap
+    const ROT_RATE = 0.10;  // rad/sec — gentle whole-star rotation
+
+    function render(t, dt) {
+      const W = window.innerWidth, H = window.innerHeight;
+      ctx.clearRect(0, 0, W, H);
+
+      const pulse = smoothPulse(t, dt);
+      const cx = W / 2, cy = H / 2;
+
+      const outerR = Math.min(W, H) * 0.32 * (1 + 0.15 * pulse);
+      const phase  = t * ROT_RATE;
+      const size   = 44 + pulse * 18;
+
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `${size}px -apple-system, system-ui, serif`;
+
+      for (let k = 0; k < VERTS; k++) {
+        // s_k ∈ [0, VERTS) — advances at OMEGA vertices/sec, offset by k.
+        const s  = ((t * OMEGA + k) % VERTS + VERTS) % VERTS;
+        const lo = Math.floor(s);
+        const hi = (lo + 1) % VERTS;
+        const f  = s - lo;
+
+        const v0 = starVertex(lo, outerR, phase);
+        const v1 = starVertex(hi, outerR, phase);
+        // Linear interp along the straight edge between consecutive vertices.
+        const x = cx + v0.x + (v1.x - v0.x) * f;
+        const y = cy + v0.y + (v1.y - v0.y) * f;
+
+        ctx.globalAlpha = 0.85 + pulse * 0.15;
+        ctx.fillText(EMOJIS[k], x, y);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    let t0, tPrev;
+    function frame(ts) {
+      if (t0 === undefined) { t0 = ts; tPrev = ts; }
+      const t  = (ts - t0)    / 1000;
+      const dt = Math.min(0.1, (ts - tPrev) / 1000);
+      tPrev = ts;
+      render(t, dt);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
