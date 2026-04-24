@@ -625,6 +625,90 @@
 
   <div class="divider"></div>
 
+  <!-- Atmospheric FX -->
+  <section style="padding: clamp(60px,9vh,100px) clamp(24px,5vw,80px);">
+    <p class="section-label">Atmospheric FX</p>
+    <h2 class="section-heading">Ambient layers</h2>
+    <p class="section-body">Five independently-embeddable atmospheric layers — gobo blobs, starfield, bokeh, fog, film grain. Use the combined interactive demo to tune them live, or grab a single-effect file and drop it into any page.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:clamp(16px,2vw,24px);margin-top:clamp(36px,5vh,60px);">
+
+      <a href="atmosphere.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
+         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:16/9;background:radial-gradient(ellipse at 30% 60%, #0a1628 0%, #040408 70%);display:flex;align-items:center;justify-content:center;font-size:clamp(28px,4vw,44px);gap:14px;letter-spacing:4px;">✦ ◉ ☁ ◐</div>
+        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Combined</div>
+          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Atmospheric FX — Interactive</div>
+          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">All five effects on one page with live toggles and sliders. Play with gobo, bokeh, fog, grain, and the starfield side-by-side.</div>
+          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+      </a>
+
+      <a href="atmosphere-gobo.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
+         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:16/9;background:radial-gradient(circle at 30% 40%, rgba(10,132,255,0.45) 0%, transparent 55%), radial-gradient(circle at 70% 65%, rgba(88,86,214,0.40) 0%, transparent 50%), radial-gradient(circle at 55% 25%, rgba(0,199,190,0.32) 0%, transparent 45%), #0a0a0f;filter:blur(8px);display:flex;align-items:center;justify-content:center;"></div>
+        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Single effect</div>
+          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Perlin Gobo Blobs</div>
+          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">Four heavily-blurred color-gradient discs drifting on 2D Perlin noise. Unique path every page load.</div>
+          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+      </a>
+
+      <a href="atmosphere-starfield.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
+         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:16/9;background:radial-gradient(ellipse at 50% 60%, #0a0a18 0%, #04040a 80%);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,3vw,36px);gap:28px;letter-spacing:4px;color:#ffffff;opacity:0.75;">✦&nbsp;·&nbsp;·&nbsp;✦&nbsp;·&nbsp;✦</div>
+        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Single effect</div>
+          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Starfield</div>
+          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">120 twinkling dots, each on its own random opacity cycle. Deep radial vignette sells the depth.</div>
+          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+      </a>
+
+      <a href="atmosphere-bokeh.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
+         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:16/9;background:radial-gradient(circle at 25% 55%, rgba(10,132,255,0.35) 0%, transparent 40%), radial-gradient(circle at 70% 35%, rgba(0,199,190,0.30) 0%, transparent 35%), radial-gradient(circle at 50% 80%, rgba(255,159,10,0.25) 0%, transparent 35%), #0a0a0f;filter:blur(14px);"></div>
+        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Single effect</div>
+          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Bokeh Discs</div>
+          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">10 blurred colored circles drifting and breathing. Reads as out-of-focus highlights on a darkroom photo.</div>
+          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+      </a>
+
+      <a href="atmosphere-fog.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
+         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:16/9;background:linear-gradient(180deg, #0a0a0f 0%, #0a0a0f 55%, rgba(120,140,190,0.25) 80%, rgba(160,180,220,0.35) 100%);"></div>
+        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Single effect</div>
+          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Marine Fog</div>
+          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">Two overlapping radial-gradient bands anchored to the bottom, sliding at different speeds. Feels like SF fog rolling in.</div>
+          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+      </a>
+
+      <a href="atmosphere-grain.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
+         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:16/9;background:linear-gradient(135deg, #1a0f2e 0%, #0a0a0f 60%, #2a1a0a 100%);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,3vw,32px);color:#f5f5f7;opacity:0.70;letter-spacing:6px;">⠿&nbsp;·&nbsp;⠿&nbsp;·&nbsp;⠿</div>
+        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Single effect</div>
+          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Film Grain</div>
+          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">SVG feTurbulence noise re-seeded at 12Hz. Monochrome photochemical grain overlay — no video file, no CSS filter can replicate it.</div>
+          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
   <!-- Components -->
   <section style="padding: clamp(60px,9vh,100px) clamp(24px,5vw,80px);">
     <p class="section-label">Components</p>
@@ -652,18 +736,6 @@
           <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Component</div>
           <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Photo Tiles Parallax</div>
           <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">Mouse-driven parallax background layer. Scattered tiles at varying depths respond to cursor movement via GSAP ticker lerp.</div>
-          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        </div>
-      </a>
-
-      <a href="atmosphere.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
-         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
-         onmouseout="this.style.transform='';this.style.boxShadow=''">
-        <div style="aspect-ratio:16/9;background:radial-gradient(ellipse at 30% 60%, #0a1628 0%, #040408 70%);display:flex;align-items:center;justify-content:center;font-size:clamp(28px,4vw,44px);gap:14px;letter-spacing:4px;">✦ ◉ ☁ ◐</div>
-        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
-          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Effects</div>
-          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Atmospheric FX</div>
-          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">Starfield, bokeh, Perlin gobo blobs, fog, film grain, and liquid glass — each independently toggleable with live sliders. (Split demos land in A3c.)</div>
           <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         </div>
       </a>
