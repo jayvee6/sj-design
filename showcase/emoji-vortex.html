@@ -28,6 +28,8 @@
   </div>
   <canvas id="c"></canvas>
 
+  <!-- Optional shared helper — inline fallback below kicks in if it 404s -->
+  <script src="../lib/canvas-size.js"></script>
   <script>
     // ─── Emoji Tunnel Vortex ───────────────────────────────────────────────
     // Phyllotaxis: 280 emojis placed at golden-angle increments
@@ -66,16 +68,24 @@
       return map;
     })();
 
-    function resize() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width  = window.innerWidth  * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width  = window.innerWidth  + 'px';
-      canvas.style.height = window.innerHeight + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Canvas sizing — use lib/canvas-size.js if it loaded, else inline fallback.
+    // Vortex keeps its custom bass+mid computePulse() inline below — SJPulse
+    // doesn't ship a matching shape, and the tunnel rotation is tuned to
+    // these exact frequencies.
+    if (window.SJCanvas) {
+      window.SJCanvas.fit(canvas, ctx);
+    } else {
+      const resize = () => {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width  = window.innerWidth  * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width  = window.innerWidth  + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      };
+      window.addEventListener('resize', resize);
+      resize();
     }
-    window.addEventListener('resize', resize);
-    resize();
 
     // Synthetic pulse — slow-rolling mid for tunnel rotation, punchy bass
     // for size inflation. Replace with real audio for reactivity.

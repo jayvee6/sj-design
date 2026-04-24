@@ -28,6 +28,8 @@
   </div>
   <canvas id="c"></canvas>
 
+  <!-- Optional shared helper — inline fallback below kicks in if it 404s -->
+  <script src="../lib/canvas-size.js"></script>
   <script>
     // ─── Emoji Fireworks ───────────────────────────────────────────────────
     // True parabolic-arc fireworks: each rocket is integrated with manual
@@ -86,16 +88,22 @@
     const rockets   = [];
     const particles = [];
 
-    function resize() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width  = window.innerWidth  * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width  = window.innerWidth  + 'px';
-      canvas.style.height = window.innerHeight + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Canvas sizing — use lib/canvas-size.js if it loaded, else inline fallback.
+    // Fireworks has no pulse dependency; only canvas sizing is shared.
+    if (window.SJCanvas) {
+      window.SJCanvas.fit(canvas, ctx);
+    } else {
+      const resize = () => {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width  = window.innerWidth  * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width  = window.innerWidth  + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      };
+      window.addEventListener('resize', resize);
+      resize();
     }
-    window.addEventListener('resize', resize);
-    resize();
 
     function launch() {
       const W = window.innerWidth, H = window.innerHeight;
