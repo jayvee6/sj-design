@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Starfield — sj-design showcase</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: radial-gradient(ellipse at 50% 60%, #0a0a18 0%, #04040a 80%);
+      color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    #layer-star { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / atmosphere
+    <strong>Starfield</strong>
+  </div>
+  <div id="layer-star" aria-hidden="true"></div>
+
+  <script>
+    // ─── Starfield ────────────────────────────────────────────────────────
+    // N white dots placed at uniform random positions. Each twinkles by
+    // tween-yoyoing opacity between its starting value and a lower target,
+    // with per-star random duration + delay so the pattern never resets
+    // to a visible sync point. The deep radial background is doing half
+    // the work — stars only feel like stars against that near-black vignette.
+
+    const starLayer = document.getElementById('layer-star');
+    const STAR_COUNT = 120;
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+      const el = document.createElement('div');
+      const sz = 1 + Math.random() * 2.2;   // 1–3.2px — keeps stars gritty, not smooth balls
+      const op = 0.18 + Math.random() * 0.52;
+      Object.assign(el.style, {
+        position: 'absolute',
+        width: sz + 'px', height: sz + 'px',
+        borderRadius: '50%', background: '#ffffff',
+        left: Math.random() * 100 + '%',
+        top:  Math.random() * 100 + '%',
+        opacity: op,
+      });
+      starLayer.appendChild(el);
+
+      // Twinkle. Long random durations (1.8–6.3s) + random delays (0–6s) so
+      // no two stars share a breathing phase. sine.inOut reads as organic
+      // starlight vs power.inOut which feels mechanical.
+      gsap.to(el, {
+        opacity: op * (0.15 + Math.random() * 0.65),
+        duration: 1.8 + Math.random() * 4.5,
+        repeat: -1, yoyo: true, ease: 'sine.inOut',
+        delay: Math.random() * 6,
+      });
+    }
+  </script>
+</body>
+</html>

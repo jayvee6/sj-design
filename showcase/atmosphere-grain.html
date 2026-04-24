@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Film Grain — sj-design showcase</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #1a0f2e 0%, #0a0a0f 60%, #2a1a0a 100%);
+      color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    #layer-grain { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+    .sample {
+      position: fixed; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center;
+      font-size: clamp(60px, 10vw, 140px); font-weight: 700; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #f5f5f7 0%, #888 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / atmosphere
+    <strong>Film Grain</strong>
+  </div>
+  <div class="sample">sj-design</div>
+
+  <!-- SVG turbulence filter (provides the noise) -->
+  <svg style="position:fixed;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="grain-f" x="0%" y="0%" width="100%" height="100%">
+        <feTurbulence id="grain-turb" type="turbulence" baseFrequency="0.65"
+          numOctaves="3" seed="0" stitchTiles="stitch" result="n"/>
+        <feColorMatrix type="saturate" values="0" in="n"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Grain layer — a rect filled with the filter, overlaid at low opacity -->
+  <div id="layer-grain" aria-hidden="true">
+    <svg style="position:fixed;inset:0;width:100%;height:100%;opacity:0.10;pointer-events:none;">
+      <rect width="100%" height="100%" filter="url(#grain-f)"/>
+    </svg>
+  </div>
+
+  <script>
+    // ─── Film Grain ───────────────────────────────────────────────────────
+    // SVG <feTurbulence> generates procedural noise; feColorMatrix strips
+    // saturation to leave monochrome grain; the filter is applied to a
+    // full-viewport <rect> at low opacity (~7–10%). The "life" of the grain
+    // comes from re-seeding feTurbulence at 12Hz (83ms) — without this the
+    // noise is static and reads as texture, not film.
+    //
+    // baseFrequency=0.65 is the grain pitch. Higher → finer grain (feels
+    // more digital). Lower → coarser, more cinematic 16mm vibe.
+
+    const grainTurb = document.getElementById('grain-turb');
+    let grainSeed = 0;
+    setInterval(() => {
+      grainTurb.setAttribute('seed', (grainSeed = (grainSeed + 1) % 9999));
+    }, 83);
+  </script>
+</body>
+</html>
