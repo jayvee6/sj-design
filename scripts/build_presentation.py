@@ -172,11 +172,13 @@ def _render_two_column(slide: dict) -> str:
 
     left = slide.get("left", {})
     right = slide.get("right", {})
+    note = f'<p class="slide-note">{_esc(slide["note"])}</p>' if slide.get("note") else ""
     return f"""
   <div class="slide-inner">
     {_eyebrow(slide)}
     <h2 class="headline">{_esc(slide.get("heading", ""))}</h2>
     <div class="two-col">{col(left)}{col(right)}</div>
+    {note}
   </div>"""
 
 
