@@ -34,22 +34,25 @@
   <script src="../../lib/synthetic-pulse.js"></script>
   <script src="../../lib/envelopes.js"></script>
   <script>
-    // ─── Shape Morph (part 1: static N-gon) ───────────────────────────────
-    // 24 emojis traced around a regular N-gon's perimeter via arc-length
-    // placement: divide the perimeter into M equal steps; emoji m sits at
-    // perimeter position s = (m/M)·N, which decomposes into an edge index
-    // floor(s) and a fraction frac(s) — then linearly interpolate between
-    // that edge's two vertices. Emojis ride the straight edges, so the
-    // polygon's silhouette is unmistakable at any N.
+    // ─── Shape Morph ──────────────────────────────────────────────────────
+    // 24 emojis traced around a regular N-gon's perimeter, where N itself
+    // continuously morphs triangle → square → pentagon → hexagon → (repeat).
     //
-    //   ngonVertices(n, R, rot): n points at rot − π/2 + k·(2π/n)
-    //   pos_m = lerp(V[floor(s)], V[(floor(s)+1) % n], frac(s)),  s = (m/M)·n
+    // Placement: each shape is resampled to the SAME M arc-length perimeter
+    // points — emoji m sits at perimeter position s = (m/M)·n, decomposed
+    // into edge floor(s) + fraction frac(s), lerped between that edge's two
+    // vertices. Because both keyframe shapes use the identical M-point
+    // parameterization (first point at the top, −π/2), morphing between a
+    // square and a pentagon is a well-defined per-point lerp — a fractional
+    // "4.5-gon" is simply the halfway blend.
     //
-    // This chunk fixes N = 5 (pentagon) with a gentle rotation + pulse
-    // breathing. Part 2 (C6b) swaps the constant N for a VizEnv-eased
-    // keyframe morph triangle→square→pentagon→hexagon — the vertex
-    // generator and placement here are written N-generic so the morph
-    // only has to animate the `sides` value.
+    // The morph: a keyframe clock advances with time, its rate rising with
+    // the pulse (energetic signal → faster morph). The stepped target side
+    // count [3,4,5,6] is eased into a *continuous* `sides` by a VizEnv
+    // envelope follower; we then render lerp(floor-gon, ceil-gon, frac).
+    //
+    //   sides   = VizEnv.follow(sides, KEYFRAMES[⌊clock⌋ % 4], dt)
+    //   pos_m   = lerp(ngonPoints(⌊sides⌋)[m], ngonPoints(⌈sides⌉)[m], frac)
 
     const canvas = document.getElementById('c');
     const ctx    = canvas.getContext('2d');
@@ -95,7 +98,7 @@
     }
 
     // Regular N-gon vertices in the shape's own coord space (centered at 0).
-    // First vertex at the top (−π/2). Written N-generic — C6b animates `n`.
+    // First vertex at the top (−π/2).
     function ngonVertices(n, R, rot) {
       const verts = [];
       for (let k = 0; k < n; k++) {
@@ -105,8 +108,35 @@
       return verts;
     }
 
-    const SIDES    = 5;     // C6b will animate this
-    const ROT_RATE = 0.16;  // rad/sec — gentle spin
+    // Resample an n-gon to M arc-length perimeter points. Every shape gets
+    // the SAME M points with the SAME starting phase, so point m of a
+    // triangle and point m of a hexagon correspond — a per-point lerp
+    // between them is a clean morph.
+    function ngonPoints(n, R, rot) {
+      const verts = ngonVertices(n, R, rot);
+      const pts = new Array(M);
+      for (let m = 0; m < M; m++) {
+        const s  = (m / M) * n;
+        const e  = Math.floor(s) % n;
+        const f  = s - Math.floor(s);
+        const v0 = verts[e];
+        const v1 = verts[(e + 1) % n];
+        pts[m] = { x: v0.x + (v1.x - v0.x) * f, y: v0.y + (v1.y - v0.y) * f };
+      }
+      return pts;
+    }
+
+    const KEYFRAMES = [3, 4, 5, 6];   // triangle → square → pentagon → hexagon
+    const ROT_RATE  = 0.16;           // rad/sec — gentle spin
+
+    // VizEnv eases the stepped target side count into a continuous value.
+    // ~0.9s attack/release settles each morph well within the keyframe
+    // interval, so shapes "arrive" before the next target jumps.
+    const sidesEnv = window.VizEnv
+      ? new window.VizEnv.Envelope({ attack: 0.9, release: 0.9, initial: 3 })
+      : null;
+    let sidesFallback = 3;
+    let morphClock = 0;
 
     function render(t, dt) {
       const W = window.innerWidth, H = window.innerHeight;
@@ -115,23 +145,39 @@
       const pulse = smoothPulse(t, dt);
       const cx = W / 2, cy = H / 2;
 
-      const R     = Math.min(W, H) * 0.30 * (1 + 0.14 * pulse);
-      const rot   = t * ROT_RATE;
-      const size  = 40 + pulse * 20;
-      const verts = ngonVertices(SIDES, R, rot);
+      // Keyframe clock — advances faster when the pulse is hot.
+      morphClock += dt * (0.32 + pulse * 0.55);
+      const targetSides = KEYFRAMES[Math.floor(morphClock) % KEYFRAMES.length];
+
+      // Ease the stepped target into a continuous side count.
+      let sides;
+      if (sidesEnv) {
+        sides = sidesEnv.follow(targetSides, dt);
+      } else {
+        sidesFallback += (targetSides - sidesFallback) * Math.min(1, dt * 1.1);
+        sides = sidesFallback;
+      }
+      sides = Math.max(3, sides);
+
+      const R    = Math.min(W, H) * 0.30 * (1 + 0.14 * pulse);
+      const rot  = t * ROT_RATE;
+      const size = 40 + pulse * 20;
+
+      // Fractional polygon = lerp(floor-gon points, ceil-gon points, frac).
+      const nLo   = Math.floor(sides);
+      const nHi   = Math.ceil(sides);
+      const fr    = sides - nLo;
+      const ptsLo = ngonPoints(nLo, R, rot);
+      const ptsHi = nHi === nLo ? ptsLo : ngonPoints(nHi, R, rot);
 
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `${size}px -apple-system, system-ui, serif`;
 
       for (let m = 0; m < M; m++) {
-        const s  = (m / M) * SIDES;          // perimeter position in edge units
-        const e  = Math.floor(s) % SIDES;    // edge index
-        const f  = s - Math.floor(s);        // fraction along that edge
-        const v0 = verts[e];
-        const v1 = verts[(e + 1) % SIDES];
-        const x  = cx + v0.x + (v1.x - v0.x) * f;
-        const y  = cy + v0.y + (v1.y - v0.y) * f;
+        const a = ptsLo[m], b = ptsHi[m];
+        const x = cx + a.x + (b.x - a.x) * fr;
+        const y = cy + a.y + (b.y - a.y) * fr;
         ctx.globalAlpha = 0.85 + pulse * 0.15;
         ctx.fillText(EMOJIS[m % EMOJIS.length], x, y);
       }
