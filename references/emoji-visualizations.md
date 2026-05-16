@@ -138,7 +138,24 @@ With no audio, the idle timer (`IDLE_INTERVAL = 1.8s`) keeps the show going.
 
 ---
 
-## Patterns worth carrying across all three
+## 4. Dancing Geometric Formations
+
+Six small parametric pieces in [`showcase/emoji-formations/`](../showcase/emoji-formations/) — emojis arranged into a recognizable figure that moves and breathes with the pulse. They're deliberately tiny (~90–155 LOC each) so one is easy to copy, retheme, and drop into a hero or loading state.
+
+**Shared stack.** Every formation loads, with inline fallback, `lib/canvas-size.js` (`SJCanvas.fit` — DPR sizing), `lib/synthetic-pulse.js` (`SJPulse.kick/wave/flicker`), and `lib/envelopes.js` (`VizEnv.Envelope` — attack/release smoothing so size/radius don't strobe). Break the `<script src>` and each still runs from the inline copy. Swap `rawPulse(t)` for an audio frame's bass to make any of them sound-reactive.
+
+- **Triangle Orbit** — 3 emojis at `angle_k = t·ω + k·2π/3` (ω = 0.55 rad/s); radius `r0·(1 + 0.30·pulse)`, size `56 + 24·pulse`. The simplest one.
+- **Hexagonal Swarm** — 12 emojis on a pointy-top hexagon's polar form `r(θ) = a·cos(π/6) / cos((θ mod π/3) − π/6)`; `θ_k = t·0.30 + k·2π/12`. Vertices sit at full circumradius `a`, edge-midpoints dip to the apothem `a·√3/2`, so it reads as a hexagon, not a circle.
+- **Heart Pulse** — 18 heart emojis arc-length-distributed on `x = 16sin³u, y = 13cos u − 5cos2u − 2cos3u − cos4u`. Uniform `u` clusters at the lobes; a 1200-sample cumulative-arc table fixes the spacing. A hue-shifting radial glow (`hsla`, hue = `25t + 50·pulse`) sits behind; scale `1 + 0.25·pulse`.
+- **Infinity Loop** — 12 cosmic emojis on the Bernoulli lemniscate `x = a·cos u/(1+sin²u), y = a·sin u·cos u/(1+sin²u)`, `u_k = t·ω + k·2π/12`. Pulse drives **trail length**, not position: each frame a `destination-out` fill of alpha `0.30 − 0.22·pulse` shaves old content, revealing the CSS gradient — a kick stretches the comet tails.
+- **Star Formation** — 10 emojis sliding a 5-point star's perimeter (inner/outer ratio `1/φ² ≈ 0.382`). `s_k = (t·0.55 + k) mod 10`; position lerps between consecutive vertices `lerp(V[⌊s⌋], V[(⌊s⌋+1) mod 10], frac(s))` so emojis ride the straight edges tip→notch→tip.
+- **Shape Morph** — 24 emojis on an N-gon that continuously morphs triangle→square→pentagon→hexagon. Each shape is resampled to the **same** M arc-length points with the same start phase, so morphing is a per-point lerp and a fractional "4.5-gon" is well defined. A keyframe clock (rate rises with pulse) steps the target side count; `VizEnv.follow` eases it into a continuous `sides`; render lerps `ngonPoints(⌊sides⌋) ↔ ngonPoints(⌈sides⌉)` by `frac(sides)`.
+
+**Audio hook.** Same shape as the three viz above — replace `rawPulse(t)`'s `SJPulse.kick(t)` with a bass value in `[0,1]`; `VizEnv` smoothing then carries the visual response.
+
+---
+
+## Patterns worth carrying across every technique
 
 - **Logical pixels via DPR.** Set `canvas.width = innerWidth * dpr`, then `ctx.setTransform(dpr, 0, 0, dpr, 0, 0)` so all your coordinates are in CSS pixels. Without this, emoji render at 50% size on retina and at blurry integer positions on fractional DPR.
 - **`textAlign = 'center'; textBaseline = 'middle'`** — always. Emoji glyphs have different baselines than Latin text; without these two lines every positioning calculation will be off-center by 8–15px.
