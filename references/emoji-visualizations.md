@@ -81,7 +81,7 @@ function computePulse(t) {
 
 ## 3. Fireworks
 
-**What it is.** Themed emoji fireworks that launch with a true parabolic arc (manual physics integration, not a tween), detonate at a randomly chosen apex, and burst into matching debris. Every launch picks a fresh angle, z-depth layer, and rocket/debris theme pair. Runs on a timer by default; wires to beat detection with one line.
+**What it is.** Themed emoji fireworks that launch with a true parabolic arc (manual physics integration, not a tween), detonate at a randomly chosen apex, and burst into matching debris in a theme-paired **shape** — peony, ring, star, heart, or smiley. Every launch picks a fresh angle, z-depth layer, and rocket/debris/shape theme set. Runs on a timer by default; wires to beat detection with one line.
 
 **Core algorithm — rocket**
 - Per-frame integration: `vy += GRAVITY * dt; x += vx * dt; y += vy * dt;` with `GRAVITY = 520` px/s². A `dt` tween would *look* like an arc but the peak timing would be wrong on speed changes — manual Euler keeps it correct.
@@ -89,9 +89,32 @@ function computePulse(t) {
 - Detonation: rocket stores `explosionY` picked randomly in a band — `[0.15H, 0.50H]` from the top (so bursts stay in the upper half of the sky, never at the edges). When `r.y <= r.explosionY`, remove the rocket and call `spawnBurst`.
 
 **Core algorithm — burst**
-- `count = 50` particles per burst. For each: `theta = (i/count)*2π + jitter(±0.12)`, `mag = speed * rand(0.6, 1.3)`, `vx = cos(θ)*mag, vy = sin(θ)*mag - rand(20, 80)` (the `-rand(20,80)` lift fights gravity for a split second so the burst *blooms* upward before falling).
+- `count = 50` particles per burst. Each particle gets a *launch-velocity vector* from a shape function (see **Burst shapes** below): `v = shapeVector(shape, i, count)` returns a unit-ish `(x, y)`; then `mag = speed * rand(spread)`, `vx = v.x * mag`, `vy = v.y * mag - rand(lift)`. The `-lift` fights gravity for a split second so the burst *blooms* before falling.
 - Particle `life ∈ [1.2, 2.0]` seconds, fade is `(1 - age/life)²` — quadratic fadeout reads cleaner than linear.
 - Particle gravity is `0.65 * GRAVITY` — embers hang longer than the rocket would.
+
+**Burst shapes.** This is a *velocity-field* system — every particle starts at the burst center and flies out, so a "shape" is **not** a tween to a position; it's a function `index → unit launch-velocity vector`. Gravity then acts on all of them, so the figure is legible at the bloom and disperses naturally a beat later (same physics aesthetic as the plain peony — don't try to "hold" the shape). Two rules make shapes swappable without retuning the engine:
+
+1. **Normalize to mean radius ≈ 1.** Every shape's vectors are scaled so their average magnitude matches the peony's `|(cosθ, sinθ)| = 1`. Then changing shape never changes burst size — only the speed/`force`/depth terms do. (Heart's raw curve spans ≈ ±16; divide by 15. Star's rose multiplier already averages 1. Smiley is authored directly in unit space.)
+2. **Per-shape `spread` + `lift`, not one global pair.** `spread` is the radial magnitude jitter: a wide spread (`0.6–1.3`) fills a *disc* — right for a peony bloom — but smears any figure that encodes position. A figure shape needs a *tight* spread (`~0.9–1.06`) so particles land on the curve, plus a gentler `lift` (a big random per-particle lift distorts the figure vertically). Table actually in use:
+
+   | shape  | spread       | lift     | note |
+   |--------|--------------|----------|------|
+   | peony  | `0.60–1.30`  | `20–80`  | loose, lofty classic bloom |
+   | ring   | `0.94–1.06`  | `16–44`  | same geometry as peony; tight spread = thin shell |
+   | star   | `0.86–1.05`  | `14–36`  | rose curve supplies the radial variation |
+   | heart  | `0.90–1.06`  | `12–30`  | hold the curve |
+   | smiley | `0.95–1.05`  | `10–24`  | hold the face |
+
+The catalog (canvas Y is screen-down, so `−y` is up):
+
+- **Peony** — `t = (i/count)·2π + jitter(±0.12)`; `(cos t, sin t)`. The small angular jitter prevents banding into a visible wheel.
+- **Ring** — identical geometry to peony; the thin "shell" read comes entirely from `ring`'s tight `spread`, not the vector.
+- **Star** — rose-curve radius fluctuation: `m = 1 + depth·sin(spokes·t)`, `(cos t · m, sin t · m)`. `spokes = 5`, `depth = 0.42` → `m ∈ [0.58, 1.42]`, mean 1. `depth` is "how deep the points cut"; `spokes` is the point count.
+- **Heart** — classic parametric heart: `x = 16 sin³t`, `y = -(13 cos t − 5 cos 2t − 2 cos 3t − cos 4t)`, both ÷ 15. The leading `−` on `y` flips the curve so the heart points *up* in screen-down coords.
+- **Smiley** — compound. Partition the `count` indices across four features (≈52% outline, ≈11% each eye, remainder smile) and emit a velocity toward each feature's position in unit space (outline radius = 1): outline = peony circle; eyes = small `r≈0.10` clusters at `(±0.36, −0.34)`; smile = the **bottom** arc of a circle (`a ∈ [0.18π, 0.82π]`, `(cos a · 0.64, 0.20 + sin a · 0.52)`) — in screen-down coords a happy mouth is the lower arc, not the upper one. It reads for the bloom beat, then gravity pulls the face apart like any burst.
+
+**Theme coupling.** `shape` is a field on each `THEMES[]` entry, so the burst reinforces the story: 💘 → heart, 🪄/⚡/🎄/🐉 → star, 🎃 → smiley (jack-o'-lantern), 🍾/👽 → ring (champagne pop / UFO halo), everything else → peony. Forcing a shape independent of theme is a one-arg override (`launch(shape)`), used by the demo's `1`–`5` keys.
 
 **Depth layers.** Each launch samples `z ∈ [0, 1]`:
 - `scale = 0.72 + z * 0.60` (farther = smaller)
@@ -102,7 +125,7 @@ function computePulse(t) {
 
 **Themes.** Each launch picks one from `THEMES[]`: `{ rocket: '🚀', debris: ['✨','💥','🌟','🎉'] }` etc. Rocket emoji and debris set are paired so the explosion reads as thematically related. Adding a theme is zero-friction — push to the array. A few that work well: rocket/sparks, heart/hearts, pumpkin/ghosts, champagne/confetti, octopus/sea-life, lightning/stars, dragon/fire.
 
-**Sky trails.** Instead of clearing, fill the canvas with `rgba(4, 6, 16, 0.30)` every frame. The 70% alpha over last frame leaves a 3-4-frame comet tail behind each particle before it fades to black.
+**Sky trails.** Instead of clearing, fill the canvas with `rgba(4, 6, 16, α)` every frame — the residual of the previous frame is the comet tail. `α` is the trail-length knob: residual after `n` frames ≈ `(1−α)ⁿ`. `α = 0.60` (current) ≈ a tight 2-3-frame tail; `0.40` is a longer smear; `0.85+` is near-instant clear (almost no trail). Too low (`≤0.30`) reads as motion blur, not sparks.
 
 **Audio hook.** One-liner:
 ```js
