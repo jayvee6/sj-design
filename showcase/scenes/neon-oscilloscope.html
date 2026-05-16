@@ -40,10 +40,12 @@
     // perspective-corrected. One fullscreen-triangle fragment shader,
     // 176-byte uniform layout (incl. a 32-bin spectrum array).
     //
-    // Part 1 (D4a): geometry + WGSL + pipeline + camera, driven by a
-    // simple SJPulse so the ribbons already move (ambient sines + beat).
-    // Part 2 (D4b) makes the band/bin signals musical + adds the index
-    // card.
+    // Bands come from SJPulse (bass kick / mid wave / treble flicker /
+    // slow beat); the 32-bin spectrum is synthesized so each ribbon gets
+    // per-x detail that pulses with its band plus a travelling shimmer —
+    // reads like a real analyzer feeding the scope. Swap signals()/binsOf()
+    // for an audio frame's bass/mid/treble/beatPulse + magnitudesSmooth to
+    // make it sound-reactive.
 
     const canvas = document.getElementById('c');
 
@@ -198,18 +200,28 @@ fn waveAmp(x: f32, t: f32, fi: f32, bv: f32, gain: f32, beat: f32) -> f32 {
 }
 `;
 
-    // D4a: simple drive — bass kick, mid wave, treble flicker, slow beat;
-    // bins left at 0 (the ambient sines + beat already animate every
-    // ribbon). D4b replaces this with layered musical signals + synthetic
-    // per-bin spectrum.
     function signals(t) {
       const bass = window.SJPulse
         ? window.SJPulse.kick(t)
         : Math.min(1, Math.pow(Math.max(0, Math.sin(t * 2.2)), 2) * 0.9);
-      const mid    = window.SJPulse ? window.SJPulse.wave(t)             : 0.35;
-      const treble = window.SJPulse ? window.SJPulse.flicker(t) * 0.5    : 0.2;
-      const beat   = window.SJPulse ? window.SJPulse.kick(t, { kickRate: 1.3, ghostAmp: 0 }) : 0;
+      const mid    = window.SJPulse ? window.SJPulse.wave(t, { rate: 0.7, mid: 0.4, amp: 0.32 }) : 0.4;
+      const treble = window.SJPulse ? window.SJPulse.flicker(t, { rate: 5.0 }) * 0.6 : 0.2;
+      const beat   = window.SJPulse ? window.SJPulse.kick(t, { kickRate: 1.0, ghostAmp: 0 }) : 0;
       return { bass, mid, treble, beat, avg: (bass + mid + treble) / 3 };
+    }
+
+    // Synthetic 32-bin mel spectrum. Bins 0–7 track bass, 8–17 mid,
+    // 18–31 treble (matches the shader's bandBinVal ranges); a per-bin
+    // sine adds a shimmer that travels along each ribbon so it isn't a
+    // flat line across x.
+    const _bins = new Float32Array(32);
+    function binsOf(t, s) {
+      for (let b = 0; b < 32; b++) {
+        const band = b <= 7 ? s.bass : (b <= 17 ? s.mid : s.treble);
+        const shimmer = 0.5 + 0.5 * Math.sin(t * (2.0 + b * 0.30) + b * 0.7);
+        _bins[b] = Math.min(1, band * (0.40 + 0.60 * shimmer));
+      }
+      return _bins;
     }
 
     async function inlineInit(cv) {
@@ -270,7 +282,9 @@ fn waveAmp(x: f32, t: f32, fi: f32, bv: f32, gain: f32, beat: f32) -> f32 {
         uniforms[6]  = gpu.canvas.width;
         uniforms[7]  = gpu.canvas.height;
         uniforms[8]  = s.avg;
-        // [9..11] pad, [12..43] bins — left 0 in D4a.
+        // [9..11] pad. [12..43] = synthetic 32-bin spectrum.
+        const bins = binsOf(t, s);
+        for (let b = 0; b < 32; b++) uniforms[12 + b] = bins[b];
         queue.writeBuffer(uniformBuf, 0, uniforms);
 
         const enc  = device.createCommandEncoder();
