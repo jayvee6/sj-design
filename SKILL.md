@@ -31,6 +31,8 @@ Standalone, copy-pasteable demos in `showcase/`. Each runs zero-dependency on a 
 
 **WebGPU scenes** — `showcase/scenes/` (raw WebGPU; needs a WebGPU browser, degrades to a message otherwise)
 - `wire-terrain` (raymarched FBM terrain) · `disco-chrome` (ray-sphere mirror ball) · `neon-oscilloscope` (four ribbon waves)
+- Each is one self-contained full-screen-triangle fragment shader (inline WGSL), single render pass, no postprocessing. Pattern + perf knobs in `lib/webgpu-bootstrap.js` (`SJGpu`; `{ maxDPR, renderScale }` — resolution is the dominant lever for these fragment-bound scenes).
+- Reference: **WebGPU Fundamentals** — source/examples repo <https://github.com/webgpu/webgpufundamentals>, rendered site <https://webgpufundamentals.org/>. The canonical WebGPU/WGSL learning resource; use it for host-API setup, WGSL syntax, points/particles, and `wgpu-matrix` (view/projection — the scenes currently hand-roll camera math in the shader).
 
 **Atmospheric FX** — `showcase/atmosphere.html` (combined, interactive) plus split single-effect files `atmosphere-{gobo,starfield,bokeh,fog,grain}.html`
 
