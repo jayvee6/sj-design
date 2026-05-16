@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wire Terrain — sj-design WebGPU showcase</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #000008; color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / webgpu scenes
+    <strong>Wire Terrain</strong>
+  </div>
+  <canvas id="c"></canvas>
+
+  <!-- Optional shared helpers — compact inline fallbacks below if they 404 -->
+  <script src="../../lib/synthetic-pulse.js"></script>
+  <script src="../../lib/webgpu-bootstrap.js"></script>
+  <script>
+    // ─── Wire Terrain (WebGPU) ────────────────────────────────────────────
+    // Ported verbatim from musicplayer-viz/viz/wire-terrain-wgpu.js — a
+    // fullscreen-triangle raymarched FBM terrain with analytic wireframe
+    // grid lines. No geometry, no vertex buffer, single render pass: the
+    // whole scene is one fragment shader. The camera orbits from the
+    // `elapsed` uniform; height + brightness react to a synthetic pulse
+    // (SJPulse) standing in for the audio frame's bass/treble/beatPulse.
+
+    const canvas = document.getElementById('c');
+
+    const WGSL = /* wgsl */`
+struct Uniforms {
+    elapsed:    f32,
+    bass:       f32,
+    treble:     f32,
+    beatPulse:  f32,
+    resolution: vec2<f32>,   // offset 16
+    react:      f32,         // offset 24
+    _pad:       f32,
+}
+@group(0) @binding(0) var<uniform> u: Uniforms;
+
+struct VSOut {
+    @builtin(position) pos: vec4<f32>,
+    @location(0)       uv:  vec2<f32>,
+}
+
+@vertex fn vs_main(@builtin(vertex_index) vid: u32) -> VSOut {
+    var pos = array<vec2<f32>, 3>(
+        vec2<f32>(-1.0, -1.0),
+        vec2<f32>( 3.0, -1.0),
+        vec2<f32>(-1.0,  3.0),
+    );
+    var uvs = array<vec2<f32>, 3>(
+        vec2<f32>(0.0, 0.0),
+        vec2<f32>(2.0, 0.0),
+        vec2<f32>(0.0, 2.0),
+    );
+    var out: VSOut;
+    out.pos = vec4<f32>(pos[vid], 0.0, 1.0);
+    out.uv  = uvs[vid];
+    return out;
+}
+
+fn hash2(p: vec2<f32>) -> f32 {
+    var q = fract(p * vec2<f32>(127.1, 311.7));
+    q += dot(q, q + 19.19);
+    return fract(q.x * q.y);
+}
+
+fn vnoise(p: vec2<f32>) -> f32 {
+    let i = floor(p); let f = fract(p);
+    let u2 = f * f * (3.0 - 2.0 * f);
+    return mix(
+        mix(hash2(i),               hash2(i + vec2<f32>(1.0, 0.0)), u2.x),
+        mix(hash2(i + vec2<f32>(0.0, 1.0)), hash2(i + vec2<f32>(1.0, 1.0)), u2.x),
+        u2.y
+    );
+}
+
+fn fbm(p_in: vec2<f32>) -> f32 {
+    var p = p_in; var v = 0.0f; var a = 0.5f;
+    for (var i = 0; i < 3; i++) {
+        v += a * vnoise(p);
+        p  = p * 2.0 + vec2<f32>(3.14, 1.59);
+        a *= 0.5;
+    }
+    return v;
+}
+
+fn terrainH(xz: vec2<f32>, t: f32) -> f32 {
+    let p  = xz * 0.15 + vec2<f32>(0.0, t * 0.35);
+    let n  = fbm(p);
+    let n2 = fbm(p * 1.6 + vec2<f32>(7.1, 3.3));
+    return (n - 0.5) * (2.5 + u.bass * 3.5)
+         + (n2 - 0.5) * (0.35 + u.treble * 0.4)
+         + u.beatPulse * 0.9;
+}
+
+fn buildRay(screenUV: vec2<f32>) -> vec3<f32> {
+    let cAng   = sin(u.elapsed * 0.08) * 0.9 + u.elapsed * 0.05;
+    let r      = 12.0f;
+    let camPos = vec3<f32>(cos(cAng) * r,
+                           2.8 + sin(u.elapsed * 0.3) * 0.6,
+                           sin(cAng) * r);
+    let camTarget = vec3<f32>(0.0, 0.4 + u.bass * 0.5, 0.0);
+    let fwd    = normalize(camTarget - camPos);
+    let right  = normalize(cross(fwd, vec3<f32>(0.0, 1.0, 0.0)));
+    let up     = cross(right, fwd);
+    let asp    = u.resolution.x / u.resolution.y;
+    let uv     = (screenUV - 0.5) * vec2<f32>(asp, 1.0);
+    return normalize(fwd * 1.5 + right * uv.x + up * uv.y);
+}
+
+fn getCamPos() -> vec3<f32> {
+    let cAng = sin(u.elapsed * 0.08) * 0.9 + u.elapsed * 0.05;
+    let r    = 12.0f;
+    return vec3<f32>(cos(cAng) * r,
+                     2.8 + sin(u.elapsed * 0.3) * 0.6,
+                     sin(cAng) * r);
+}
+
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+    let camPos = getCamPos();
+    let rd     = buildRay(in.uv);
+
+    let fogColor = vec3<f32>(0.000, 0.000, 0.031);
+
+    var tRay = 0.2f;
+    var hit  = false;
+    var hitP = vec3<f32>(0.0);
+
+    var prevT = tRay;
+    for (var i = 0; i < 80; i++) {
+        let p  = camPos + rd * tRay;
+        let h  = terrainH(p.xz, u.elapsed);
+        let dy = p.y - h;
+        if dy < 0.0 {
+            var lo = prevT; var hi = tRay;
+            for (var j = 0; j < 6; j++) {
+                let mid = (lo + hi) * 0.5;
+                let pm  = camPos + rd * mid;
+                let hm  = terrainH(pm.xz, u.elapsed);
+                if pm.y - hm < 0.0 { hi = mid; } else { lo = mid; }
+            }
+            hit  = true;
+            hitP = camPos + rd * ((lo + hi) * 0.5);
+            break;
+        }
+        prevT  = tRay;
+        tRay  += max(0.06, dy * 0.50);
+        if tRay > 200.0 { break; }
+    }
+
+    if (!hit) {
+        let skyGrad = smoothstep(-0.1, 0.3, rd.y);
+        let skyCol  = mix(fogColor * 2.0, fogColor * 0.5, skyGrad);
+        return vec4<f32>(skyCol, 1.0);
+    }
+
+    let h   = terrainH(hitP.xz, u.elapsed);
+    let h01 = clamp((h + 2.5) / 6.0, 0.0, 1.0);
+    let low  = vec3<f32>(0.55, 0.10, 0.75);
+    let mid  = vec3<f32>(0.20, 0.40, 0.95);
+    let high = vec3<f32>(0.20, 0.95, 0.90);
+    var col = mix(low, mid, smoothstep(0.0, 0.55, h01));
+    col      = mix(col, high, smoothstep(0.45, 1.0, h01));
+
+    let GRID_FREQ = 1.4f;
+    let perpScale = clamp(tRay / 20.0, 1.0, 4.0);
+    let LINE_W    = 0.032f * perpScale;
+    let cx = fract(hitP.x * GRID_FREQ);
+    let cz = fract(hitP.z * GRID_FREQ);
+    let isWire = (cx < LINE_W || cx > 1.0 - LINE_W ||
+                  cz < LINE_W || cz > 1.0 - LINE_W);
+    if (!isWire) {
+        col = vec3<f32>(0.03, 0.01, 0.08) + vec3<f32>(0.05, 0.02, 0.12) * h01;
+    }
+
+    col *= 0.8 + u.bass * 0.45 + u.beatPulse * 0.3;
+
+    let fogFactor = 1.0 - exp(-tRay * 0.035);
+    col = mix(col, fogColor, fogFactor);
+
+    return vec4<f32>(clamp(col, vec3<f32>(0.0), vec3<f32>(1.0)), 1.0);
+}
+`;
+
+    // Synthetic pulse — bass (punchy), treble (fast shimmer), beat (slow
+    // kick). Replace these three with an audio frame's bass/treble/beatPulse
+    // to make the terrain sound-reactive.
+    function pulses(t) {
+      if (window.SJPulse) {
+        return {
+          bass:   window.SJPulse.kick(t),
+          treble: window.SJPulse.flicker(t, { rate: 6.0 }) * 0.6,
+          beat:   window.SJPulse.kick(t, { kickRate: 1.3, ghostAmp: 0 }) * 0.5,
+        };
+      }
+      const k = Math.max(0, Math.sin(t * 2.2));
+      return {
+        bass:   Math.min(1, k * k * 0.9 + Math.max(0, Math.sin(t * 5.1 + 1.3)) * 0.35),
+        treble: Math.abs(Math.sin(t * 6.0)) * 0.6,
+        beat:   Math.max(0, Math.sin(t * 1.3)) * 0.5,
+      };
+    }
+
+    // Compact inline WebGPU init if lib/webgpu-bootstrap.js didn't load.
+    async function inlineInit(cv) {
+      if (!navigator.gpu) { console.warn('[wire-terrain] WebGPU unavailable'); return null; }
+      const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+      if (!adapter) { console.warn('[wire-terrain] no adapter'); return null; }
+      const device = await adapter.requestDevice();
+      const dpr = window.devicePixelRatio || 1;
+      const size = () => { cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr);
+        cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; };
+      size(); addEventListener('resize', size);
+      const context = cv.getContext('webgpu');
+      const format = navigator.gpu.getPreferredCanvasFormat();
+      context.configure({ device, format, alphaMode: 'opaque' });
+      return { adapter, device, queue: device.queue, context, format, canvas: cv, dpr };
+    }
+
+    (async () => {
+      const gpu = window.SJGpu ? await window.SJGpu.init(canvas) : await inlineInit(canvas);
+      if (!gpu) return;
+      const { device, queue, context, format } = gpu;
+
+      const module = device.createShaderModule({ label: 'WireTerrain', code: WGSL });
+      const bgl = device.createBindGroupLayout({
+        entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                    buffer: { type: 'uniform' } }],
+      });
+      const UNIFORM_BYTES = 32;
+      const uniforms  = new Float32Array(UNIFORM_BYTES / 4);
+      const uniformBuf = device.createBuffer({
+        label: 'WireTerrain uniforms',
+        size:  UNIFORM_BYTES,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
+      const bindGroup = device.createBindGroup({
+        layout: bgl, entries: [{ binding: 0, resource: { buffer: uniformBuf } }],
+      });
+      const pipeline = device.createRenderPipeline({
+        label:  'WireTerrain',
+        layout: device.createPipelineLayout({ bindGroupLayouts: [bgl] }),
+        vertex:   { module, entryPoint: 'vs_main' },
+        fragment: { module, entryPoint: 'fs_main', targets: [{ format }] },
+        primitive: { topology: 'triangle-list' },
+      });
+
+      let t0;
+      function frame(ts) {
+        if (t0 === undefined) t0 = ts;
+        const t = (ts - t0) / 1000;
+        const p = pulses(t);
+
+        uniforms[0] = t;
+        uniforms[1] = p.bass;
+        uniforms[2] = p.treble;
+        uniforms[3] = p.beat;
+        uniforms[4] = gpu.canvas.width;
+        uniforms[5] = gpu.canvas.height;
+        uniforms[6] = 1.0;   // react — constant in standalone
+        uniforms[7] = 0;
+        queue.writeBuffer(uniformBuf, 0, uniforms);
+
+        const enc  = device.createCommandEncoder();
+        const pass = enc.beginRenderPass({
+          colorAttachments: [{
+            view:       context.getCurrentTexture().createView(),
+            loadOp:     'clear',
+            storeOp:    'store',
+            clearValue: { r: 0, g: 0, b: 0.031, a: 1 },
+          }],
+        });
+        pass.setPipeline(pipeline);
+        pass.setBindGroup(0, bindGroup);
+        pass.draw(3);
+        pass.end();
+        queue.submit([enc.finish()]);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

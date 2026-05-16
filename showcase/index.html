@@ -592,17 +592,24 @@
 
   <div class="divider"></div>
 
-  <!-- 3D Scenes (placeholder — D1–D4) -->
+  <!-- WebGPU Scenes -->
   <section style="padding: clamp(60px,9vh,100px) clamp(24px,5vw,80px);">
-    <p class="section-label">3D Scenes</p>
-    <h2 class="section-heading">Three.js scenes — coming</h2>
-    <p class="section-body">Disco Chrome, Neon Oscilloscope, and Wire Terrain are being ported from the <code style="font-family:monospace;font-size:0.9em;opacity:0.75">musicplayer-viz</code> companion repo — each decoupled from audio with synthetic pulse drivers so they run standalone as hero backgrounds, loading states, or atmospheric overlays.</p>
+    <p class="section-label">WebGPU Scenes</p>
+    <h2 class="section-heading">Raw-WebGPU fragment scenes</h2>
+    <p class="section-body">Ported from the <code style="font-family:monospace;font-size:0.9em;opacity:0.75">musicplayer-viz</code> companion repo — now a 100% raw-WebGPU fleet (WGSL inline, single render pass, no Three.js). Each scene is one self-contained fragment shader, decoupled from audio with a synthetic pulse so it runs standalone as a hero background or loading state. Needs a WebGPU browser; degrades to an honest message otherwise.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:clamp(16px,2vw,24px);margin-top:clamp(36px,5vh,60px);">
 
-      <div style="aspect-ratio:16/9;min-height:180px;border-radius:16px;border:1px dashed rgba(255,255,255,0.14);background:rgba(255,255,255,0.02);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;">
-        <div style="font-size:32px;opacity:0.55;">🚧</div>
-        <div style="font-size:13px;color:var(--label-2);line-height:1.55;max-width:280px;">D1–D4 of the showcase refactor — bloom composer + three.js bootstrap helpers, then Disco Chrome → Neon Oscilloscope → Wire Terrain ports.</div>
-      </div>
+      <a href="scenes/wire-terrain.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
+         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:16/9;background:linear-gradient(180deg,#1a0d2e 0%,#0a1840 55%,#000008 100%);display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;font-size:clamp(20px,2.4vw,30px);letter-spacing:7px;color:#33e6d4;opacity:0.85;">╱╲╱╲╱╲</div>
+        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">WebGPU · fragment</div>
+          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Wire Terrain</div>
+          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">Raymarched FBM terrain with analytic wireframe grid — zero geometry, one fragment shader, orbiting camera. Pulse drives height + brightness.</div>
+          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+      </a>
 
     </div>
   </section>
