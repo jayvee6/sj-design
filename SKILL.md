@@ -264,20 +264,7 @@ Tell the user:
 
 ## Animation reference (GSAP)
 
-Animations are applied automatically by slide type — no configuration needed:
-
-| Slide type | Animation |
-|------------|-----------|
-| `title` | Icon drops from top, eyebrow follows, headline rises, subheading fades |
-| `content` | Eyebrow and headline slide from left, bullets stagger in one by one |
-| `stats` | Eyebrow/headline animate in, cards spring up with scale, values count up from zero |
-| `quote` | Quote-mark watermark scales in behind text, icon springs, quote fades up, attribution follows |
-| `two-column` | Columns slide in from opposite sides, bullets stagger inside |
-| `gallery` | Frame scales in, Ken Burns photo cycle begins (crossfade + pan/zoom) |
-| `media` | Heading drops, frame scales up from 95%, caption fades |
-| `closing` | Headline scales up with spring easing, CTA fades, emoji rain available |
-
-All animations use Apple's `cubic-bezier(0.16, 1, 0.3, 1)` easing curve (expo out). Spring effects use `back.out(1.5)`.
+Per-slide-type entrance choreography is applied automatically — the full table is in [`references/slide-animations.md`](references/slide-animations.md). All animations use Apple's `cubic-bezier(0.16, 1, 0.3, 1)` easing (expo out); spring effects use `back.out(1.5)`.
 
 ---
 
@@ -310,6 +297,8 @@ Every deck includes a persistent heads-up display:
 
 ## Example prompts
 
+### Presentations
+
 **Investor pitch:**
 > "Build a pitch deck for my SF duplex investment — include stats on rental income, a gallery of property photos, and a closing slide with my contact info. Use the light theme."
 
@@ -324,3 +313,20 @@ Every deck includes a persistent heads-up display:
 
 **Real estate:**
 > "Build a property overview deck for 740-742 37th Ave. Stats: $5,340 current monthly income, $10,400 market rent potential, $1,662,761 projected 2031 value. Gallery of exterior photos."
+
+### Motion & graphics
+
+**Landing hero:**
+> "Give me a landing-page hero background — the dancing emoji heart-pulse, subtle, behind centered headline text."
+
+**Loading state:**
+> "I need a small loading animation in a 200×200 box using the Concentric Waves emoji viz, slowed down."
+
+**Celebration moment:**
+> "Make a signup-success screen that fires the emoji fireworks (star-shape burst) once on load, then idles."
+
+**Empty state:**
+> "Build an empty-state illustration with the Wire Terrain WebGPU scene running dim behind a 'No results yet' message."
+
+**Ambient backdrop:**
+> "Drop the Tunnel Vortex in as a full-screen background for a kiosk attract loop — muted, no audio."
