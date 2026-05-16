@@ -242,9 +242,9 @@
   <!-- Theme Grid -->
   <section class="themes-section">
     <div class="themes-header">
-      <p class="section-label">Themes</p>
-      <h2 class="section-heading">Seventeen distinct looks, seventeen atmospheres</h2>
-      <p class="section-body">Every theme has its own ambient environment — gobo blob colors, bokeh palette, and a unique atmospheric effect. Six originals plus eleven Bay Area themes, from Twin Peaks fog to Haight-Ashbury emoji explosions. Set <code style="font-size:0.9em;color:var(--accent)">"theme": "haight"</code> and the whole deck transforms.</p>
+      <p class="section-label">Use case · Presentations</p>
+      <h2 class="section-heading">The slide-deck generator, built on the same primitives</h2>
+      <p class="section-body">Presentations are one thing sj-design makes — a complete deck generator layered on the motion, atmosphere, and glass primitives above. Seventeen themes, each with its own ambient environment: gobo blob colors, bokeh palette, a unique atmospheric effect. Six originals plus eleven Bay Area themes. Set <code style="font-size:0.9em;color:var(--accent)">"theme": "haight"</code> and the whole deck transforms.</p>
     </div>
     <div class="theme-grid">
 
@@ -516,22 +516,6 @@
       </div>
 
     </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- Liquid Glass Demo callout -->
-  <section style="padding: clamp(40px,6vh,80px) clamp(24px,5vw,80px); display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px;">
-    <p class="section-label">Technique</p>
-    <h2 class="section-heading" style="max-width:640px;">Glass Refraction — how it works</h2>
-    <p class="section-body" style="max-width:520px;">Physics-based refractive glass using surface equations ported from <code style="font-family:monospace;font-size:0.9em;opacity:0.75">@hashintel/refractive</code>. Displacement maps, 4-edge bezels, and a layer-by-layer anatomy of every effect in sj-design.</p>
-    <a href="glass-refraction-demo.html"
-       style="display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:13px 26px;border-radius:100px;background:rgba(10,132,255,0.14);border:1px solid rgba(10,132,255,0.35);color:#5AC8FA;font-size:clamp(13px,1.2vw,15px);font-weight:600;text-decoration:none;letter-spacing:-0.01em;transition:background 0.2s,transform 0.2s;"
-       onmouseover="this.style.background='rgba(10,132,255,0.22)';this.style.transform='translateY(-2px)'"
-       onmouseout="this.style.background='rgba(10,132,255,0.14)';this.style.transform=''">
-      Open demo
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </a>
   </section>
 
   <div class="divider"></div>
@@ -938,9 +922,33 @@
     </div>
   </section>
 
+  <div class="divider"></div>
+
+  <!-- Lab — experimental / technique deep-dives -->
+  <section style="padding: clamp(60px,9vh,100px) clamp(24px,5vw,80px);">
+    <p class="section-label">Lab</p>
+    <h2 class="section-heading">Experimental &amp; technique demos</h2>
+    <p class="section-body">Standalone deep-dives and works in progress — not part of the core primitive set. Each explores a single technique end to end.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:clamp(16px,2vw,24px);margin-top:clamp(36px,5vh,60px);">
+
+      <a href="glass-refraction-demo.html" style="text-decoration:none;display:flex;flex-direction:column;gap:0;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid var(--sep);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),box-shadow 0.3s;"
+         onmouseover="this.style.transform='translateY(-5px) scale(1.01)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.45)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:16/9;background:linear-gradient(135deg,#0a1628 0%,#10243f 45%,#1a0d2e 100%);display:flex;align-items:center;justify-content:center;font-size:clamp(28px,4vw,44px);gap:14px;letter-spacing:4px;">◇ ◈ ❖ ◆</div>
+        <div style="padding:clamp(18px,2vw,26px);display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);">Technique</div>
+          <div style="font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;color:var(--label-1);">Glass Refraction</div>
+          <div style="font-size:clamp(13px,1.2vw,14px);color:var(--label-2);line-height:1.55;">Physics-based refractive glass — surface equations ported from <code style="font-family:monospace;font-size:0.9em;opacity:0.75">@hashintel/refractive</code>. Displacement maps, 4-edge bezels, layer-by-layer anatomy.</div>
+          <div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);">Open demo <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9M6 1.5l4.5 4.5L6 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
   <footer class="footer">
-    <p class="footer-copy">Presentation Skill — Built with Claude Code</p>
-    <a class="footer-link" href="https://github.com/jayvee6/presentation-skill" target="_blank">github.com/jayvee6/presentation-skill</a>
+    <p class="footer-copy">sj-design — motion, graphics &amp; emoji-viz primitives · Built with Claude Code</p>
+    <a class="footer-link" href="https://github.com/jayvee6/sj-design" target="_blank">github.com/jayvee6/sj-design</a>
   </footer>
 
 </div>
