@@ -1,21 +1,46 @@
 ---
 name: presentation
 description: >
-  Use this skill whenever the user wants to create a presentation, slideshow, slide deck, pitch deck,
-  or lecture slides. Trigger on prompts like "make me a presentation about X", "create slides for Y",
-  "I need a deck on Z", "turn this into a slideshow", "build a pitch for X", "make slides explaining Y",
-  "present this as slides", or any request to visually present information as a series of slides.
-  Even if the user just says "present this", use this skill. The output is a self-contained HTML file
-  with cinematic GSAP animations navigable by keyboard or click, in Apple design style.
+  A motion, graphics, and emoji-visualization toolkit for the web. Use for motion
+  primitives — animated hero backgrounds, loading states, celebration moments,
+  atmospheric FX, emoji visualizations, dancing emoji formations, WebGPU 3D scenes —
+  AND for generating complete Apple-style slide decks built on the same primitives.
+  Trigger on "make me a presentation / slide deck / pitch deck", "turn this into a
+  slideshow", "build a hero background", "loading animation", "emoji visualization",
+  "celebration effect", or any request to present information as slides. Output is
+  self-contained HTML — cinematic GSAP / Canvas / WebGPU, no dependencies.
 ---
 
-# Presentation Skill
+# sj-design
 
-Generate beautiful, animated HTML slide decks with Apple-style design and GSAP animations. Presentations are self-contained `.html` files — no dependencies to install.
+A motion, graphics, and emoji-visualization toolkit for the web. Ships primitives for hero backgrounds, loading states, celebration moments, atmospheric FX, emoji visualizations, and WebGPU 3D scenes — plus a complete slide-deck generator built on top of the same primitives. Everything is a self-contained `.html` file: no dependencies to install.
 
 ---
 
-## Workflow
+## Motion primitives
+
+Standalone, copy-pasteable demos in `showcase/`. Each runs zero-dependency on a synthetic time pulse and has a one-line hook to wire back to audio.
+
+**Emoji visualizations** — see [`references/emoji-visualizations.md`](references/emoji-visualizations.md)
+- `showcase/emoji-waves.html` — concentric delayed-bass rings
+- `showcase/emoji-vortex.html` — golden-angle phyllotaxis tunnel
+- `showcase/emoji-fireworks.html` — themed parabolic bursts (peony / ring / star / heart / smiley)
+
+**Dancing formations** — `showcase/emoji-formations/`
+- `triangle-orbit` · `hex-swarm` · `heart-pulse` · `infinity-loop` · `star-formation` · `shape-morph`
+
+**WebGPU scenes** — `showcase/scenes/` (raw WebGPU; needs a WebGPU browser, degrades to a message otherwise)
+- `wire-terrain` (raymarched FBM terrain) · `disco-chrome` (ray-sphere mirror ball) · `neon-oscilloscope` (four ribbon waves)
+
+**Atmospheric FX** — `showcase/atmosphere.html` (combined, interactive) plus split single-effect files `atmosphere-{gobo,starfield,bokeh,fog,grain}.html`
+
+**Shared lib** — `lib/`: `canvas-size.js` (SJCanvas, DPR sizing) · `synthetic-pulse.js` (SJPulse) · `envelopes.js` (VizEnv attack/release) · `webgpu-bootstrap.js` (SJGpu). Demos load these with an inline fallback so each file stays single-file portable.
+
+---
+
+## Building presentations
+
+A complete Apple-style slide-deck generator, built on the primitives above — one use case of the toolkit. The workflow below produces a self-contained HTML deck with cinematic GSAP animations, navigable by keyboard or click.
 
 ### Step 1 — Understand the request
 Read the user's prompt carefully. Identify:
