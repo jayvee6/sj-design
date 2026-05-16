@@ -145,13 +145,16 @@ fn getCamPos() -> vec3<f32> {
     var hitP = vec3<f32>(0.0);
 
     var prevT = tRay;
-    for (var i = 0; i < 80; i++) {
+    // 56 steps + 4-iteration bisection: ~30% fewer terrainH evals than
+    // 80/6 with no visible change on a fogged, moving wireframe (4
+    // halvings = 1/16-interval hit, sharp enough for the grid lines).
+    for (var i = 0; i < 56; i++) {
         let p  = camPos + rd * tRay;
         let h  = terrainH(p.xz, u.elapsed);
         let dy = p.y - h;
         if dy < 0.0 {
             var lo = prevT; var hi = tRay;
-            for (var j = 0; j < 6; j++) {
+            for (var j = 0; j < 4; j++) {
                 let mid = (lo + hi) * 0.5;
                 let pm  = camPos + rd * mid;
                 let hm  = terrainH(pm.xz, u.elapsed);
@@ -162,7 +165,7 @@ fn getCamPos() -> vec3<f32> {
             break;
         }
         prevT  = tRay;
-        tRay  += max(0.06, dy * 0.50);
+        tRay  += max(0.10, dy * 0.55);   // slightly larger floor → fewer iters to hit
         if tRay > 200.0 { break; }
     }
 
