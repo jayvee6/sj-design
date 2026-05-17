@@ -79,7 +79,7 @@
 
     // Build ID — bump BUILD every iteration; srcHash auto-fingerprints the
     // shader so a screenshot's HUD always pins the exact code state.
-    const BUILD = 'cd-011';
+    const BUILD = 'cd-014';
     function srcHash(s) {
       let h = 2166136261 >>> 0;
       for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
@@ -333,12 +333,13 @@
         vec3 NtW  = normalize(vec3( tnB.x * cRb - tnB.z * sRb, tnB.y,
                                     tnB.x * sRb + tnB.z * cRb )); // object->world
         vec3 Rbm  = reflect(-spot, NtW);
-        float aim     = pow(max(0.0, dot(vdir, Rbm)), 42.0);    // soft straight shaft
-        float specHot = pow(max(0.0, dot(NtW, spot)), 2.0);     // broad lit hemisphere -> dense fan
-        float bright  = 0.30 + 0.70 * thB;                      // most tiles emit, hottest brightest
+        float m       = 1.0 - max(0.0, dot(vdir, Rbm));         // 0 on the beam axis
+        float shaft   = exp(-m * 300.0);                        // slightly wider = less speckle
+        float specHot = pow(max(0.0, dot(NtW, spot)), 3.0);     // tile must catch the spot
+        float hotTile = smoothstep(0.74, 0.94, thB);            // ~half as many emitting facets
         vec3 bCol = mix(vec3(1.00, 0.35, 0.85),
                         vec3(1.00, 0.82, 0.42), fract(thB * 7.0));
-        return bCol * aim * specHot * bright;
+        return bCol * shaft * specHot * hotTile;
       }
 
       vec4 smoke(vec3 ro, vec3 rd, float tStart, float tEnd) {
@@ -346,7 +347,8 @@
         float dtCoarse = dtFine * 3.0;                  // race through empty space
         float jit = hash3(vec3(rd.x * 411.0, rd.y * 411.0, uElapsed));
         float t = tStart + dtFine * jit;
-        vec3 acc = vec3(0.0);
+        vec3 acc  = vec3(0.0);
+        vec3 bAcc = vec3(0.0);              // beam light — soft-kneed after the march
         float T = 1.0;
         vec3 SPOT  = normalize(vec3(-0.35, 0.55, 0.30));  // club pin-spot A
         vec3 SPOT2 = normalize(vec3( 0.42, 0.48, -0.30)); // club pin-spot B
@@ -381,13 +383,17 @@
           float bFall = exp(-max(0.0, length(p) - SPHERE_R) * 0.032);
           vec3 beams = discoBeam(p, vdir, SPOT,  cRb, sRb)
                      + discoBeam(p, vdir, SPOT2, cRb, sRb);
-          ct += beams * bFall * (5.0 + uBass * 7.0 + uBeat * 4.0);
 
           float aT = exp(-d * dtFine * 0.42);           // dtFine = actual step
-          acc += T * (1.0 - aT) * ct;
+          float w  = T * (1.0 - aT);
+          acc  += w * ct;
+          bAcc += w * beams * bFall * (18.0 + uBass * 20.0 + uBeat * 12.0);
           T *= aT;
           t += dtFine;
         }
+        // Soft-knee the beam light: a direct camera hit becomes a brilliant
+        // bounded flare instead of an unbounded full-frame whiteout.
+        acc += bAcc / (1.0 + 0.45 * bAcc);
         return vec4(acc, T);
       }
 
