@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmic Disco — sj-design WebGPU showcase</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #010109; color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+    .hud {
+      position: fixed; top: 24px; right: 24px; z-index: 10;
+      font: 600 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #c7c7cc; text-align: right; white-space: pre;
+      pointer-events: none; letter-spacing: 0.02em;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.85);
+    }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / webgpu scenes
+    <strong>Cosmic Disco</strong>
+  </div>
+  <div id="hud" class="hud"></div>
+  <canvas id="c"></canvas>
+
+  <!-- Optional shared helpers — compact inline fallbacks below if they 404 -->
+  <script src="../../lib/synthetic-pulse.js"></script>
+  <script src="../../lib/webgpu-bootstrap.js"></script>
+  <script>
+    // ─── Cosmic Disco (WebGPU) ────────────────────────────────────────────
+    // A bright real-disco-ball mirror sphere inside a LUSH volumetric pink/
+    // gold nebula. One fullscreen-triangle fragment shader, single render
+    // pass, tonemap in-shader (sj-design scene contract — no postprocessing).
+    // Rendered at 0.66× and upscaled (the volumetric march is the cost; the
+    // softness is hidden by the clouds + motion, same trick as wire-terrain).
+    //
+    //   Layer            Technique
+    //   ────────────────────────────────────────────────────────────────────
+    //   mirror ball      ray-sphere (R=5); dense lat/lon tiles (TILE 0.042),
+    //                    per-tile angular jitter so neighbours scatter light;
+    //                    each tile reflects nebula() + hard colored glints +
+    //                    gold city-lights between the tiles
+    //   volumetric smoke 48-step raymarch through animated domain-warped 3D
+    //                    FBM density in a finite shell, Beer–Lambert
+    //                    absorption + cheap forward single-scatter toward the
+    //                    pink/gold lights, depth-composited against the ball
+    //                    (ball clips the march; clouds parallax on orbit)
+    //   nebula far-field FBM colour + spiral galaxies + stars; the deep
+    //                    backdrop seen through smoke gaps and mirrored tiles
+    //   light burst      dense hash-jittered radial shafts, dimmed by the
+    //                    smoke transmittance so they read as god-rays
+    //
+    // Signals: SJPulse (bass=kick, mid=wave, treble=flicker, amp=mean).
+    // Swap signals() for an AudioFrame to react. Camera auto-orbits.
+
+    const canvas = document.getElementById('c');
+
+    // Build ID — bump BUILD every iteration; srcHash auto-fingerprints the
+    // shader so a screenshot's HUD always pins the exact code state.
+    const BUILD = 'cd-011';
+    function srcHash(s) {
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      return h.toString(36).slice(0, 5);
+    }
+
+    // Perf HUD — ported from musicplayer-viz app.js _hud (the accurate one):
+    // 120-frame ring-buffer TRUE average (no EMA — EMA masks drops), p99
+    // low1%, drops/sec. Plus a WebGPU onSubmittedWorkDone completion-count
+    // cross-check line.
+    const HUD = (() => {
+      const el = document.getElementById('hud');
+      const RING = 120;
+      const buf = new Float32Array(RING);
+      const sortScratch = new Float32Array(RING);   // reused — no per-update alloc
+      let head = 0, count = 0, prevTs = 0, lastUpdate = 0;
+      const UPDATE_MS = 250;
+      const DROP_RING = 60;
+      const dropBuf = new Uint8Array(DROP_RING);
+      let dropHead = 0;
+      let gpuCount = 0, lastCount = 0, lastWall = 0, gpuFps = 0;
+      let probeMs = 0, haveProbe = false;
+      let meta = { api: '', build: '', gpu: '', res: () => '' };
+      return {
+        setMeta(m) { meta = m; },
+        gpuDone() { gpuCount++; },                          // WebGPU: per completed submit
+        gpuProbe(ms) { probeMs += (ms - probeMs) * 0.2; haveProbe = true; },
+        frame(ts) {
+          if (!prevTs) { prevTs = ts; return; }
+          const dt = ts - prevTs;
+          prevTs = ts;
+          buf[head] = dt; head = (head + 1) % RING; if (count < RING) count++;
+          dropBuf[dropHead] = dt > 33.3 ? 1 : 0;
+          dropHead = (dropHead + 1) % DROP_RING;
+          if (!el || ts - lastUpdate < UPDATE_MS) return;
+          lastUpdate = ts;
+          const n = count;
+          let sum = 0;
+          const sorted = sortScratch.subarray(0, n);
+          for (let i = 0; i < n; i++) {
+            const v = buf[(head - n + i + RING) % RING];
+            sorted[i] = v; sum += v;
+          }
+          sorted.sort();
+          const avg    = sum / n;
+          const fps    = 1000 / avg;
+          const p99    = sorted[Math.min(n - 1, Math.floor(n * 0.99))];
+          const fpsLow = 1000 / p99;
+          let dropSum = 0;
+          for (let i = 0; i < DROP_RING; i++) dropSum += dropBuf[i];
+          const dps = (dropSum / ((DROP_RING * avg) / 1000)).toFixed(1);
+          if (gpuCount > 0) {
+            if (lastWall) gpuFps = (gpuCount - lastCount) * 1000 / (ts - lastWall);
+            lastCount = gpuCount; lastWall = ts;
+          }
+          const gLine = gpuCount > 0 ? 'gpu ' + Math.round(gpuFps)
+                      : haveProbe    ? 'gpu ' + Math.round(1000 / probeMs)
+                      : 'gpu --';
+          el.textContent = [
+            meta.api,
+            'build ' + meta.build,
+            'fps ' + Math.round(fps) + '  (' + avg.toFixed(1) + ' ms)',
+            'low1% ' + Math.round(fpsLow) + '   drops ' + dps + '/s',
+            gLine,
+            meta.res(),
+            'GPU ' + meta.gpu,
+          ].join(String.fromCharCode(10));
+        },
+      };
+    })();
+
+    const WGSL = /* wgsl */`
+// ── LOCKSTEP PARITY — mirror EVERY change in cosmic-disco-threejs.html ──
+// and bump BUILD in BOTH files. Idiom map: vec3<f32>→vec3 · f32→float ·
+// let/var→typed local · atan2→atan · select(a,b,c)→c?b:a · loop bounds
+// must stay constant in GLSL ES. srcHash differs by language (expected).
+struct Uniforms {
+    elapsed:    f32,         // 0
+    bass:       f32,         // 4
+    mid:        f32,         // 8
+    treble:     f32,         // 12
+    beat:       f32,         // 16
+    amp:        f32,         // 20
+    resolution: vec2<f32>,   // 24  (vec2 on 8-byte boundary)
+    rotY:       f32,         // 32  ball self-spin accumulator
+    camAng:     f32,         // 36  camera orbit angle
+    _pad0:      f32,         // 40
+    _pad1:      f32,         // 44
+}                            // 48 bytes total (12 × f32)
+@group(0) @binding(0) var<uniform> u: Uniforms;
+
+struct VSOut {
+    @builtin(position) pos: vec4<f32>,
+    @location(0)       uv:  vec2<f32>,
+}
+
+@vertex fn vs_main(@builtin(vertex_index) vid: u32) -> VSOut {
+    var pos = array<vec2<f32>, 3>(
+        vec2<f32>(-1.0, -1.0), vec2<f32>(3.0, -1.0), vec2<f32>(-1.0, 3.0),
+    );
+    var uvs = array<vec2<f32>, 3>(
+        vec2<f32>(0.0, 0.0), vec2<f32>(2.0, 0.0), vec2<f32>(0.0, 2.0),
+    );
+    var out: VSOut;
+    out.pos = vec4<f32>(pos[vid], 0.0, 1.0);
+    out.uv  = uvs[vid];
+    return out;
+}
+
+const PI:       f32 = 3.14159265359;
+const SPHERE_R: f32 = 5.0;
+const TILE:     f32 = 0.0418879;  // 2π/150 — longitude wraps seamlessly (no atan2 seam)
+const GROUT:    f32 = 0.045;   // hairline dark seam between tiles
+const RMAX:     f32 = 42.0;    // volumetric smoke shell radius
+const STEPS:    i32 = 36;      // adaptive volumetric march (empty-space skip)
+
+fn hash3(p: vec3<f32>) -> f32 {
+    var q = fract(p * 0.3183099 + vec3<f32>(0.1, 0.2, 0.3));
+    q += dot(q, q.yzx + 19.19);
+    return fract((q.x + q.y) * q.z);
+}
+
+fn vnoise(p: vec3<f32>) -> f32 {
+    let i = floor(p);
+    let f = fract(p);
+    let w = f * f * (3.0 - 2.0 * f);
+    let n000 = hash3(i + vec3<f32>(0.0, 0.0, 0.0));
+    let n100 = hash3(i + vec3<f32>(1.0, 0.0, 0.0));
+    let n010 = hash3(i + vec3<f32>(0.0, 1.0, 0.0));
+    let n110 = hash3(i + vec3<f32>(1.0, 1.0, 0.0));
+    let n001 = hash3(i + vec3<f32>(0.0, 0.0, 1.0));
+    let n101 = hash3(i + vec3<f32>(1.0, 0.0, 1.0));
+    let n011 = hash3(i + vec3<f32>(0.0, 1.0, 1.0));
+    let n111 = hash3(i + vec3<f32>(1.0, 1.0, 1.0));
+    let x00 = mix(n000, n100, w.x);
+    let x10 = mix(n010, n110, w.x);
+    let x01 = mix(n001, n101, w.x);
+    let x11 = mix(n011, n111, w.x);
+    let y0  = mix(x00, x10, w.y);
+    let y1  = mix(x01, x11, w.y);
+    return mix(y0, y1, w.z);
+}
+
+fn fbm3(p0: vec3<f32>) -> f32 {
+    var p = p0;
+    var a = 0.5;
+    var s = 0.0;
+    for (var i = 0; i < 3; i++) {
+        s += a * vnoise(p);
+        p  = p * 2.03;
+        a  = a * 0.5;
+    }
+    return s;
+}
+
+fn aces(x: vec3<f32>) -> vec3<f32> {
+    return clamp(
+        (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14),
+        vec3<f32>(0.0), vec3<f32>(1.0),
+    );
+}
+
+fn raySphere(O: vec3<f32>, rd: vec3<f32>, r: f32) -> f32 {
+    let b    = dot(O, rd);
+    let c    = dot(O, O) - r * r;
+    let disc = b * b - c;
+    if disc < 0.0 { return -1.0; }
+    let sq = sqrt(disc);
+    let t1 = -b - sq;
+    let t2 = -b + sq;
+    if t1 > 0.001 { return t1; }
+    if t2 > 0.001 { return t2; }
+    return -1.0;
+}
+
+// Entry/exit params of a ray through a sphere of radius r (camera is inside).
+fn shell(O: vec3<f32>, rd: vec3<f32>, r: f32) -> vec2<f32> {
+    let b    = dot(O, rd);
+    let c    = dot(O, O) - r * r;
+    let disc = b * b - c;
+    if disc < 0.0 { return vec2<f32>(-1.0, -1.0); }
+    let s = sqrt(disc);
+    return vec2<f32>(-b - s, -b + s);
+}
+
+// Decorative log-spiral galaxy blob centred on direction ctr.
+fn galaxy(dir: vec3<f32>, ctr: vec3<f32>) -> f32 {
+    let d = dir - ctr;
+    let r = length(d);
+    if r > 0.32 { return 0.0; }
+    let a    = atan2(d.y, d.x) + r * 16.0;
+    let arms = 0.5 + 0.5 * cos(a * 2.0);
+    let core = exp(-r * r * 70.0);
+    let disc = exp(-r * r * 26.0) * pow(arms, 2.0);
+    return core * 1.3 + disc * 0.55;
+}
+
+// Far-field nebula colour for a direction — backdrop + mirror-ball env.
+// Noise + palette only — single fbm3 warp + 3-octave fbm3 body. Reused for
+// the backdrop and the mirror-ball reflection (no galaxies/stars in reflection).
+fn nebulaCore(dir: vec3<f32>) -> vec3<f32> {
+    let drift = vec3<f32>(u.elapsed * 0.02, 0.0, u.elapsed * 0.015);
+    let wv = fbm3(dir * 1.8 + 11.0);
+    let w  = vec3<f32>(wv, wv * 1.31 + 0.21, wv * 0.74 - 0.17);
+    let n  = fbm3(dir * 2.6 + w * 1.4 + drift);
+    let n2 = fbm3(dir * 5.0 + w * 0.8);
+    let ridge = pow(1.0 - abs(n2 * 2.0 - 1.0), 3.0);
+
+    let deep = vec3<f32>(0.020, 0.010, 0.060);
+    let rose = vec3<f32>(0.850, 0.180, 0.450);
+    let mag  = vec3<f32>(0.950, 0.250, 0.700);
+    let gold = vec3<f32>(1.000, 0.720, 0.320);
+    let cyan = vec3<f32>(0.250, 0.750, 1.000);
+
+    var col = mix(deep, rose, smoothstep(0.25, 0.65, n));
+    col = mix(col, mag, smoothstep(0.50, 0.85, n) * 0.85);
+    col += gold * ridge * 0.90;
+    col += cyan * pow(max(0.0, n - 0.60), 2.0) * 0.55;
+    col *= 0.45 + u.amp * 0.50;
+    return col;
+}
+
+fn nebula(dir: vec3<f32>) -> vec3<f32> {
+    var col = nebulaCore(dir);
+    let nd = normalize(dir);
+    let g = galaxy(nd, normalize(vec3<f32>( 0.70,  0.45, -0.40)))
+          + galaxy(nd, normalize(vec3<f32>(-0.80,  0.30,  0.50)))
+          + galaxy(nd, normalize(vec3<f32>( 0.20, -0.55, -0.78)));
+    col += vec3<f32>(0.95, 0.88, 1.00) * g;
+
+    let sc   = floor(dir * 260.0);
+    let sH   = hash3(sc);
+    let star = step(0.9965, sH) * (0.40 + 0.60 * hash3(sc + 5.0));
+    col += vec3<f32>(0.90, 0.92, 1.00) * star;
+    return col;
+}
+
+fn latLon(p: vec3<f32>) -> vec2<f32> {
+    return vec2<f32>(asin(clamp(p.y, -1.0, 1.0)), atan2(p.z, p.x));
+}
+
+fn tileNormal(p: vec3<f32>) -> vec3<f32> {
+    let ll   = latLon(p);
+    let tLat = (floor(ll.x / TILE) + 0.5) * TILE;
+    let tLon = (floor(ll.y / TILE) + 0.5) * TILE;
+    return normalize(vec3<f32>(
+        cos(tLat) * cos(tLon),
+        sin(tLat),
+        cos(tLat) * sin(tLon),
+    ));
+}
+
+// Gold city-light clusters glowing between the mirror tiles (object space).
+fn cityLights(d: vec3<f32>) -> f32 {
+    let q    = d * 22.0;
+    let c    = floor(q);
+    let big  = hash3(c);
+    if big < 0.55 { return 0.0; }
+    let fine = hash3(floor(q * 4.0) + 3.0);
+    let lit  = smoothstep(0.60, 0.95, fine) * smoothstep(0.55, 0.80, big);
+    return lit * (0.60 + 0.40 * fract(big * 37.0));
+}
+
+fn lightPos(i: i32) -> vec3<f32> {
+    let fi  = f32(i);
+    let ang = fi * (PI * 0.5) + u.elapsed * 0.50;
+    let y   = 2.5 + sin(u.elapsed * 0.32 + fi * 1.3) * 2.5;
+    return vec3<f32>(cos(ang) * 9.0, y, sin(ang) * 9.0);
+}
+
+fn lightColor(i: i32) -> vec3<f32> {
+    if i == 0 { return vec3<f32>(1.00, 0.18, 0.65); }   // pink
+    if i == 1 { return vec3<f32>(0.28, 0.84, 1.00); }   // cyan
+    if i == 2 { return vec3<f32>(1.00, 0.82, 0.45); }   // gold
+    return          vec3<f32>(1.00, 0.95, 1.00);        // white
+}
+
+// ── Volumetric smoke ────────────────────────────────────────────────────
+// Cheap radial envelope — evaluated BEFORE any noise so empty steps skip
+// the whole fbm chain (the dominant march cost).
+fn smokeEnv(p: vec3<f32>) -> f32 {
+    let r = length(p);
+    return smoothstep(5.0, 12.0, r) * (1.0 - smoothstep(28.0, 46.0, r));
+}
+
+// Raw cloud noise (pre-carve). Domain warp uses 2 fbm3 + a synthesized
+// 3rd channel — the warp is low-frequency, the 3rd axis is imperceptible.
+fn smokeNoise(p: vec3<f32>) -> f32 {
+    let drift = vec3<f32>(u.elapsed * 0.06, u.elapsed * 0.02, -u.elapsed * 0.04);
+    let q  = p * 0.06 + drift * 0.10;
+    let wx = fbm3(q * 0.7 + 1.0);
+    let wy = fbm3(q * 0.7 + 9.0);
+    let w  = vec3<f32>(wx, wy, (wx - wy) * 0.5 + 0.5);
+    return fbm3(q + w * 0.8);
+}
+
+// One club pin-spot bounced off the ball: find the tile whose mirror
+// normal sends the spot toward this fog point, return its coloured shaft.
+fn discoBeam(p: vec3<f32>, vdir: vec3<f32>, spot: vec3<f32>, cRb: f32, sRb: f32) -> vec3<f32> {
+    let Nreq = normalize(spot + vdir);
+    let nB   = vec3<f32>( Nreq.x * cRb + Nreq.z * sRb, Nreq.y,
+                         -Nreq.x * sRb + Nreq.z * cRb );        // world→object
+    let ll   = latLon(nB);
+    let cLat = floor(ll.x / TILE);
+    let cLon = floor(ll.y / TILE);
+    let thB  = hash3(vec3<f32>(cLat, cLon, 1.0));
+    let tLat = (cLat + 0.5) * TILE;
+    let tLon = (cLon + 0.5) * TILE;
+    let tnB  = vec3<f32>(cos(tLat) * cos(tLon), sin(tLat), cos(tLat) * sin(tLon));
+    let NtW  = normalize(vec3<f32>( tnB.x * cRb - tnB.z * sRb, tnB.y,
+                                    tnB.x * sRb + tnB.z * cRb )); // object→world
+    let Rbm  = reflect(-spot, NtW);
+    let aim     = pow(max(0.0, dot(vdir, Rbm)), 42.0);          // soft straight shaft
+    let specHot = pow(max(0.0, dot(NtW, spot)), 2.0);           // broad lit hemisphere → dense fan
+    let bright  = 0.30 + 0.70 * thB;                            // most tiles emit, hottest brightest
+    let bCol = mix(vec3<f32>(1.00, 0.35, 0.85),
+                   vec3<f32>(1.00, 0.82, 0.42), fract(thB * 7.0));
+    return bCol * aim * specHot * bright;
+}
+
+fn smoke(ro: vec3<f32>, rd: vec3<f32>, tStart: f32, tEnd: f32) -> vec4<f32> {
+    let dtFine   = (tEnd - tStart) / f32(STEPS);
+    let dtCoarse = dtFine * 3.0;                       // race through empty space
+    let jit = hash3(vec3<f32>(rd.x * 411.0, rd.y * 411.0, u.elapsed));
+    var t   = tStart + dtFine * jit;
+    var acc = vec3<f32>(0.0);
+    var T   = 1.0;
+    let SPOT  = normalize(vec3<f32>(-0.35, 0.55, 0.30));  // club pin-spot A
+    let SPOT2 = normalize(vec3<f32>( 0.42, 0.48, -0.30)); // club pin-spot B
+    let cRb  = cos(u.rotY);
+    let sRb  = sin(u.rotY);
+    for (var i = 0; i < STEPS; i++) {
+        if T < 0.04 || t > tEnd { break; }
+        let p = ro + rd * t;
+        let e = smokeEnv(p);
+        if e <= 0.0001 { t += dtCoarse; continue; }    // outside envelope
+        let dRaw = smokeNoise(p);
+        let d = smoothstep(0.52, 0.98, dRaw) * e * 1.30;
+        if d <= 0.001 { t += dtCoarse; continue; }      // carved-empty
+        let l0  = normalize(lightPos(0) - p);
+        let l2  = normalize(lightPos(2) - p);
+        let ph0 = pow(max(0.0, dot(rd, l0)), 4.0);
+        let ph2 = pow(max(0.0, dot(rd, l2)), 4.0);
+        let dRamp = smoothstep(0.05, 0.55, d);
+        var ct = mix(vec3<f32>(0.04, 0.01, 0.06),
+                     vec3<f32>(0.95, 0.30, 0.55),
+                     smoothstep(0.20, 0.80, dRaw));
+        ct *= 0.25 + 1.15 * dRamp;
+        ct += vec3<f32>(1.00, 0.78, 0.45) * pow(d, 3.0) * 0.85;
+        ct += vec3<f32>(1.00, 0.95, 0.88) * pow(d, 6.0) * 0.45;
+        ct += lightColor(0) * ph0 * (0.55 + u.bass * 1.0);
+        ct += lightColor(2) * ph2 * 0.45;
+        ct *= 0.30 + u.amp * 0.45;
+
+        // Disco-ball reflected beams — dense radial fan thrown by the bright
+        // facets under two club pin-spots, revealed only by the fog.
+        let vdir  = normalize(p);
+        let bFall = exp(-max(0.0, length(p) - SPHERE_R) * 0.032);
+        let beams = discoBeam(p, vdir, SPOT,  cRb, sRb)
+                  + discoBeam(p, vdir, SPOT2, cRb, sRb);
+        ct += beams * bFall * (5.0 + u.bass * 7.0 + u.beat * 4.0);
+
+        let aT = exp(-d * dtFine * 0.42);               // dtFine = actual step
+        acc += T * (1.0 - aT) * ct;
+        T *= aT;
+        t += dtFine;
+    }
+    return vec4<f32>(acc, T);
+}
+
+// ── Mirror ball ─────────────────────────────────────────────────────────
+fn ballShade(camPos: vec3<f32>, rd: vec3<f32>, tS: f32) -> vec3<f32> {
+    let hitP = camPos + tS * rd;
+    let cR = cos(u.rotY);
+    let sR = sin(u.rotY);
+    let hitObj = vec3<f32>(
+         hitP.x * cR + hitP.z * sR,
+         hitP.y,
+        -hitP.x * sR + hitP.z * cR,
+    );
+    let nObj = normalize(hitObj);
+    let poleDamp = smoothstep(1.0, 0.85, abs(nObj.y));   // calm the lat/lon pole vortex
+
+    let ll   = latLon(nObj);
+    let cLat = floor(ll.x / TILE);
+    let cLon = floor(ll.y / TILE);
+    let th   = hash3(vec3<f32>(cLat, cLon, 1.0));
+
+    let tnO = tileNormal(nObj);
+    let jit = (vec3<f32>(
+        hash3(vec3<f32>(cLat, cLon,  7.0)),
+        hash3(vec3<f32>(cLat, cLon, 13.0)),
+        hash3(vec3<f32>(cLat, cLon, 23.0)),
+    ) - 0.5) * (0.16 * poleDamp);
+    let tnJ = normalize(tnO + jit);
+    let tN  = normalize(vec3<f32>(
+         tnJ.x * cR - tnJ.z * sR,
+         tnJ.y,
+         tnJ.x * sR + tnJ.z * cR,
+    ));
+    let refl = reflect(rd, tN);
+
+    var ball = nebulaCore(refl) * 0.55 + vec3<f32>(0.10, 0.11, 0.16);
+    for (var i = 0; i < 4; i++) {
+        let lc = lightColor(i);
+        let ld = normalize(lightPos(i) - hitP);
+        let s  = max(0.0, dot(refl, ld));
+        ball += lc * exp(120.0 * (s - 1.0))
+                * (18.0 + u.bass * 36.0 + u.beat * 26.0);
+        ball += lc * pow(s, 8.0) * 0.45;
+    }
+    ball *= 0.70 + 0.80 * th;
+    if th > 0.78 {
+        ball += vec3<f32>(1.45, 1.25, 1.40) * (0.8 + u.treble * 0.8) * poleDamp;
+    }
+    let envF = pow(max(0.0, -dot(refl, rd)), 2.0);
+    ball += vec3<f32>(0.78, 0.80, 0.95) * envF * 0.9;
+    ball += vec3<f32>(1.00, 0.72, 0.32) * cityLights(nObj)
+            * (0.55 + u.treble * 0.55);
+    let fres = pow(1.0 - max(0.0, dot(tN, -rd)), 3.0);
+    ball += vec3<f32>(1.00, 0.55, 0.85) * fres
+            * (0.45 + u.bass * 0.80 + u.beat * 0.50);
+
+    // Analytic grout AA — soft ~1px seam instead of a hard step.
+    let aaPix = 1.6 / u.resolution.y;
+    let wT    = clamp(aaPix * tS / (SPHERE_R * TILE) * 0.7, 1.0e-4, 0.08) * poleDamp;
+    let fLa   = fract(ll.x / TILE);
+    let fLo   = fract(ll.y / TILE);
+    let dLa   = min(fLa, 1.0 - fLa);
+    let dLo   = min(fLo, 1.0 - fLo);
+    let gM    = clamp(max(
+        1.0 - smoothstep(GROUT - wT, GROUT + wT, dLa),
+        1.0 - smoothstep(GROUT - wT, GROUT + wT, dLo)), 0.0, 1.0);
+    return mix(ball, vec3<f32>(0.010, 0.006, 0.018), gM);
+}
+
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+    let asp = u.resolution.x / u.resolution.y;
+
+    let camR   = 13.0;
+    let camPos = vec3<f32>(
+        sin(u.camAng) * camR,
+        2.4 + sin(u.camAng * 0.6) * 1.2,
+        cos(u.camAng) * camR,
+    );
+    let fwd   = normalize(vec3<f32>(0.0) - camPos);
+    let right = normalize(cross(fwd, vec3<f32>(0.0, 1.0, 0.0)));
+    let up    = cross(right, fwd);
+    let ndc   = (in.uv - 0.5) * vec2<f32>(asp, 1.0);
+    let rd    = normalize(fwd + right * ndc.x * 1.6 + up * ndc.y * 1.6);
+
+    let tS = raySphere(camPos, rd, SPHERE_R);
+
+    // Analytic anti-aliasing — silhouette coverage from the ray's
+    // closest-approach distance vs the radius, feathered by the world size
+    // of one device pixel. No screen-space derivatives → no
+    // uniform-control-flow UB, no WebGL extension needed.
+    let tCA   = max(0.0, dot(-camPos, rd));
+    let dCA   = length(camPos + tCA * rd);
+    let aaPix = 1.6 / u.resolution.y;
+    let silAA = aaPix * length(camPos) * 1.4;
+    let cov   = smoothstep(SPHERE_R + silAA, SPHERE_R - silAA, dCA);
+    let tHit  = select(tCA, tS, tS > 0.0);
+
+    // Behind the smoke: ball, deep field, or a feathered rim blend.
+    var behind = vec3<f32>(0.0);
+    if cov >= 0.999 {
+        behind = ballShade(camPos, rd, tHit);
+    } else if cov <= 0.001 {
+        behind = nebula(rd);
+    } else {
+        behind = mix(nebula(rd), ballShade(camPos, rd, tHit), cov);
+    }
+
+    // Smoke shell, soft-clipped by the ball coverage so the boundary
+    // feathers instead of stair-steps.
+    let sh = shell(camPos, rd, RMAX);
+    let tStart = max(0.001, sh.x);
+    let tClip  = select(sh.y, min(sh.y, tS), tS > 0.0);
+    let tEnd   = mix(sh.y, tClip, cov);
+
+    var col = behind;
+    var smk = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    if tEnd > tStart {
+        smk = smoke(camPos, rd, tStart, tEnd);
+        col = smk.rgb + smk.a * behind;
+    }
+
+    // Pink bloom halo behind the ball, scattered by smoke in front.
+    let halo = min(0.9, exp(-dCA * dCA * 0.080) * (0.22 + u.bass * 0.50 + u.beat * 0.40));
+    col += vec3<f32>(1.00, 0.45, 0.85) * halo * smk.a;
+
+    // (Beams are no longer a screen-space starburst — they are reflected
+    // off the mirror tiles and revealed by the volumetric fog in smoke().)
+
+    let exposure = 0.95 + u.beat * 0.15;
+    return vec4<f32>(aces(col * exposure), 1.0);
+}
+`;
+
+    // simulatedAudio → SJPulse. amp = (bass + mid + treble) / 3 (the
+    // prototype's exact definition). Swap for an AudioFrame to react.
+    // Reused across frames — no per-frame allocation (GC pauses show up as
+    // periodic frame-time spikes; see the perf playbook).
+    const SIG = { bass: 0, mid: 0, treble: 0, beat: 0, amp: 0 };
+    const WAVE_OPT = { mid: 0.5, amp: 0.45 };
+    const BEAT_OPT = { kickRate: 1.3, ghostAmp: 0 };
+    function signals(t) {
+      const bass = window.SJPulse
+        ? window.SJPulse.kick(t)
+        : Math.min(1, Math.pow(Math.max(0, Math.sin(t * 2.2)), 2) * 0.9);
+      const mid = window.SJPulse
+        ? window.SJPulse.wave(t, WAVE_OPT)
+        : 0.5 + 0.45 * Math.sin(t * 0.55);
+      const treble = window.SJPulse
+        ? window.SJPulse.flicker(t)
+        : Math.abs(Math.sin(t * 4.0));
+      const beat = window.SJPulse
+        ? window.SJPulse.kick(t, BEAT_OPT)
+        : Math.max(0, Math.sin(t * 1.3));
+      SIG.bass = bass; SIG.mid = mid; SIG.treble = treble; SIG.beat = beat;
+      SIG.amp = (bass + mid + treble) / 3;
+      return SIG;
+    }
+
+    async function inlineInit(cv) {
+      if (!navigator.gpu) { console.warn('[cosmic-disco] WebGPU unavailable'); return null; }
+      const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+      if (!adapter) { console.warn('[cosmic-disco] no adapter'); return null; }
+      const device = await adapter.requestDevice();
+      // Lush volumetric: render at 0.66× and let the GPU upscale.
+      const dpr = Math.min(window.devicePixelRatio || 1, 1) * 0.66;
+      const size = () => { cv.width = Math.max(1, Math.round(innerWidth * dpr)); cv.height = Math.max(1, Math.round(innerHeight * dpr));
+        cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; };
+      size(); addEventListener('resize', size);
+      const context = cv.getContext('webgpu');
+      const format = navigator.gpu.getPreferredCanvasFormat();
+      context.configure({ device, format, alphaMode: 'opaque' });
+      return { adapter, device, queue: device.queue, context, format, canvas: cv, dpr };
+    }
+
+    (async () => {
+      const gpu = window.SJGpu
+        ? await window.SJGpu.init(canvas, { maxDPR: 1, renderScale: 0.66 })
+        : await inlineInit(canvas);
+      if (!gpu) return;
+      const { device, queue, context, format } = gpu;
+
+      let gpuName = 'WebGPU device';
+      try {
+        const ai = gpu.adapter && gpu.adapter.info;
+        if (ai) gpuName = [ai.vendor, ai.architecture].filter(Boolean).join(' ')
+                          || ai.description || gpuName;
+      } catch (e) {}
+      HUD.setMeta({
+        api: 'WebGPU · WGSL',
+        build: BUILD + '-' + srcHash(WGSL),
+        gpu: gpuName,
+        res: () => gpu.canvas.width + '×' + gpu.canvas.height
+                   + '  ' + gpu.dpr.toFixed(2) + '×',
+      });
+
+      const module = device.createShaderModule({ label: 'CosmicDisco', code: WGSL });
+      const bgl = device.createBindGroupLayout({
+        entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                    buffer: { type: 'uniform' } }],
+      });
+      const UNIFORM_BYTES = 48;
+      const uniforms   = new Float32Array(UNIFORM_BYTES / 4);
+      const uniformBuf = device.createBuffer({
+        label: 'CosmicDisco uniforms',
+        size:  UNIFORM_BYTES,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
+      const bindGroup = device.createBindGroup({
+        layout: bgl, entries: [{ binding: 0, resource: { buffer: uniformBuf } }],
+      });
+      const pipeline = device.createRenderPipeline({
+        label:  'CosmicDisco',
+        layout: device.createPipelineLayout({ bindGroupLayouts: [bgl] }),
+        vertex:   { module, entryPoint: 'vs_main' },
+        fragment: { module, entryPoint: 'fs_main', targets: [{ format }] },
+        primitive: { topology: 'triangle-list' },
+      });
+
+      // Hoisted once — no per-frame descriptor/array literals (only the
+      // swapchain view must be re-fetched each frame; WebGPU mandates that).
+      const renderPassDesc = {
+        colorAttachments: [{
+          view: undefined,
+          loadOp: 'clear',
+          storeOp: 'store',
+          clearValue: { r: 0, g: 0, b: 0, a: 1 },
+        }],
+      };
+      const cmdBuf = [null];
+
+      let t0, tPrev, rotY = 0, camAng = 0;
+      function frame(ts) {
+        if (t0 === undefined) { t0 = ts; tPrev = ts; }
+        const t  = (ts - t0)    / 1000;
+        const dt = Math.min(0.1, Math.max(0.001, (ts - tPrev) / 1000));
+        tPrev = ts;
+        const s = signals(t);
+
+        rotY   += dt * (0.15 + s.bass * 0.25);   // ball self-spin
+        camAng += dt * 0.05;                     // slow cinematic orbit
+
+        uniforms[0]  = t;
+        uniforms[1]  = s.bass;
+        uniforms[2]  = s.mid;
+        uniforms[3]  = s.treble;
+        uniforms[4]  = s.beat;
+        uniforms[5]  = s.amp;
+        uniforms[6]  = gpu.canvas.width;   // resolution.x  (offset 24)
+        uniforms[7]  = gpu.canvas.height;  // resolution.y  (offset 28)
+        uniforms[8]  = rotY;               // offset 32
+        uniforms[9]  = camAng;             // offset 36
+        uniforms[10] = 0;
+        uniforms[11] = 0;
+        queue.writeBuffer(uniformBuf, 0, uniforms);
+
+        renderPassDesc.colorAttachments[0].view =
+          context.getCurrentTexture().createView();
+        const enc  = device.createCommandEncoder();
+        const pass = enc.beginRenderPass(renderPassDesc);
+        pass.setPipeline(pipeline);
+        pass.setBindGroup(0, bindGroup);
+        pass.draw(3);
+        pass.end();
+        cmdBuf[0] = enc.finish();
+        queue.submit(cmdBuf);
+        queue.onSubmittedWorkDone().then(HUD.gpuDone);
+        HUD.frame(ts);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

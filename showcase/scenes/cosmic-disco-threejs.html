@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmic Disco (Three.js) — sj-design comparison build</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #010109; color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .label {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #8e8e93;
+    }
+    .label strong { color: #f5f5f7; letter-spacing: 0.04em; text-transform: none; font-size: 14px; display: block; margin-top: 4px; }
+    .label span { color: #5a5a5f; text-transform: none; letter-spacing: 0.02em; display: block; margin-top: 2px; font-weight: 500; }
+    .hud {
+      position: fixed; top: 24px; right: 24px; z-index: 10;
+      font: 600 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #c7c7cc; text-align: right; white-space: pre;
+      pointer-events: none; letter-spacing: 0.02em;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.85);
+    }
+  </style>
+</head>
+<body>
+  <div class="label">
+    sj-design / comparison build
+    <strong>Cosmic Disco — Three.js</strong>
+    <span>WebGL/GLSL host · same algorithm as cosmic-disco.html (WGSL)</span>
+  </div>
+  <div id="hud" class="hud"></div>
+  <canvas id="c"></canvas>
+
+  <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.156.1/build/three.module.js"
+    }
+  }
+  </script>
+
+  <!-- Shared synthetic pulse (same signals as the WGSL build) -->
+  <script src="../../lib/synthetic-pulse.js"></script>
+
+  <script type="module">
+    // ─── Cosmic Disco (Three.js comparison build) ────────────────────────
+    // The SAME shader as cosmic-disco.html, transliterated WGSL → GLSL and
+    // hosted by Three.js as a single fullscreen ShaderMaterial on an ortho
+    // quad. A volumetric raymarched nebula is a fragment-shader job with no
+    // meaningful scene-graph equivalent, so for a pixel-locked comparison
+    // while the look iterates, both files run ONE algorithm:
+    //
+    //   cosmic-disco.html          raw WebGPU · WGSL · single render pass
+    //   cosmic-disco-threejs.html  this — Three.js WebGLRenderer · GLSL ES ·
+    //                              ortho quad + ShaderMaterial
+    //
+    // The comparison is now WebGPU/WGSL vs WebGL/Three.js/GLSL of the
+    // identical algorithm (host + shading-language + API contrast), not a
+    // scene-graph contrast. A separate real-scene-graph Three.js variant
+    // (mesh ball + particle systems) can be rebuilt once the look is locked.
+    //
+    // Same as the WGSL build: 0.66× render scale upscaled, in-shader ACES,
+    // SJPulse signals (bass=kick, mid=wave, treble=flicker, amp=mean),
+    // identical camera orbit / spin rates.
+    //
+    // Not production viz code — the StudioJoeMusic web stack is raw WebGPU.
+
+    import * as THREE from 'three';
+
+    const canvas = document.getElementById('c');
+
+    // Build ID — bump BUILD every iteration; srcHash auto-fingerprints the
+    // shader so a screenshot's HUD always pins the exact code state.
+    const BUILD = 'cd-011';
+    function srcHash(s) {
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      return h.toString(36).slice(0, 5);
+    }
+
+    // Perf HUD — ported from musicplayer-viz app.js _hud (the accurate one):
+    // 120-frame ring-buffer TRUE average (no EMA — EMA masks drops), p99
+    // low1%, drops/sec. Plus a sampled gl.finish GPU-drain cross-check line.
+    const HUD = (() => {
+      const el = document.getElementById('hud');
+      const RING = 120;
+      const buf = new Float32Array(RING);
+      const sortScratch = new Float32Array(RING);   // reused — no per-update alloc
+      let head = 0, count = 0, prevTs = 0, lastUpdate = 0;
+      const UPDATE_MS = 250;
+      const DROP_RING = 60;
+      const dropBuf = new Uint8Array(DROP_RING);
+      let dropHead = 0;
+      let gpuCount = 0, lastCount = 0, lastWall = 0, gpuFps = 0;
+      let probeMs = 0, haveProbe = false;
+      let meta = { api: '', build: '', gpu: '', res: () => '' };
+      return {
+        setMeta(m) { meta = m; },
+        gpuDone() { gpuCount++; },
+        gpuProbe(ms) { probeMs += (ms - probeMs) * 0.2; haveProbe = true; },
+        frame(ts) {
+          if (!prevTs) { prevTs = ts; return; }
+          const dt = ts - prevTs;
+          prevTs = ts;
+          buf[head] = dt; head = (head + 1) % RING; if (count < RING) count++;
+          dropBuf[dropHead] = dt > 33.3 ? 1 : 0;
+          dropHead = (dropHead + 1) % DROP_RING;
+          if (!el || ts - lastUpdate < UPDATE_MS) return;
+          lastUpdate = ts;
+          const n = count;
+          let sum = 0;
+          const sorted = sortScratch.subarray(0, n);
+          for (let i = 0; i < n; i++) {
+            const v = buf[(head - n + i + RING) % RING];
+            sorted[i] = v; sum += v;
+          }
+          sorted.sort();
+          const avg    = sum / n;
+          const fps    = 1000 / avg;
+          const p99    = sorted[Math.min(n - 1, Math.floor(n * 0.99))];
+          const fpsLow = 1000 / p99;
+          let dropSum = 0;
+          for (let i = 0; i < DROP_RING; i++) dropSum += dropBuf[i];
+          const dps = (dropSum / ((DROP_RING * avg) / 1000)).toFixed(1);
+          const gLine = haveProbe ? 'gpu ' + Math.round(1000 / probeMs)
+                                  : 'gpu --';
+          el.textContent = [
+            meta.api,
+            'build ' + meta.build,
+            'fps ' + Math.round(fps) + '  (' + avg.toFixed(1) + ' ms)',
+            'low1% ' + Math.round(fpsLow) + '   drops ' + dps + '/s',
+            gLine,
+            meta.res(),
+            'GPU ' + meta.gpu,
+          ].join(String.fromCharCode(10));
+        },
+      };
+    })();
+
+    const FRAG = /* glsl */`
+      precision highp float;
+      // ── LOCKSTEP PARITY — mirror EVERY change in cosmic-disco.html (WGSL)
+      // and bump BUILD in BOTH files. Idiom map: vec3<f32>→vec3 · f32→float
+      // · let/var→typed local · atan2→atan · select(a,b,c)→c?b:a · loop
+      // bounds must stay constant. srcHash differs by language (expected).
+      varying vec2 vUv;
+
+      uniform float uElapsed, uBass, uMid, uTreble, uBeat, uAmp, uRotY, uCamAng;
+      uniform vec2  uRes;
+
+      const float PI       = 3.14159265359;
+      const float SPHERE_R = 5.0;
+      const float TILE     = 0.0418879;  // 2π/150 — longitude wraps seamlessly
+      const float GROUT    = 0.045;
+      const float RMAX     = 42.0;
+      const int   STEPS    = 36;
+
+      float hash3(vec3 p) {
+        vec3 q = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+        q += dot(q, q.yzx + 19.19);
+        return fract((q.x + q.y) * q.z);
+      }
+
+      float vnoise(vec3 p) {
+        vec3 ip = floor(p);
+        vec3 f  = fract(p);
+        vec3 w  = f * f * (3.0 - 2.0 * f);
+        float n000 = hash3(ip + vec3(0.0, 0.0, 0.0));
+        float n100 = hash3(ip + vec3(1.0, 0.0, 0.0));
+        float n010 = hash3(ip + vec3(0.0, 1.0, 0.0));
+        float n110 = hash3(ip + vec3(1.0, 1.0, 0.0));
+        float n001 = hash3(ip + vec3(0.0, 0.0, 1.0));
+        float n101 = hash3(ip + vec3(1.0, 0.0, 1.0));
+        float n011 = hash3(ip + vec3(0.0, 1.0, 1.0));
+        float n111 = hash3(ip + vec3(1.0, 1.0, 1.0));
+        float x00 = mix(n000, n100, w.x);
+        float x10 = mix(n010, n110, w.x);
+        float x01 = mix(n001, n101, w.x);
+        float x11 = mix(n011, n111, w.x);
+        return mix(mix(x00, x10, w.y), mix(x01, x11, w.y), w.z);
+      }
+
+      float fbm3(vec3 p) {
+        float a = 0.5, s = 0.0;
+        for (int i = 0; i < 3; i++) { s += a * vnoise(p); p *= 2.03; a *= 0.5; }
+        return s;
+      }
+
+      vec3 aces(vec3 x) {
+        return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14),
+                     0.0, 1.0);
+      }
+
+      float raySphere(vec3 O, vec3 rd, float r) {
+        float b = dot(O, rd);
+        float c = dot(O, O) - r * r;
+        float disc = b * b - c;
+        if (disc < 0.0) return -1.0;
+        float sq = sqrt(disc);
+        float t1 = -b - sq;
+        float t2 = -b + sq;
+        if (t1 > 0.001) return t1;
+        if (t2 > 0.001) return t2;
+        return -1.0;
+      }
+
+      vec2 shell(vec3 O, vec3 rd, float r) {
+        float b = dot(O, rd);
+        float c = dot(O, O) - r * r;
+        float disc = b * b - c;
+        if (disc < 0.0) return vec2(-1.0, -1.0);
+        float s = sqrt(disc);
+        return vec2(-b - s, -b + s);
+      }
+
+      float galaxy(vec3 dir, vec3 ctr) {
+        vec3 d = dir - ctr;
+        float r = length(d);
+        if (r > 0.32) return 0.0;
+        float a    = atan(d.y, d.x) + r * 16.0;
+        float arms = 0.5 + 0.5 * cos(a * 2.0);
+        float core = exp(-r * r * 70.0);
+        float disc = exp(-r * r * 26.0) * pow(arms, 2.0);
+        return core * 1.3 + disc * 0.55;
+      }
+
+      vec3 nebulaCore(vec3 dir) {
+        vec3 drift = vec3(uElapsed * 0.02, 0.0, uElapsed * 0.015);
+        float wv = fbm3(dir * 1.8 + 11.0);
+        vec3  w  = vec3(wv, wv * 1.31 + 0.21, wv * 0.74 - 0.17);
+        float n  = fbm3(dir * 2.6 + w * 1.4 + drift);
+        float n2 = fbm3(dir * 5.0 + w * 0.8);
+        float ridge = pow(1.0 - abs(n2 * 2.0 - 1.0), 3.0);
+
+        vec3 deep = vec3(0.020, 0.010, 0.060);
+        vec3 rose = vec3(0.850, 0.180, 0.450);
+        vec3 mag  = vec3(0.950, 0.250, 0.700);
+        vec3 gold = vec3(1.000, 0.720, 0.320);
+        vec3 cyan = vec3(0.250, 0.750, 1.000);
+
+        vec3 col = mix(deep, rose, smoothstep(0.25, 0.65, n));
+        col = mix(col, mag, smoothstep(0.50, 0.85, n) * 0.85);
+        col += gold * ridge * 0.90;
+        col += cyan * pow(max(0.0, n - 0.60), 2.0) * 0.55;
+        col *= 0.45 + uAmp * 0.50;
+        return col;
+      }
+      vec3 nebula(vec3 dir) {
+        vec3 col = nebulaCore(dir);
+        vec3 nd = normalize(dir);
+        float g = galaxy(nd, normalize(vec3( 0.70,  0.45, -0.40)))
+                + galaxy(nd, normalize(vec3(-0.80,  0.30,  0.50)))
+                + galaxy(nd, normalize(vec3( 0.20, -0.55, -0.78)));
+        col += vec3(0.95, 0.88, 1.00) * g;
+
+        vec3 sc = floor(dir * 260.0);
+        float sH = hash3(sc);
+        float star = step(0.9965, sH) * (0.40 + 0.60 * hash3(sc + 5.0));
+        col += vec3(0.90, 0.92, 1.00) * star;
+        return col;
+      }
+
+      vec2 latLon(vec3 p) {
+        return vec2(asin(clamp(p.y, -1.0, 1.0)), atan(p.z, p.x));
+      }
+
+      vec3 tileNormal(vec3 p) {
+        vec2 ll = latLon(p);
+        float tLat = (floor(ll.x / TILE) + 0.5) * TILE;
+        float tLon = (floor(ll.y / TILE) + 0.5) * TILE;
+        return normalize(vec3(cos(tLat) * cos(tLon),
+                              sin(tLat),
+                              cos(tLat) * sin(tLon)));
+      }
+
+      float cityLights(vec3 d) {
+        vec3 q = d * 22.0;
+        vec3 c = floor(q);
+        float big = hash3(c);
+        if (big < 0.55) return 0.0;
+        float fine = hash3(floor(q * 4.0) + 3.0);
+        float lit  = smoothstep(0.60, 0.95, fine) * smoothstep(0.55, 0.80, big);
+        return lit * (0.60 + 0.40 * fract(big * 37.0));
+      }
+
+      vec3 lightPos(int i) {
+        float fi  = float(i);
+        float ang = fi * (PI * 0.5) + uElapsed * 0.50;
+        float y   = 2.5 + sin(uElapsed * 0.32 + fi * 1.3) * 2.5;
+        return vec3(cos(ang) * 9.0, y, sin(ang) * 9.0);
+      }
+      vec3 lightColor(int i) {
+        if (i == 0) return vec3(1.00, 0.18, 0.65);
+        if (i == 1) return vec3(0.28, 0.84, 1.00);
+        if (i == 2) return vec3(1.00, 0.82, 0.45);
+        return vec3(1.00, 0.95, 1.00);
+      }
+
+      float smokeEnv(vec3 p) {
+        float r = length(p);
+        return smoothstep(5.0, 12.0, r) * (1.0 - smoothstep(28.0, 46.0, r));
+      }
+      float smokeNoise(vec3 p) {
+        vec3 drift = vec3(uElapsed * 0.06, uElapsed * 0.02, -uElapsed * 0.04);
+        vec3 q  = p * 0.06 + drift * 0.10;
+        float wx = fbm3(q * 0.7 + 1.0);
+        float wy = fbm3(q * 0.7 + 9.0);
+        vec3 w  = vec3(wx, wy, (wx - wy) * 0.5 + 0.5);
+        return fbm3(q + w * 0.8);
+      }
+
+      // One club pin-spot bounced off the ball: find the tile whose mirror
+      // normal sends the spot toward this fog point, return its coloured shaft.
+      vec3 discoBeam(vec3 p, vec3 vdir, vec3 spot, float cRb, float sRb) {
+        vec3 Nreq = normalize(spot + vdir);
+        vec3 nB   = vec3( Nreq.x * cRb + Nreq.z * sRb, Nreq.y,
+                         -Nreq.x * sRb + Nreq.z * cRb );        // world->object
+        vec2 ll   = latLon(nB);
+        float cLat = floor(ll.x / TILE);
+        float cLon = floor(ll.y / TILE);
+        float thB  = hash3(vec3(cLat, cLon, 1.0));
+        float tLat = (cLat + 0.5) * TILE;
+        float tLon = (cLon + 0.5) * TILE;
+        vec3 tnB  = vec3(cos(tLat) * cos(tLon), sin(tLat), cos(tLat) * sin(tLon));
+        vec3 NtW  = normalize(vec3( tnB.x * cRb - tnB.z * sRb, tnB.y,
+                                    tnB.x * sRb + tnB.z * cRb )); // object->world
+        vec3 Rbm  = reflect(-spot, NtW);
+        float aim     = pow(max(0.0, dot(vdir, Rbm)), 42.0);    // soft straight shaft
+        float specHot = pow(max(0.0, dot(NtW, spot)), 2.0);     // broad lit hemisphere -> dense fan
+        float bright  = 0.30 + 0.70 * thB;                      // most tiles emit, hottest brightest
+        vec3 bCol = mix(vec3(1.00, 0.35, 0.85),
+                        vec3(1.00, 0.82, 0.42), fract(thB * 7.0));
+        return bCol * aim * specHot * bright;
+      }
+
+      vec4 smoke(vec3 ro, vec3 rd, float tStart, float tEnd) {
+        float dtFine   = (tEnd - tStart) / float(STEPS);
+        float dtCoarse = dtFine * 3.0;                  // race through empty space
+        float jit = hash3(vec3(rd.x * 411.0, rd.y * 411.0, uElapsed));
+        float t = tStart + dtFine * jit;
+        vec3 acc = vec3(0.0);
+        float T = 1.0;
+        vec3 SPOT  = normalize(vec3(-0.35, 0.55, 0.30));  // club pin-spot A
+        vec3 SPOT2 = normalize(vec3( 0.42, 0.48, -0.30)); // club pin-spot B
+        float cRb = cos(uRotY);
+        float sRb = sin(uRotY);
+        for (int i = 0; i < STEPS; i++) {
+          if (T < 0.04 || t > tEnd) break;
+          vec3 p = ro + rd * t;
+          float e = smokeEnv(p);
+          if (e <= 0.0001) { t += dtCoarse; continue; } // outside envelope
+          float dRaw = smokeNoise(p);
+          float d = smoothstep(0.52, 0.98, dRaw) * e * 1.30;
+          if (d <= 0.001) { t += dtCoarse; continue; }  // carved-empty
+          vec3 l0 = normalize(lightPos(0) - p);
+          vec3 l2 = normalize(lightPos(2) - p);
+          float ph0 = pow(max(0.0, dot(rd, l0)), 4.0);
+          float ph2 = pow(max(0.0, dot(rd, l2)), 4.0);
+          float dRamp = smoothstep(0.05, 0.55, d);
+          vec3 ct = mix(vec3(0.04, 0.01, 0.06),
+                        vec3(0.95, 0.30, 0.55),
+                        smoothstep(0.20, 0.80, dRaw));
+          ct *= 0.25 + 1.15 * dRamp;
+          ct += vec3(1.00, 0.78, 0.45) * pow(d, 3.0) * 0.85;
+          ct += vec3(1.00, 0.95, 0.88) * pow(d, 6.0) * 0.45;
+          ct += lightColor(0) * ph0 * (0.55 + uBass * 1.0);
+          ct += lightColor(2) * ph2 * 0.45;
+          ct *= 0.30 + uAmp * 0.45;
+
+          // Disco-ball reflected beams — dense radial fan thrown by the
+          // bright facets under two club pin-spots, revealed only by the fog.
+          vec3 vdir  = normalize(p);
+          float bFall = exp(-max(0.0, length(p) - SPHERE_R) * 0.032);
+          vec3 beams = discoBeam(p, vdir, SPOT,  cRb, sRb)
+                     + discoBeam(p, vdir, SPOT2, cRb, sRb);
+          ct += beams * bFall * (5.0 + uBass * 7.0 + uBeat * 4.0);
+
+          float aT = exp(-d * dtFine * 0.42);           // dtFine = actual step
+          acc += T * (1.0 - aT) * ct;
+          T *= aT;
+          t += dtFine;
+        }
+        return vec4(acc, T);
+      }
+
+      vec3 ballShade(vec3 camPos, vec3 rd, float tS) {
+        vec3 hitP = camPos + tS * rd;
+        float cR = cos(uRotY);
+        float sR = sin(uRotY);
+        vec3 hitObj = vec3( hitP.x * cR + hitP.z * sR,
+                            hitP.y,
+                           -hitP.x * sR + hitP.z * cR);
+        vec3 nObj = normalize(hitObj);
+        float poleDamp = smoothstep(1.0, 0.85, abs(nObj.y));   // calm the lat/lon pole vortex
+
+        vec2 ll = latLon(nObj);
+        float cLat = floor(ll.x / TILE);
+        float cLon = floor(ll.y / TILE);
+        float th = hash3(vec3(cLat, cLon, 1.0));
+
+        vec3 tnO = tileNormal(nObj);
+        vec3 jit = (vec3(hash3(vec3(cLat, cLon,  7.0)),
+                         hash3(vec3(cLat, cLon, 13.0)),
+                         hash3(vec3(cLat, cLon, 23.0))) - 0.5) * (0.16 * poleDamp);
+        vec3 tnJ = normalize(tnO + jit);
+        vec3 tN  = normalize(vec3( tnJ.x * cR - tnJ.z * sR,
+                                   tnJ.y,
+                                   tnJ.x * sR + tnJ.z * cR));
+        vec3 refl = reflect(rd, tN);
+
+        vec3 ball = nebulaCore(refl) * 0.55 + vec3(0.10, 0.11, 0.16);
+        for (int i = 0; i < 4; i++) {
+          vec3 lc = lightColor(i);
+          vec3 ld = normalize(lightPos(i) - hitP);
+          float s = max(0.0, dot(refl, ld));
+          ball += lc * exp(120.0 * (s - 1.0))
+                  * (18.0 + uBass * 36.0 + uBeat * 26.0);
+          ball += lc * pow(s, 8.0) * 0.45;
+        }
+        ball *= 0.70 + 0.80 * th;
+        if (th > 0.78) ball += vec3(1.45, 1.25, 1.40) * (0.8 + uTreble * 0.8) * poleDamp;
+        float envF = pow(max(0.0, -dot(refl, rd)), 2.0);
+        ball += vec3(0.78, 0.80, 0.95) * envF * 0.9;
+        ball += vec3(1.00, 0.72, 0.32) * cityLights(nObj)
+                * (0.55 + uTreble * 0.55);
+        float fres = pow(1.0 - max(0.0, dot(tN, -rd)), 3.0);
+        ball += vec3(1.00, 0.55, 0.85) * fres
+                * (0.45 + uBass * 0.80 + uBeat * 0.50);
+
+        // Analytic grout AA — soft ~1px seam instead of a hard step.
+        float aaPix = 1.6 / uRes.y;
+        float wT    = clamp(aaPix * tS / (SPHERE_R * TILE) * 0.7, 1.0e-4, 0.08) * poleDamp;
+        float fLa   = fract(ll.x / TILE);
+        float fLo   = fract(ll.y / TILE);
+        float dLa   = min(fLa, 1.0 - fLa);
+        float dLo   = min(fLo, 1.0 - fLo);
+        float gM    = clamp(max(
+            1.0 - smoothstep(GROUT - wT, GROUT + wT, dLa),
+            1.0 - smoothstep(GROUT - wT, GROUT + wT, dLo)), 0.0, 1.0);
+        return mix(ball, vec3(0.010, 0.006, 0.018), gM);
+      }
+
+      void main() {
+        float asp = uRes.x / uRes.y;
+
+        float camR = 13.0;
+        vec3 camPos = vec3(sin(uCamAng) * camR,
+                           2.4 + sin(uCamAng * 0.6) * 1.2,
+                           cos(uCamAng) * camR);
+        vec3 fwd   = normalize(vec3(0.0) - camPos);
+        vec3 right = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+        vec3 up    = cross(right, fwd);
+        vec2 ndc   = (vUv - 0.5) * vec2(asp, 1.0);
+        vec3 rd    = normalize(fwd + right * ndc.x * 1.6 + up * ndc.y * 1.6);
+
+        float tS = raySphere(camPos, rd, SPHERE_R);
+
+        // Analytic anti-aliasing — derivative-free pixel footprint, so no
+        // GL_OES_standard_derivatives extension and no UB in branches.
+        float tCA   = max(0.0, dot(-camPos, rd));
+        float dCA   = length(camPos + tCA * rd);
+        float aaPix = 1.6 / uRes.y;
+        float silAA = aaPix * length(camPos) * 1.4;
+        float cov   = smoothstep(SPHERE_R + silAA, SPHERE_R - silAA, dCA);
+        float tHit  = tS > 0.0 ? tS : tCA;
+
+        vec3 behind = vec3(0.0);
+        if (cov >= 0.999)      behind = ballShade(camPos, rd, tHit);
+        else if (cov <= 0.001) behind = nebula(rd);
+        else                   behind = mix(nebula(rd), ballShade(camPos, rd, tHit), cov);
+
+        vec2 sh = shell(camPos, rd, RMAX);
+        float tStart = max(0.001, sh.x);
+        float tClip  = tS > 0.0 ? min(sh.y, tS) : sh.y;
+        float tEnd   = mix(sh.y, tClip, cov);
+
+        vec3 col = behind;
+        vec4 smk = vec4(0.0, 0.0, 0.0, 1.0);
+        if (tEnd > tStart) {
+          smk = smoke(camPos, rd, tStart, tEnd);
+          col = smk.rgb + smk.a * behind;
+        }
+
+        float halo = min(0.9, exp(-dCA * dCA * 0.080)
+                     * (0.22 + uBass * 0.50 + uBeat * 0.40));
+        col += vec3(1.00, 0.45, 0.85) * halo * smk.a;
+
+        // (Beams are no longer a screen-space starburst — they are reflected
+        // off the mirror tiles and revealed by the volumetric fog in smoke().)
+
+        float exposure = 0.95 + uBeat * 0.15;
+        gl_FragColor = vec4(aces(col * exposure), 1.0);
+      }
+    `;
+
+    const VERT = /* glsl */`
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+      }
+    `;
+
+    // simulatedAudio → SJPulse (identical to the WGSL build). amp = mean.
+    // Reused across frames — no per-frame allocation (GC pauses show up as
+    // periodic frame-time spikes; see the perf playbook).
+    const SIG = { bass: 0, mid: 0, treble: 0, beat: 0, amp: 0 };
+    const WAVE_OPT = { mid: 0.5, amp: 0.45 };
+    const BEAT_OPT = { kickRate: 1.3, ghostAmp: 0 };
+    function signals(t) {
+      const bass = window.SJPulse
+        ? window.SJPulse.kick(t)
+        : Math.min(1, Math.pow(Math.max(0, Math.sin(t * 2.2)), 2) * 0.9);
+      const mid = window.SJPulse
+        ? window.SJPulse.wave(t, WAVE_OPT)
+        : 0.5 + 0.45 * Math.sin(t * 0.55);
+      const treble = window.SJPulse
+        ? window.SJPulse.flicker(t)
+        : Math.abs(Math.sin(t * 4.0));
+      const beat = window.SJPulse
+        ? window.SJPulse.kick(t, BEAT_OPT)
+        : Math.max(0, Math.sin(t * 1.3));
+      SIG.bass = bass; SIG.mid = mid; SIG.treble = treble; SIG.beat = beat;
+      SIG.amp = (bass + mid + treble) / 3;
+      return SIG;
+    }
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+    // Lush volumetric: render at 0.66× and let the browser upscale.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1) * 0.66);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    let gpuName = 'WebGL device';
+    try {
+      const gl  = renderer.getContext();
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      if (dbg) gpuName = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || gpuName;
+    } catch (e) {}
+    HUD.setMeta({
+      api: (renderer.capabilities.isWebGL2 ? 'WebGL2' : 'WebGL') + ' · Three.js',
+      build: BUILD + '-' + srcHash(FRAG),
+      gpu: gpuName,
+      res: () => renderer.domElement.width + '×' + renderer.domElement.height
+                 + '  ' + renderer.getPixelRatio().toFixed(2) + '×',
+    });
+
+    const scene  = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+    const uniforms = {
+      uElapsed: { value: 0 }, uBass: { value: 0 }, uMid: { value: 0 },
+      uTreble:  { value: 0 }, uBeat: { value: 0 }, uAmp: { value: 0 },
+      uRotY:    { value: 0 }, uCamAng: { value: 0 },
+      uRes:     { value: new THREE.Vector2(1, 1) },
+    };
+    const quad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      new THREE.ShaderMaterial({
+        uniforms, vertexShader: VERT, fragmentShader: FRAG, depthTest: false,
+      }),
+    );
+    scene.add(quad);
+
+    function setRes() {
+      uniforms.uRes.value.set(
+        renderer.domElement.width, renderer.domElement.height);
+    }
+    setRes();
+
+    // Same rAF time base as the WGSL build (NOT THREE.Clock) so the two
+    // builds phase-lock for a true pixel comparison.
+    let rotY = 0, camAng = 0, probeN = 0, t0, tPrev;
+
+    function frame(ts) {
+      requestAnimationFrame(frame);
+      if (t0 === undefined) { t0 = ts; tPrev = ts; }
+      const t  = (ts - t0) / 1000;
+      const dt = Math.min(0.1, Math.max(0.001, (ts - tPrev) / 1000));
+      tPrev = ts;
+      setRes();                       // resolution uniform every frame (matches WGSL)
+      const s  = signals(t);
+
+      rotY   += dt * (0.15 + s.bass * 0.25);
+      camAng += dt * 0.05;
+
+      uniforms.uElapsed.value = t;
+      uniforms.uBass.value    = s.bass;
+      uniforms.uMid.value     = s.mid;
+      uniforms.uTreble.value  = s.treble;
+      uniforms.uBeat.value    = s.beat;
+      uniforms.uAmp.value     = s.amp;
+      uniforms.uRotY.value    = rotY;
+      uniforms.uCamAng.value  = camAng;
+
+      if ((++probeN % 15) === 0) {
+        const t0 = performance.now();
+        renderer.render(scene, camera);
+        renderer.getContext().finish();   // true GPU drain — sampled 1/15 frames
+        HUD.gpuProbe(performance.now() - t0);
+      } else {
+        renderer.render(scene, camera);
+      }
+
+      HUD.frame(ts);
+    }
+    requestAnimationFrame(frame);
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      setRes();
+    });
+  </script>
+</body>
+</html>
