@@ -66,6 +66,35 @@
     ];
     const N = EMOJIS.length;
 
+    // Pre-rasterize each emoji once into an off-screen canvas. Per-frame
+    // fillText() of color-emoji glyphs is ~10× slower than drawImage() on
+    // Windows (Segoe UI Emoji / DirectWrite) — same technique as
+    // emoji-vortex.html. Smooth on Windows, unchanged on macOS.
+    const EMOJI_GLYPH  = 0.82;   // glyph fraction of the cache box (safe padding)
+    const EMOJI_MAX_PX = 52;     // ≥ largest on-screen emoji in this demo
+    const emojiCache = (() => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const cpx = Math.ceil((EMOJI_MAX_PX / EMOJI_GLYPH) * dpr);
+      const map = {};
+      for (const e of EMOJIS) {
+        const oc = document.createElement('canvas');
+        oc.width = oc.height = cpx;
+        const o = oc.getContext('2d');
+        o.font = `${cpx * EMOJI_GLYPH}px -apple-system, system-ui, serif`;
+        o.textAlign = 'center';
+        o.textBaseline = 'middle';
+        o.fillText(e, cpx / 2, cpx / 2);
+        map[e] = oc;
+      }
+      return map;
+    })();
+    function drawEmoji(emoji, x, y, size) {
+      const img = emojiCache[emoji];
+      if (!img) return;
+      const box = size / EMOJI_GLYPH, h = box / 2;
+      ctx.drawImage(img, x - h, y - h, box, box);
+    }
+
     // Canvas sizing — prefers lib/canvas-size.js (SJCanvas).
     if (window.SJCanvas) {
       window.SJCanvas.fit(canvas, ctx);
@@ -175,9 +204,7 @@
       const scale      = baseScale * (1 + 0.25 * pulse);
       const emojiSize  = 32 + pulse * 14;
 
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = `${emojiSize}px -apple-system, system-ui, serif`;
+      // No per-frame ctx.font / fillText — drawEmoji() blits the cache.
 
       for (let k = 0; k < N; k++) {
         const p  = heart(emojiUs[k]);
@@ -185,7 +212,7 @@
         // y is flipped (screen Y goes down); translate by the centroid offset.
         const py = cy - (p.y - HEART_CY_OFFSET) * scale;
         ctx.globalAlpha = 0.85 + pulse * 0.15;
-        ctx.fillText(EMOJIS[k], px, py);
+        drawEmoji(EMOJIS[k], px, py, emojiSize);
       }
       ctx.globalAlpha = 1;
     }
