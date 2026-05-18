@@ -80,6 +80,7 @@
     }
 
     const GRAVITY           = 520;   // px/s² — tuned for full-viewport canvas
+    const MAX_PARTICLES     = 900;   // hard perf bound on the live debris set
     const LAUNCH_SPEED_UNIT = 180;
     const EXPLOSION_UNIT    = 260;
     const ANGLE_RANGE_DEG   = 20;    // ±20° from vertical — mild visible arc
@@ -303,11 +304,17 @@
         lastAutoFireT = t;
       }
 
-      // Translucent fill = short comet trails. Higher alpha clears more of
-      // the previous frame → crisper particles, shorter tail. 0.60 ≈ a tight
-      // 2-3-frame tail; drop toward 0.40 for longer smear, raise toward 0.85
-      // for near-instant clear (almost no trail).
-      ctx.fillStyle = 'rgba(4, 6, 16, 0.60)';
+      // OPAQUE dark-sky clear every frame. The old translucent
+      // `rgba(4,6,16,0.60)` fill never decayed to true black on an 8-bit
+      // canvas: the per-channel recurrence round(old·0.4 + fill·0.6) has a
+      // fixed point at the non-black floor rgb(4,6,16), so faint emoji
+      // ghosts accumulated into a permanent haze (Fade Burn-In). Fireworks
+      // reads fine with a clean clear — one opaque pass, no trail, no
+      // additive streak (the additive pass regressed in musicplayer-viz's
+      // fireworks.js: bright flash at the burst origin + a doubled loop).
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#040610';
       ctx.fillRect(0, 0, W, H);
 
       // Rocket physics — true parabola via gravity accumulation.
@@ -330,6 +337,13 @@
         p.vy += GRAVITY * dt * 0.65;
         p.x  += p.vx * dt;
         p.y  += p.vy * dt;
+      }
+      // Hard cap: idle auto-fire (and any beat-driven launches) can spawn
+      // bursts faster than particles age out. Bound the live set so the
+      // draw loop's per-frame cost can't run away — oldest debris dropped
+      // first. Mirrors musicplayer-viz/viz/fireworks.js.
+      if (particles.length > MAX_PARTICLES) {
+        particles.splice(0, particles.length - MAX_PARTICLES);
       }
 
       // Draw — z-sorted so far items render behind near items.
