@@ -50,6 +50,35 @@
     const canvas = document.getElementById('c');
     const ctx    = canvas.getContext('2d');
 
+    // Pre-rasterize each emoji once on first use (memoized). Per-frame
+    // fillText() of color-emoji glyphs is ~10× slower than drawImage() on
+    // Windows (Segoe UI Emoji / DirectWrite) — same technique as
+    // emoji-vortex.html. Smooth on Windows, unchanged on macOS. Lazy
+    // because the emoji set is spread across THEMES (rockets + debris).
+    const EMOJI_GLYPH  = 0.82;   // glyph fraction of the cache box (safe padding)
+    const EMOJI_MAX_PX = 72;     // ≥ largest on-screen emoji in this demo
+    const _emojiCache = new Map();
+    function emojiBitmap(e) {
+      let img = _emojiCache.get(e);
+      if (!img) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const px  = Math.ceil((EMOJI_MAX_PX / EMOJI_GLYPH) * dpr);
+        img = document.createElement('canvas');
+        img.width = img.height = px;
+        const o = img.getContext('2d');
+        o.font = `${px * EMOJI_GLYPH}px -apple-system, system-ui, sans-serif`;
+        o.textAlign = 'center';
+        o.textBaseline = 'middle';
+        o.fillText(e, px / 2, px / 2);
+        _emojiCache.set(e, img);
+      }
+      return img;
+    }
+    function drawEmoji(emoji, x, y, size) {
+      const box = size / EMOJI_GLYPH, h = box / 2;
+      ctx.drawImage(emojiBitmap(emoji), x - h, y - h, box, box);
+    }
+
     const GRAVITY           = 520;   // px/s² — tuned for full-viewport canvas
     const LAUNCH_SPEED_UNIT = 180;
     const EXPLOSION_UNIT    = 260;
@@ -304,9 +333,6 @@
       }
 
       // Draw — z-sorted so far items render behind near items.
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
       const drawList = rockets.concat(particles);
       drawList.sort((a, b) => a.z - b.z);
 
@@ -315,13 +341,11 @@
         if (isRocket) {
           const size = 36 * item.depthScale;
           ctx.globalAlpha = zToAlpha(item.z);
-          ctx.font = `${size}px -apple-system, system-ui, sans-serif`;
-          ctx.fillText(item.emoji, item.x, item.y);
+          drawEmoji(item.emoji, item.x, item.y, size);
         } else {
           const remaining = Math.max(0, 1 - item.age / item.life);
           ctx.globalAlpha = remaining * remaining * zToAlpha(item.z);
-          ctx.font = `${item.size}px -apple-system, system-ui, sans-serif`;
-          ctx.fillText(item.emoji, item.x, item.y);
+          drawEmoji(item.emoji, item.x, item.y, item.size);
         }
       }
       ctx.globalAlpha = 1;
