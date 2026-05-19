@@ -3,12 +3,16 @@ name: presentation
 description: >
   A motion, graphics, and emoji-visualization toolkit for the web. Use for motion
   primitives — animated hero backgrounds, loading states, celebration moments,
-  atmospheric FX, emoji visualizations, dancing emoji formations, WebGPU 3D scenes —
-  AND for generating complete Apple-style slide decks built on the same primitives.
-  Trigger on "make me a presentation / slide deck / pitch deck", "turn this into a
-  slideshow", "build a hero background", "loading animation", "emoji visualization",
-  "celebration effect", or any request to present information as slides. Output is
-  self-contained HTML — cinematic GSAP / Canvas / WebGPU, no dependencies.
+  atmospheric FX, emoji visualizations, dancing emoji formations, WebGPU 3D scenes,
+  3D object/logo explosions, fake-3D depth-map photo parallax, hover image
+  distortion/reveal — AND for generating complete Apple-style slide decks built on
+  the same primitives. Trigger on "make me a presentation / slide deck / pitch
+  deck", "turn this into a slideshow", "build a hero background", "loading
+  animation", "emoji visualization", "celebration effect", "explode/shatter this
+  logo or object into pieces", "give this photo a 3D depth effect that follows the
+  mouse", "add hover distortion/reveal to these images", or any request to present
+  information as slides. Output is self-contained HTML — cinematic GSAP / Canvas /
+  WebGPU, no dependencies.
 ---
 
 # sj-design
@@ -33,6 +37,12 @@ Standalone, copy-pasteable demos in `showcase/`. Each runs zero-dependency on a 
 - `wire-terrain` (raymarched FBM terrain) · `disco-chrome` (ray-sphere mirror ball) · `neon-oscilloscope` (four ribbon waves)
 - Each is one self-contained full-screen-triangle fragment shader (inline WGSL), single render pass, no postprocessing. Pattern + perf knobs in `lib/webgpu-bootstrap.js` (`SJGpu`; `{ maxDPR, renderScale }` — resolution is the dominant lever for these fragment-bound scenes).
 - Reference: **WebGPU Fundamentals** — source/examples repo <https://github.com/webgpu/webgpufundamentals>, rendered site <https://webgpufundamentals.org/>. The canonical WebGPU/WGSL learning resource; use it for host-API setup, WGSL syntax, points/particles, and `wgpu-matrix` (view/projection — the scenes currently hand-roll camera math in the shader).
+
+**Image FX (3D explosion · fake3d · hover)** — see [`references/image-fx.md`](references/image-fx.md)
+- 3D object/logo explosion (pre-fractured GLB shards, one `progress` uniform, GSAP explode/re-form)
+- fake-3D depth-map photo parallax (image + depth map, cursor/gyro UV offset with inertia)
+- hover image distortion/reveal (per-tile displacement + RGB split + cross-fade)
+- Recipes only (no bundled demo yet). Independent reimplementations of techniques by **akella (Yuri Artyukh)** — see the Credits / Attribution section in the reference; any generated output must keep a visible akella credit + repo link.
 
 **Atmospheric FX** — `showcase/atmosphere.html` (combined, interactive) plus split single-effect files `atmosphere-{gobo,starfield,bokeh,fog,grain}.html`
 
