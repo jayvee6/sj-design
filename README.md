@@ -2,6 +2,8 @@
 
 A Claude Code skill that produces self-contained, animated HTML from natural language prompts. It ships **motion primitives** — hero backgrounds, loading states, celebration moments, atmospheric FX, emoji visualizations, dancing emoji formations, WebGPU 3D scenes, and image FX — plus a complete **Apple-style slide-deck generator** built on the same primitives. Every output is a single `.html` file with no dependencies to install — ready to open in any browser.
 
+**[See it in action → studiojoe.dev](https://studiojoe.dev)** — live demos of the motion primitives, themes, and generated decks.
+
 > Building native iOS under the Studio Joe design system? See [docs/swiftui-conventions.md](docs/swiftui-conventions.md) for the iOS 26 Liquid Glass mappings.
 
 ![Showcase](docs/screenshots/showcase-hero.png)
@@ -265,4 +267,4 @@ See [`showcase/glass-refraction-demo.html`](showcase/glass-refraction-demo.html)
 
 ---
 
-Built with [Claude Code](https://claude.ai/code) · Animations by [GSAP](https://gsap.com) · Canvas 2D + WebGPU · Apple design tokens
+Live demos at **[studiojoe.dev](https://studiojoe.dev)** · Built with [Claude Code](https://claude.ai/code) · Animations by [GSAP](https://gsap.com) · Canvas 2D + WebGPU · Apple design tokens
