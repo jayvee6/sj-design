@@ -1,6 +1,8 @@
-# sj-design — Presentation Skill for Claude Code
+# sj-design — Motion, Graphics & Presentation Toolkit for Claude Code
 
-A Claude Code skill that generates beautiful, animated HTML slide decks from natural language prompts. Describe what you need; get a self-contained `.html` file with cinematic animations, Apple design tokens, and physics-based glass refraction fills — ready to open in any browser.
+A Claude Code skill that produces self-contained, animated HTML from natural language prompts. It ships **motion primitives** — hero backgrounds, loading states, celebration moments, atmospheric FX, emoji visualizations, dancing emoji formations, WebGPU 3D scenes, and image FX — plus a complete **Apple-style slide-deck generator** built on the same primitives. Every output is a single `.html` file with no dependencies to install — ready to open in any browser.
+
+**[See it in action → studiojoe.dev](https://studiojoe.dev)** — live demos of the motion primitives, themes, and generated decks.
 
 > Building native iOS under the Studio Joe design system? See [docs/swiftui-conventions.md](docs/swiftui-conventions.md) for the iOS 26 Liquid Glass mappings.
 
@@ -8,7 +10,57 @@ A Claude Code skill that generates beautiful, animated HTML slide decks from nat
 
 ---
 
-## What it produces
+## What's in the box
+
+| | |
+|---|---|
+| **Motion primitives** | Copy-pasteable, zero-dependency demos for hero backgrounds, loaders, and celebration moments. Each runs on a synthetic time pulse with a one-line hook to wire back to audio. |
+| **Presentations** | A full slide-deck generator — narrative planning, Apple Style Guide copy, 8 layouts, 17 themes, cinematic GSAP animation. |
+
+Both share the same lib (`lib/`), design tokens, and Glass Refraction system.
+
+---
+
+## Motion primitives
+
+Standalone demos live in `showcase/`. Reference docs in `references/`.
+
+### Emoji visualizations
+Self-contained canvas-2D techniques — see [`references/emoji-visualizations.md`](references/emoji-visualizations.md).
+
+- `showcase/emoji-waves.html` — concentric delayed-bass rings
+- `showcase/emoji-vortex.html` — golden-angle phyllotaxis tunnel
+- `showcase/emoji-fireworks.html` — themed parabolic bursts (peony / ring / star / heart / smiley)
+
+### Dancing formations
+`showcase/emoji-formations/` — `triangle-orbit` · `hex-swarm` · `heart-pulse` · `infinity-loop` · `star-formation` · `shape-morph`
+
+### WebGPU scenes
+`showcase/scenes/` — raw WebGPU; needs a WebGPU-capable browser, degrades to a message otherwise.
+
+- `wire-terrain` — raymarched FBM terrain
+- `disco-chrome` — ray-sphere mirror ball
+- `neon-oscilloscope` — four ribbon waves
+- `cosmic-disco` — physical tile-bounced volumetric beams + mirror ball (also a Three.js variant)
+
+Pattern + perf knobs (`maxDPR`, `renderScale`) live in `lib/webgpu-bootstrap.js` (`SJGpu`). Reference: [WebGPU Fundamentals](https://webgpufundamentals.org/).
+
+### Image FX
+Recipes in [`references/image-fx.md`](references/image-fx.md) — independent reimplementations of techniques by akella (Yuri Artyukh); generated output must keep a visible akella credit.
+
+- 3D object/logo explosion — pre-fractured GLB shards driven by one `progress` uniform
+- fake-3D depth-map photo parallax — cursor/gyro UV offset with inertia
+- hover image distortion/reveal — per-tile displacement + RGB split + cross-fade
+
+### Atmospheric FX
+`showcase/atmosphere.html` (combined, interactive) plus split single-effect files `atmosphere-{gobo,starfield,bokeh,fog,grain}.html`.
+
+### Shared lib
+`lib/` — `canvas-size.js` (SJCanvas, DPR sizing) · `synthetic-pulse.js` (SJPulse) · `envelopes.js` (VizEnv attack/release) · `webgpu-bootstrap.js` (SJGpu). Demos load these with an inline fallback so each file stays single-file portable.
+
+---
+
+## Presentations
 
 Every deck is a single `.html` file with no external dependencies:
 
@@ -53,6 +105,26 @@ Include a demo slide with this YouTube link and a quote from a beta user.
 ```
 
 Claude plans a narrative arc, writes content following Apple Style Guide rules, builds a JSON spec, runs the build script, and opens the result.
+
+Or ask for a motion primitive directly:
+
+```
+Give me a landing-page hero background — the dancing emoji heart-pulse,
+subtle, behind centered headline text.
+```
+
+```
+Make a signup-success screen that fires the emoji fireworks (star burst)
+once on load, then idles.
+```
+
+```
+Drop the Wire Terrain WebGPU scene in dim behind a "No results yet" message.
+```
+
+```
+Give this product photo a 3D depth effect that follows the mouse.
+```
 
 ---
 
@@ -136,10 +208,27 @@ sj-design/
 │   └── build_presentation.py         # Builds HTML from a JSON spec
 ├── assets/
 │   └── template.html                 # GSAP template with all 17 themes
+├── lib/                              # Shared zero-dependency modules
+│   ├── canvas-size.js                #   SJCanvas — DPR-aware sizing
+│   ├── synthetic-pulse.js            #   SJPulse — synthetic time pulse
+│   ├── envelopes.js                  #   VizEnv — attack/release envelopes
+│   └── webgpu-bootstrap.js           #   SJGpu — WebGPU setup + perf knobs
+├── references/
+│   ├── emoji-visualizations.md       # Concentric Waves / Vortex / Fireworks
+│   ├── image-fx.md                   # 3D explosion · fake3d · hover distortion
+│   ├── slide-animations.md           # Per-slide GSAP choreography
+│   └── apple-hig/                    # Apple Human Interface Guidelines notes
 ├── showcase/
 │   ├── index.html                    # Design system showcase
-│   ├── glass-refraction-demo.html        # Interactive Glass Refraction technique demo
+│   ├── glass-refraction-demo.html    # Interactive Glass Refraction technique demo
+│   ├── emoji-{waves,vortex,fireworks}.html
+│   ├── atmosphere*.html              # Combined + split atmospheric FX
+│   ├── emoji-formations/             # 6 dancing emoji formations
+│   ├── scenes/                       # WebGPU 3D scenes
 │   └── decks/                        # Example generated decks
+├── docs/
+│   ├── swiftui-conventions.md        # iOS 26 Liquid Glass mappings
+│   └── screenshots/                  # README imagery
 └── evals/
     └── evals.json                    # Eval test cases
 ```
@@ -178,4 +267,4 @@ See [`showcase/glass-refraction-demo.html`](showcase/glass-refraction-demo.html)
 
 ---
 
-Built with [Claude Code](https://claude.ai/code) · Animations by [GSAP](https://gsap.com) · Apple design tokens
+Live demos at **[studiojoe.dev](https://studiojoe.dev)** · Built with [Claude Code](https://claude.ai/code) · Animations by [GSAP](https://gsap.com) · Canvas 2D + WebGPU · Apple design tokens
