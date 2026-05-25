@@ -38,6 +38,8 @@ real Chrome (headless:false, WebGPU/D3D12). MCP tools are registered in Claude D
 
 | Tool | When to use |
 |---|---|
+| `sja_devices` | List iOS simulators + connected devices — get UDIDs for sja_capture |
+| `sja_capture` | **Unified** screenshot / video / Metal trace for any target: URL, macOS app, iOS sim, real device |
 | `sja_health` | First tool call of any session — confirm PC is reachable |
 | `sja_screenshot` | Visual review of any local or deployed URL |
 | `sja_run_test` | Any page with `window.__RESULTS__`, `__SJTEST__`, or `__GITEST__` |
