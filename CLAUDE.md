@@ -47,6 +47,7 @@ real Chrome (headless:false, WebGPU/D3D12). MCP tools are registered in Claude D
 | `sja_nsight_trace` | GPU-side fps via D3D12 Present() — NVIDIA hardware clock |
 | `sja_pix_capture` | D3D12 frame debug — WebGPU pass breakdown, CPU vs GPU Δ |
 | `sja_shell` | Run bash on the PC: git, builds, server control, file ops |
+| `sja_metal_trace` | Metal System Trace on the Mac — MTLCommandBuffer GPU clock, utilization %, memory BW |
 | `sja_jobs` | Check status of recent jobs |
 
 Always call `sja_health` before the first job. If it fails, the PC is asleep or
