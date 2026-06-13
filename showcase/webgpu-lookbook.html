@@ -42,12 +42,12 @@
   .slide-inner.center{align-items:center;text-align:center}
 
   /* hero / agenda / split: edgeless frosted blur + directional darken, left side */
-  .slide[data-layout="hero"]::before,.slide[data-layout="agenda"]::before,.slide[data-layout="split"]::before{
+  .slide[data-layout="hero"]::before,.slide[data-layout="agenda"]::before,.slide[data-layout="split"]::before,.slide[data-layout="section"]::before{
     content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
     backdrop-filter:blur(20px) saturate(1.25);-webkit-backdrop-filter:blur(20px) saturate(1.25);
     -webkit-mask-image:linear-gradient(100deg,#000 0%,#000 26%,transparent 56%);
             mask-image:linear-gradient(100deg,#000 0%,#000 26%,transparent 56%)}
-  .slide[data-layout="hero"]::after,.slide[data-layout="agenda"]::after,.slide[data-layout="split"]::after{
+  .slide[data-layout="hero"]::after,.slide[data-layout="agenda"]::after,.slide[data-layout="split"]::after,.slide[data-layout="section"]::after{
     content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
     background:linear-gradient(100deg, rgba(3,4,9,.78) 0%, rgba(3,4,9,.5) 24%,
                rgba(3,4,9,.18) 44%, transparent 60%)}
@@ -65,7 +65,9 @@
   /* center: centered content over a softly frosted full scene (no card, no circle) */
   .slide[data-layout="center"]{justify-content:center}
   .slide[data-layout="center"] .slide-inner{width:min(900px,82vw);align-items:center;text-align:center}
-  .slide[data-layout="center"]::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  .slide[data-layout="center"]::before,.slide[data-layout="statement"]::before,
+  .slide[data-layout="bigfact"]::before,.slide[data-layout="gallery"]::before{
+    content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
     backdrop-filter:blur(9px) brightness(.6) saturate(1.2);-webkit-backdrop-filter:blur(9px) brightness(.6) saturate(1.2)}
 
   /* split: content + media frame (image or product shot) */
@@ -91,6 +93,36 @@
     padding-bottom:.7rem;border-bottom:1px solid rgba(255,255,255,.1)}
   .agenda li::before{content:counter(ag,decimal-leading-zero);color:var(--accent);
     font-variant-numeric:tabular-nums;font-size:.62em;font-weight:700;min-width:2.4em;letter-spacing:.04em}
+
+  /* section: chapter divider — big heading + accent kicker, left */
+  .slide[data-layout="section"] .slide-inner{width:min(1000px,80vw);gap:.9rem}
+  .slide[data-layout="section"] .kicker{font-size:clamp(13px,1.4vw,18px);font-weight:700;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
+  .slide[data-layout="section"] h1.headline{font-size:clamp(46px,7.5vw,108px);line-height:1.0}
+
+  /* statement: one big sentence, centered */
+  .slide[data-layout="statement"]{justify-content:center}
+  .slide[data-layout="statement"] .slide-inner{width:min(1100px,86vw);align-items:center;text-align:center}
+  .slide[data-layout="statement"] .headline{font-size:clamp(40px,6.4vw,94px);line-height:1.06;letter-spacing:-.02em}
+
+  /* bigfact: a single dominant figure + caption, centered */
+  .slide[data-layout="bigfact"]{justify-content:center}
+  .slide[data-layout="bigfact"] .slide-inner{width:min(1000px,86vw);align-items:center;text-align:center;gap:.6rem}
+  .bigfact{font-size:clamp(96px,18vw,260px);font-weight:800;letter-spacing:-.04em;line-height:.9;
+    background:linear-gradient(180deg,var(--ink) 30%,var(--accent));-webkit-background-clip:text;
+    background-clip:text;color:transparent;text-shadow:0 6px 60px rgba(0,0,0,.4)}
+  .bigfact-label{font-size:clamp(16px,2vw,26px);color:var(--ink-2);max-width:40ch}
+
+  /* gallery: three media frames in a row (photo 3-up), centered */
+  .slide[data-layout="gallery"]{justify-content:center}
+  .slide[data-layout="gallery"] .slide-inner{width:min(1200px,92vw);align-items:center;text-align:center}
+  .gallery-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem;width:100%;margin-top:.4rem}
+  .gallery-3 .frame{aspect-ratio:3/4;border-radius:22px;overflow:hidden;border:1px solid var(--card-bdr);
+    box-shadow:0 30px 70px -28px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;
+    font-size:clamp(36px,5vw,64px);color:var(--ink-2);
+    background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.02));
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+  .gallery-3 .frame img{width:100%;height:100%;object-fit:cover}
 
   .eyebrow{font-size:clamp(11px,1vw,14px);font-weight:600;letter-spacing:.22em;
            text-transform:uppercase;color:var(--ink-3)}
@@ -308,6 +340,38 @@
       </div>
     </section>
 
+    <section class="slide" data-scene="shatter" data-pal="shatter" data-layout="section">
+      <div class="slide-inner">
+        <p class="kicker parallax" data-depth="1.0">Part 02</p>
+        <h1 class="headline parallax" data-depth="1.8">The hard part</h1>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="aurora" data-pal="aurora" data-layout="statement">
+      <div class="slide-inner">
+        <h1 class="headline parallax" data-depth="1.6">Design is how it works — not just how it looks.</h1>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="godrays" data-pal="amber" data-layout="bigfact">
+      <div class="slide-inner">
+        <p class="bigfact parallax" data-depth="2.2">100%</p>
+        <p class="bigfact-label parallax" data-depth="1.0">On-device. No frames ever leave the GPU.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="silk" data-pal="silk" data-layout="gallery">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.0">Photo — 3 up</p>
+        <h2 class="headline parallax" data-depth="1.4">Show the work</h2>
+        <div class="gallery-3 parallax" data-depth="0.6">
+          <div class="frame">🖼️</div>
+          <div class="frame">📸</div>
+          <div class="frame">🎞️</div>
+        </div>
+      </div>
+    </section>
+
     <section class="slide" data-scene="warp" data-pal="aurora" data-layout="center">
       <div class="slide-inner center">
         <p class="icon parallax" data-depth="2.0">🚀</p>
@@ -325,7 +389,7 @@
       <button id="prev" aria-label="Previous slide">←</button>
       <button id="next" aria-label="Next slide">→</button>
     </div>
-    <span id="counter">1 / 17</span>
+    <span id="counter">1 / 21</span>
     <div class="grp">
       <button id="full" aria-label="Fullscreen">⛶</button>
     </div>
