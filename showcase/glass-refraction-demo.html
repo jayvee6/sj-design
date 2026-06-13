@@ -329,24 +329,7 @@
 
     /* ── INTERACTIVE ─────────────────────────────────────────────── */
 
-    /* Displaced-background layer: same gradient as .interactive-preview,
-       positioned identically to the glass card. The SVG filter (blur + displace)
-       is applied here — NOT on the glass element — so there's no
-       filter+backdrop-filter compositing issue in Safari. */
-    .glass-refract-bg {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: min(280px, 60%); aspect-ratio: 2/1;
-      border-radius: 18px;
-      background:
-        radial-gradient(circle at 25% 35%, rgba(48,209,88,0.55) 0%, transparent 50%),
-        radial-gradient(circle at 75% 65%, rgba(90,200,250,0.50) 0%, transparent 48%),
-        radial-gradient(circle at 60% 20%, rgba(255,159,10,0.40) 0%, transparent 40%),
-        #0a1018;
-      z-index: 0;
-      /* filter applied by JS once displacement map is ready */
-    }
+    /* .glass-refract-bg removed — interactive demo now uses liquidglass WebGL */
 
     /* Single-column: card on top, controls below — visually tight */
     .interactive-wrap {
@@ -368,34 +351,16 @@
         #0a1018;
     }
 
+    /* liquidglass renders the glass surface via WebGL — strip all CSS glass styling */
     .interactive-glass {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       width: min(280px, 60%); aspect-ratio: 2/1;
       border-radius: 18px;
-      background: rgba(255,255,255,0.09);
-      border: 1px solid rgba(255,255,255,0.18);
-      box-shadow:
-        0 12px 48px rgba(0,0,0,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.22),
-        inset 1px 0 0 rgba(48,209,88,0.11),
-        inset 0 -1px 0 rgba(0,0,0,0.10),
-        inset -1px 0 0 rgba(0,0,0,0.07);
-      /* No filter, no backdrop-filter — displacement lives on .glass-refract-bg
-         sibling so filter+backdrop compositing issues don't apply (Safari-safe) */
       display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
+      overflow: visible; /* allow shadow to extend beyond bounds */
       z-index: 1;
-    }
-
-    .interactive-glass::before {
-      content: '';
-      position: absolute; inset: 0; border-radius: inherit;
-      background: radial-gradient(ellipse 80% 40% at 40% 20%,
-        rgba(255,255,255,0.14) 0%, transparent 65%);
-      pointer-events: none;
-      z-index: 1; /* above .glass-refract-layer */
     }
 
     .interactive-glass-label {
@@ -694,7 +659,7 @@
   <section class="hero">
     <p class="hero-eyebrow">sj-design · technique</p>
     <h1 class="hero-title">Glass<br>Refraction</h1>
-    <p class="hero-sub">Physics-based refractive glass for vanilla HTML. Surface equations from Snell's law, 4-edge specular bezels, and real displacement maps — no React required.</p>
+    <p class="hero-sub">WebGL lens physics for vanilla HTML. A GLSL fragment shader models a biconvex pill — dual-surface Snell's law refraction, chromatic aberration, Fresnel, and multi-light specular. Powered by <code style="font-family:monospace;font-size:0.85em;background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;color:#5AC8FA">@ybouane/liquidglass</code>.</p>
     <div class="hero-card">
       <div class="hero-card-label">Displacement scale</div>
       <div class="hero-card-value">lip(x)</div>
@@ -809,33 +774,57 @@
 
   <!-- ── INTERACTIVE ───────────────────────────────────────────── -->
   <section>
-    <p class="section-eyebrow">Interactive</p>
-    <h2 class="section-heading">Dial in the refraction</h2>
-    <p class="section-body">Adjust the <code style="font-family:monospace;font-size:0.9em;background:rgba(255,255,255,0.07);padding:2px 7px;border-radius:5px;color:#5AC8FA">feDisplacementMap scale</code> to see how strongly the edge distorts the background. sj-design uses scale 6 — subtle, physically plausible. Higher values are more dramatic but less realistic.</p>
+    <p class="section-eyebrow">Interactive · WebGL</p>
+    <h2 class="section-heading">Real-time lens physics</h2>
+    <p class="section-body">Powered by <code style="font-family:monospace;font-size:0.9em;background:rgba(255,255,255,0.07);padding:2px 7px;border-radius:5px;color:#5AC8FA">@ybouane/liquidglass</code> — a WebGL fragment shader that models a biconvex pill lens. Dual-surface Snell's law refraction, chromatic aberration, Fresnel reflection, and multi-light specular highlights. The scene behind the glass is captured as a texture and physically bent — not blurred.</p>
 
     <div class="interactive-wrap" style="max-width:680px;">
-      <div class="interactive-preview">
-        <!-- bg receives blur+displace SVG filter; no backdrop-filter = works in Safari -->
-        <div class="glass-refract-bg"></div>
-        <div class="interactive-glass">
-          <div class="interactive-glass-label">Move the slider →<br>watch the edges shift</div>
+      <div class="interactive-preview" id="lg-root">
+        <!-- liquidglass element — direct child of root, WebGL renders into injected canvas -->
+        <div class="interactive-glass" id="lg-panel">
+          <div class="interactive-glass-label">Real WebGL refraction<br>Adjust sliders below</div>
         </div>
       </div>
 
       <div class="interactive-controls">
-        <p class="controls-desc">The <code style="font-family:monospace;font-size:0.88em;background:rgba(255,255,255,0.07);padding:2px 5px;border-radius:4px;color:#5AC8FA">feDisplacementMap scale</code> controls how strongly edge pixels are displaced. At 0 — no refraction. At 6 (sj-design default) — physically plausible. At 30 — dramatic refraction effect.</p>
+        <p class="controls-desc">Each parameter maps to a GLSL uniform in the fragment shader. <strong style="color:var(--l1)">Refraction</strong> bends pixels via dual-surface IOR. <strong style="color:var(--l1)">Chroma</strong> splits R/G/B along the surface normal. <strong style="color:var(--l1)">Edge HL</strong> controls the inner rim glow. <strong style="color:var(--l1)">Specular</strong> adds Blinn-Phong highlights from four virtual lights.</p>
 
         <div class="slider-row">
-          <span class="slider-label">scale</span>
-          <input type="range" id="scale-slider" min="0" max="30" step="0.5" value="6">
-          <span class="slider-value" id="scale-display">6</span>
+          <span class="slider-label">Refraction</span>
+          <input type="range" id="lg-refract" min="0" max="2" step="0.05" value="0.69">
+          <span class="slider-value" id="lg-refract-val">0.69</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Blur</span>
+          <input type="range" id="lg-blur" min="0" max="1" step="0.05" value="0.20">
+          <span class="slider-value" id="lg-blur-val">0.20</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Chroma</span>
+          <input type="range" id="lg-chroma" min="0" max="0.3" step="0.01" value="0.05">
+          <span class="slider-value" id="lg-chroma-val">0.05</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Edge HL</span>
+          <input type="range" id="lg-edge" min="0" max="0.5" step="0.01" value="0.08">
+          <span class="slider-value" id="lg-edge-val">0.08</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Specular</span>
+          <input type="range" id="lg-spec" min="0" max="1" step="0.05" value="0.12">
+          <span class="slider-value" id="lg-spec-val">0.12</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Fresnel</span>
+          <input type="range" id="lg-fresnel" min="0" max="2" step="0.05" value="1.00">
+          <span class="slider-value" id="lg-fresnel-val">1.00</span>
         </div>
 
-        <div class="support-note ok" id="support-note">
-          ✓ Full glass refraction active — displacement filter supported in this browser.
+        <div class="support-note ok" id="support-note" style="display:none">
+          ✓ WebGL active — real lens refraction running on GPU.
         </div>
-        <div class="support-note warn" id="no-support-note">
-          ⚠ Displacement not applied in this browser — 4-edge bezel fallback active.
+        <div class="support-note warn" id="no-support-note" style="display:none">
+          ⚠ WebGL not available — check browser support.
         </div>
       </div>
     </div>
@@ -1250,19 +1239,6 @@
     });
   }
 
-  // ── Slider ─────────────────────────────────────────────────────────
-  function initSlider() {
-    const slider  = document.getElementById('scale-slider');
-    const display = document.getElementById('scale-display');
-    const disp    = document.getElementById('lg-demo-disp');
-    if (!slider) return;
-    slider.addEventListener('input', () => {
-      const v = parseFloat(slider.value);
-      display.textContent = v % 1 === 0 ? v : v.toFixed(1);
-      if (disp) disp.setAttribute('scale', v);
-    });
-  }
-
   // ── Code tabs ──────────────────────────────────────────────────────
   function initCodeTabs() {
     document.querySelectorAll('.code-tab').forEach(tab => {
@@ -1294,10 +1270,66 @@
   // ── Boot ───────────────────────────────────────────────────────────
   initGlassRefraction();
   drawPhysicsCanvas();
-  initSlider();
   initCodeTabs();
 
 })();
+</script>
+
+<script type="module">
+import { LiquidGlass } from '/lib/liquidglass.js';
+
+const root  = document.getElementById('lg-root');
+const panel = document.getElementById('lg-panel');
+if (!root || !panel) throw new Error('liquidglass: missing #lg-root or #lg-panel');
+
+const BASE = {
+  refraction:      0.69,
+  blurAmount:      0.20,
+  chromAberration: 0.05,
+  edgeHighlight:   0.08,
+  specular:        0.12,
+  fresnel:         1.00,
+  cornerRadius:    18,
+  zRadius:         28,
+  shadowOpacity:   0.40,
+  shadowSpread:    16,
+  shadowOffsetY:   2,
+  tintStrength:    0.08,
+  brightness:      0.02,
+};
+
+panel.dataset.config = JSON.stringify(BASE);
+
+let lg;
+try {
+  lg = await LiquidGlass.init({ root, glassElements: [panel] });
+  document.getElementById('support-note').style.display = 'block';
+} catch (e) {
+  console.warn('[liquidglass] init failed:', e);
+  document.getElementById('no-support-note').style.display = 'block';
+}
+
+const SLIDERS = [
+  { id: 'lg-refract',  key: 'refraction',      valId: 'lg-refract-val',  fmt: v => v.toFixed(2) },
+  { id: 'lg-blur',     key: 'blurAmount',       valId: 'lg-blur-val',     fmt: v => v.toFixed(2) },
+  { id: 'lg-chroma',   key: 'chromAberration',  valId: 'lg-chroma-val',   fmt: v => v.toFixed(2) },
+  { id: 'lg-edge',     key: 'edgeHighlight',    valId: 'lg-edge-val',     fmt: v => v.toFixed(2) },
+  { id: 'lg-spec',     key: 'specular',         valId: 'lg-spec-val',     fmt: v => v.toFixed(2) },
+  { id: 'lg-fresnel',  key: 'fresnel',          valId: 'lg-fresnel-val',  fmt: v => v.toFixed(2) },
+];
+
+const state = { ...BASE };
+
+for (const { id, key, valId, fmt } of SLIDERS) {
+  const slider = document.getElementById(id);
+  const disp   = document.getElementById(valId);
+  if (!slider) continue;
+  slider.addEventListener('input', () => {
+    state[key] = parseFloat(slider.value);
+    disp.textContent = fmt(state[key]);
+    panel.dataset.config = JSON.stringify(state);
+  });
+}
 </script>
 </body>
 </html>
