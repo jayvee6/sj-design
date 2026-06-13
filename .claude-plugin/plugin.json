@@ -1,0 +1,26 @@
+{
+  "name": "sj-design",
+  "version": "2.0.0",
+  "description": "Studio Joe design toolkit — Apple-style slide decks, motion primitives, emoji visualizations, and WebGPU scenes (presentation skill), plus a design-system expert that codes, consults, and reviews using patterns distilled from real shipped Studio Joe projects across web, WebGPU, Chrome/Safari, macOS, and iOS (sj-design-expert skill), and a repeatable ingest pipeline (ingest-design-source).",
+  "author": {
+    "name": "Joey Villarreal",
+    "url": "https://github.com/jayvee6"
+  },
+  "homepage": "https://github.com/jayvee6/sj-design",
+  "repository": "https://github.com/jayvee6/sj-design",
+  "license": "MIT",
+  "keywords": [
+    "design-system",
+    "presentation",
+    "slides",
+    "gsap",
+    "motion",
+    "webgpu",
+    "emoji",
+    "apple-design",
+    "glass",
+    "design-review",
+    "swiftui",
+    "liquid-glass"
+  ]
+}

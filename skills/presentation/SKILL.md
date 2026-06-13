@@ -15,7 +15,9 @@ description: >
   WebGPU, no dependencies.
 ---
 
-# sj-design
+# sj-design — presentation
+
+> **Layout note:** this skill lives at `skills/presentation/` inside the sj-design repo. All shared assets — `showcase/`, `lib/`, `scripts/`, `references/`, `assets/`, `fonts/` — are at the **repo root, two levels up** (`../../` relative to this file). Sibling skills: `sj-design-expert` (Studio Joe design-system coder / consultant / reviewer) and `ingest-design-source` (feed a new source into the expert).
 
 A motion, graphics, and emoji-visualization toolkit for the web. Ships primitives for hero backgrounds, loading states, celebration moments, atmospheric FX, emoji visualizations, and WebGPU 3D scenes — plus a complete slide-deck generator built on top of the same primitives. Everything is a self-contained `.html` file: no dependencies to install.
 
@@ -25,7 +27,7 @@ A motion, graphics, and emoji-visualization toolkit for the web. Ships primitive
 
 Standalone, copy-pasteable demos in `showcase/`. Each runs zero-dependency on a synthetic time pulse and has a one-line hook to wire back to audio.
 
-**Emoji visualizations** — see [`references/emoji-visualizations.md`](references/emoji-visualizations.md)
+**Emoji visualizations** — see [`references/emoji-visualizations.md`](../../references/emoji-visualizations.md)
 - `showcase/emoji-waves.html` — concentric delayed-bass rings
 - `showcase/emoji-vortex.html` — golden-angle phyllotaxis tunnel
 - `showcase/emoji-fireworks.html` — themed parabolic bursts (peony / ring / star / heart / smiley)
@@ -38,7 +40,7 @@ Standalone, copy-pasteable demos in `showcase/`. Each runs zero-dependency on a 
 - Each is one self-contained full-screen-triangle fragment shader (inline WGSL), single render pass, no postprocessing. Pattern + perf knobs in `lib/webgpu-bootstrap.js` (`SJGpu`; `{ maxDPR, renderScale }` — resolution is the dominant lever for these fragment-bound scenes).
 - Reference: **WebGPU Fundamentals** — source/examples repo <https://github.com/webgpu/webgpufundamentals>, rendered site <https://webgpufundamentals.org/>. The canonical WebGPU/WGSL learning resource; use it for host-API setup, WGSL syntax, points/particles, and `wgpu-matrix` (view/projection — the scenes currently hand-roll camera math in the shader).
 
-**Image FX (3D explosion · fake3d · hover)** — see [`references/image-fx.md`](references/image-fx.md)
+**Image FX (3D explosion · fake3d · hover)** — see [`references/image-fx.md`](../../references/image-fx.md)
 - 3D object/logo explosion (pre-fractured GLB shards, one `progress` uniform, GSAP explode/re-form)
 - fake-3D depth-map photo parallax (image + depth map, cursor/gyro UV offset with inertia)
 - hover image distortion/reveal (per-tile displacement + RGB split + cross-fade)
@@ -203,18 +205,18 @@ Construct a JSON object matching this schema:
 Save the JSON to a temp file and run:
 
 ```bash
-python3 /path/to/skills/presentation/scripts/build_presentation.py /tmp/spec.json
+python3 <sj-design repo root>/scripts/build_presentation.py /tmp/spec.json
 ```
 
 Or pipe via stdin:
 
 ```bash
-echo '<json>' | python3 /path/to/skills/presentation/scripts/build_presentation.py
+echo '<json>' | python3 <sj-design repo root>/scripts/build_presentation.py
 ```
 
 To specify output path:
 ```bash
-python3 build_presentation.py spec.json -o ~/Desktop/my-deck.html
+python3 <sj-design repo root>/scripts/build_presentation.py spec.json -o ~/Desktop/my-deck.html
 ```
 
 The script prints the output path on success: `✓ Generated: /tmp/my-deck.html`
@@ -276,7 +278,7 @@ Tell the user:
 
 ## Animation reference (GSAP)
 
-Per-slide-type entrance choreography is applied automatically — the full table is in [`references/slide-animations.md`](references/slide-animations.md). All animations use Apple's `cubic-bezier(0.16, 1, 0.3, 1)` easing (expo out); spring effects use `back.out(1.5)`.
+Per-slide-type entrance choreography is applied automatically — the full table is in [`references/slide-animations.md`](../../references/slide-animations.md). All animations use Apple's `cubic-bezier(0.16, 1, 0.3, 1)` easing (expo out); spring effects use `back.out(1.5)`.
 
 ---
 
@@ -289,7 +291,7 @@ Every presentation includes layered ambient effects that run throughout:
 - **Bokeh discs** — Blurred glowing circles that drift and breathe
 - **SF fog** — Three-depth-layer fog clouds (☁️ emoji, blurred) that drift right-to-left like the real marine layer; Perlin noise drives vertical curl
 
-**Emoji visualization techniques** (for hero slides, loading screens, closing moments, or any slide wanting a full-motion canvas): see [`references/emoji-visualizations.md`](references/emoji-visualizations.md) for three self-contained canvas-2D techniques — **Concentric Waves**, **Tunnel Vortex** (phyllotaxis), and **Fireworks** (themed parabolic-arc bursts in peony / ring / star / heart / smiley shapes). Each has a runnable demo in `showcase/` and a one-line hook to wire back to audio if you have it.
+**Emoji visualization techniques** (for hero slides, loading screens, closing moments, or any slide wanting a full-motion canvas): see [`references/emoji-visualizations.md`](../../references/emoji-visualizations.md) for three self-contained canvas-2D techniques — **Concentric Waves**, **Tunnel Vortex** (phyllotaxis), and **Fireworks** (themed parabolic-arc bursts in peony / ring / star / heart / smiley shapes). Each has a runnable demo in `showcase/` and a one-line hook to wire back to audio if you have it.
 
 ---
 
