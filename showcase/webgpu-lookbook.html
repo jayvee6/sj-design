@@ -1160,7 +1160,7 @@ struct VOut{ @builtin(position) pos:vec4<f32>, @location(0) uv:vec2<f32>,
         if(!REDUCE){
           slides[cur].querySelectorAll('.parallax').forEach(el=>{
             const d=parseFloat(el.dataset.depth||1);
-            el.style.transform='translate3d('+(-mx*d*6)+'px,'+(-my*d*5)+'px,0)';
+            el.style.transform='translate3d('+(-mx*d*2.2)+'px,'+(-my*d*1.8)+'px,0)';
           });
         }
 
@@ -1171,7 +1171,7 @@ struct VOut{ @builtin(position) pos:vec4<f32>, @location(0) uv:vec2<f32>,
 
         U_F32[0]=simTime;
         U_F32[1]=sr;
-        U_F32[2]=mx; U_F32[3]=my;
+        U_F32[2]=mx*0.45; U_F32[3]=my*0.45;   // gentle — just a hint of scene/particle drift
         U_F32[4]=canvas.width; U_F32[5]=canvas.height;
         U_F32[6]=REDUCE?0.2:pulse; U_F32[7]=REDUCE?0:beat;
         device.queue.writeBuffer(uBuf,0,U_F32);
