@@ -8,8 +8,7 @@ A Claude Code skill (`SKILL.md`) that produces beautiful `.html` presentations u
 
 ## Key files
 
-- `skills/presentation/SKILL.md` — deck/motion generator skill
-- `skills/sj-design-expert/SKILL.md` — design-system coder/consultant/reviewer skill (+ `references/` distilled from first-party projects)
+- `skills/sj-design-expert/SKILL.md` — THE skill: builder (decks/motion, absorbed the former presentation skill) + coder/consultant/reviewer (+ `references/` distilled from first-party projects; `references/generation-playbook.md` is the deck/motion workflow)
 - `skills/ingest-design-source/SKILL.md` — repeatable pipeline to feed new sources into the expert
 - `.claude-plugin/plugin.json` — plugin packaging (Claude Code / Desktop install)
 - `index.html` — showcase/demo page
@@ -28,9 +27,9 @@ A Claude Code skill (`SKILL.md`) that produces beautiful `.html` presentations u
 
 ## Working on the skills
 
-Edit the relevant `skills/*/SKILL.md` directly. `~/.claude/skills/{presentation,sj-design-expert,ingest-design-source}` are symlinks into this repo — edits are live immediately.
+Edit the relevant `skills/*/SKILL.md` directly. `~/.claude/skills/{sj-design-expert,ingest-design-source}` are symlinks into this repo — edits are live immediately.
 
-For the presentation skill: Test by running the skill in Claude Code against prompts in `evals/`.
+Test deck generation by running sj-design-expert (Builder mode) against prompts in `evals/`.
 
 ---
 

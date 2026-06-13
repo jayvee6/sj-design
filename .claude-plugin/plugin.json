@@ -1,7 +1,7 @@
 {
   "name": "sj-design",
-  "version": "2.0.0",
-  "description": "Studio Joe design toolkit — Apple-style slide decks, motion primitives, emoji visualizations, and WebGPU scenes (presentation skill), plus a design-system expert that codes, consults, and reviews using patterns distilled from real shipped Studio Joe projects across web, WebGPU, Chrome/Safari, macOS, and iOS (sj-design-expert skill), and a repeatable ingest pipeline (ingest-design-source).",
+  "version": "3.0.0",
+  "description": "Studio Joe design expert plugin \u2014 sj-design-expert is a builder/coder/consultant/reviewer in one: generates Apple-style slide decks, motion primitives, emoji visualizations, and WebGPU scenes (self-contained HTML), and codes/consults/reviews in the Studio Joe design system using patterns distilled from real shipped projects across web, WebGPU, Chrome/Safari, macOS, and iOS. Includes ingest-design-source, the repeatable pipeline that feeds new sources into the expert.",
   "author": {
     "name": "Joey Villarreal",
     "url": "https://github.com/jayvee6"
