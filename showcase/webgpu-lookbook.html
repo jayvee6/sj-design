@@ -66,7 +66,7 @@
   .slide[data-layout="center"]{justify-content:center}
   .slide[data-layout="center"] .slide-inner{width:min(900px,82vw);align-items:center;text-align:center}
   .slide[data-layout="center"]::before,.slide[data-layout="statement"]::before,
-  .slide[data-layout="bigfact"]::before,.slide[data-layout="gallery"]::before{
+  .slide[data-layout="bigfact"]::before,.slide[data-layout="gallery"]::before,.slide[data-layout="media"]::before{
     content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
     backdrop-filter:blur(9px) brightness(.6) saturate(1.2);-webkit-backdrop-filter:blur(9px) brightness(.6) saturate(1.2)}
 
@@ -147,6 +147,15 @@
   .gallery-grid.cols-4 .frame:nth-child(2){transform:rotateY(5deg)  translateZ(-14px)}
   .gallery-grid.cols-4 .frame:nth-child(3){transform:rotateY(-5deg) translateZ(-14px)}
   .gallery-grid.cols-4 .frame:nth-child(4){transform:rotateY(-13deg) translateZ(-40px)}
+
+  /* media: a single large video/image in a 3D glass frame, centered */
+  .slide[data-layout="media"]{justify-content:center}
+  .slide[data-layout="media"] .slide-inner{width:min(1180px,92vw);align-items:center;text-align:center;gap:1.1rem}
+  .media-frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:22px;overflow:hidden;
+    border:1px solid rgba(255,255,255,.24);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.30),
+               0 56px 110px -34px rgba(0,0,0,.66), 0 16px 34px -16px rgba(0,0,0,.5)}
+  .media-frame iframe,.media-frame video,.media-frame img{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;object-fit:cover}
 
   .eyebrow{font-size:clamp(11px,1vw,14px);font-weight:600;letter-spacing:.22em;
            text-transform:uppercase;color:var(--ink-3)}
@@ -409,6 +418,19 @@
       </div>
     </section>
 
+    <section class="slide" data-scene="ink" data-pal="ink" data-layout="media">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.0">Watch</p>
+        <h2 class="headline parallax" data-depth="1.4">Video, framed in glass</h2>
+        <div class="media-frame parallax" data-depth="0.5">
+          <iframe src="https://www.youtube.com/embed/njX2bu-_Vw4?rel=0&modestbranding=1"
+            title="Embedded video" loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen></iframe>
+        </div>
+      </div>
+    </section>
+
     <section class="slide" data-scene="warp" data-pal="aurora" data-layout="center">
       <div class="slide-inner center">
         <p class="icon parallax" data-depth="2.0">🚀</p>
@@ -426,7 +448,7 @@
       <button id="prev" aria-label="Previous slide">←</button>
       <button id="next" aria-label="Next slide">→</button>
     </div>
-    <span id="counter">1 / 22</span>
+    <span id="counter">1 / 23</span>
     <div class="grp">
       <button id="full" aria-label="Fullscreen">⛶</button>
     </div>
@@ -1094,7 +1116,8 @@ struct VOut{ @builtin(position) pos:vec4<f32>, @location(0) uv:vec2<f32>,
         else if(e.key==='f'||e.key==='F'){document.getElementById('full').click();}
       });
       document.getElementById('deck').addEventListener('click',e=>{
-        if(e.target.closest('button'))return;
+        // don't advance when interacting with media / controls
+        if(e.target.closest('button, iframe, video, .media-frame, .slide-media, .gallery-grid'))return;
         go(e.clientX>innerWidth*0.5?1:-1);
       });
 
