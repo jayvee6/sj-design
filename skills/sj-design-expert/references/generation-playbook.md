@@ -11,6 +11,57 @@ install, portable per `studio-design-system.md` §11.
 
 ---
 
+## 0. WebGPU deck engine — the new default (2026-06-12)
+
+Studio Joe presentations now render on a **self-contained WebGPU engine**, not
+the older GSAP/CSS gobo template. This is the new "presentation" system.
+Proven reference engine (verified in real Chrome, console clean):
+`showcase/webgpu-lookbook.html`.
+
+**What it is:** one fullscreen WebGPU canvas behind the slides drives a live
+animated atmosphere; slide content rides on top in a layout kit. Self-contained
+single file; CSS-gradient fallback when WebGPU is unavailable;
+`prefers-reduced-motion` freeze; ACES tonemap + dither per scene; a live speed
+control (accumulated sim-time). Deck-level **backdrop + palette + speed**;
+per-slide **layout + content**.
+
+**Scene catalog (14)** — all share one Float32Array uniform contract
+(`elapsed, reveal, mouseX/Y, res, pulse, beat, colA/B/C/Bg`):
+
+| Category | Scenes |
+|---|---|
+| Dynamic | Aurora Veil · Nebula Flow-Field · Ink Diffusion · Caustic Water |
+| Minimal | Silk Gradient · Topographic |
+| Bold | Hyperspace Warp · Halftone Riso · Scanline CRT |
+| Material | Crystalline Refraction · Liquid Chrome · Voronoi Shatter |
+| Editorial | Volumetric God-Rays |
+| Live (GPU compute particles) | Constellation Field |
+
+**Layout kit (10)** — per-slide `data-layout`:
+`hero` (full-bleed left) · `glass` (frosted panel) · `center` · `split`
+(copy + media) · `agenda` (numbered) · `bg` (background-only) · `section`
+(divider) · `statement` (one big line) · `bigfact` (gradient figure) ·
+`gallery` (3-up / 4-up, 3D glass frames) · `media` (16:9 video/image glass
+frame). Per-layout legibility: edgeless frosted-blur + directional darken
+(hero/agenda/split/section), frosted panel (glass), full frost
+(center/statement/bigfact/gallery/media). Galleries, split, and media accept
+`<img>`, `<video>`, or a YouTube `<iframe>` wrapped in 3D glass frames
+(YouTube embeds need an http(s) origin — Error 153 on `file://`).
+
+**Authoring:** a web-based builder (client-side, Vercel-hosted, exports a
+self-contained `.html`) is **in progress** — pick a backdrop + layout per slide,
+edit content live, download the finished deck. Until it ships, author by editing
+the look-book directly, or via the JSON pipeline below.
+
+**Roadmap:** Light/Dark variant per scene (Keynote-parity; dark-only today) ·
+WebXR/OpenXR immersive mode (scene → 360 environment, glass panels → world-space;
+ties to the FrameCast project).
+
+The older JSON → `build_presentation.py` → `template.html` pipeline (§2–5) still
+works and stays documented, but **new decks target the WebGPU engine.**
+
+---
+
 ## 1. Motion primitives catalog
 
 Standalone, copy-pasteable demos in `showcase/`. Each runs zero-dependency on
