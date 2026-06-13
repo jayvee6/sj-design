@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebGPU Look Book — sj-design</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#05060a; --bg-2:#0b1024;
+    --ink:#f5f5f7; --ink-2:#c7c9d1; --ink-3:#8a8d99;
+    --accent:#7aa2ff;
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+    --glass-bg:rgba(255,255,255,0.06);
+    --glass-bdr:rgba(255,255,255,0.14);
+    --card-bg:rgba(10,12,20,0.42);
+    --card-bdr:rgba(255,255,255,0.16);
+  }
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--font)}
+  /* CSS gradient fallback — shown when WebGPU is unavailable (canvas stays transparent). */
+  #bg{position:fixed;inset:0;z-index:0;background:
+        radial-gradient(120% 90% at 30% 10%, var(--bg-2), transparent 60%),
+        radial-gradient(120% 90% at 80% 90%, #1a1230, transparent 55%),
+        var(--bg);}
+  #gpu{position:fixed;inset:0;z-index:1;display:block;width:100vw;height:100vh;pointer-events:none}
+  #deck{position:fixed;inset:0;z-index:9}
+
+  /* ─── Layout kit ───────────────────────────────────────────────────────────
+     Every slide carries data-layout. The author picks per slide:
+       hero    — full-bleed, content in a left column over the live scene
+       glass   — content inside a large frosted-glass panel (scene around it)
+       center  — centered content over a gently frosted full scene
+       split   — content one side, image/product shot the other
+       agenda  — numbered agenda / table of contents
+       bg      — background tells the story; minimal caption, bottom-left      */
+  .slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-start;
+         padding:clamp(40px,8vh,120px) clamp(44px,8vw,150px);
+         opacity:0;pointer-events:none;transition:opacity .25s ease}
+  .slide.active{opacity:1;pointer-events:auto}
+  .slide-inner{position:relative;z-index:2;width:min(640px,58vw);
+    display:flex;flex-direction:column;gap:1.25rem;align-items:flex-start;text-align:left}
+  .slide-inner.center{align-items:center;text-align:center}
+
+  /* hero / agenda / split: edgeless frosted blur + directional darken, left side */
+  .slide[data-layout="hero"]::before,.slide[data-layout="agenda"]::before,.slide[data-layout="split"]::before{
+    content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+    backdrop-filter:blur(20px) saturate(1.25);-webkit-backdrop-filter:blur(20px) saturate(1.25);
+    -webkit-mask-image:linear-gradient(100deg,#000 0%,#000 26%,transparent 56%);
+            mask-image:linear-gradient(100deg,#000 0%,#000 26%,transparent 56%)}
+  .slide[data-layout="hero"]::after,.slide[data-layout="agenda"]::after,.slide[data-layout="split"]::after{
+    content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:linear-gradient(100deg, rgba(3,4,9,.78) 0%, rgba(3,4,9,.5) 24%,
+               rgba(3,4,9,.18) 44%, transparent 60%)}
+
+  /* glass: the large frosted panel — gorgeous over most scenes */
+  .slide[data-layout="glass"]{justify-content:center}
+  .slide[data-layout="glass"] .slide-inner{width:min(1160px,92vw);min-height:min(64vh,580px);
+    justify-content:center;gap:1.3rem;
+    padding:clamp(2.6rem,5.5vw,5rem) clamp(2.8rem,6.5vw,6rem);
+    border-radius:34px;background:var(--card-bg);border:1px solid var(--card-bdr);
+    backdrop-filter:blur(30px) saturate(1.7);-webkit-backdrop-filter:blur(30px) saturate(1.7);
+    box-shadow:0 40px 100px -30px rgba(0,0,0,.6),
+               inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.22)}
+
+  /* center: centered content over a softly frosted full scene (no card, no circle) */
+  .slide[data-layout="center"]{justify-content:center}
+  .slide[data-layout="center"] .slide-inner{width:min(900px,82vw);align-items:center;text-align:center}
+  .slide[data-layout="center"]::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+    backdrop-filter:blur(9px) brightness(.6) saturate(1.2);-webkit-backdrop-filter:blur(9px) brightness(.6) saturate(1.2)}
+
+  /* split: content + media frame (image or product shot) */
+  .slide[data-layout="split"] .slide-inner{width:min(44vw,540px)}
+  .slide-media{position:absolute;z-index:1;top:clamp(40px,10vh,120px);bottom:clamp(40px,10vh,120px);
+    right:clamp(44px,8vw,150px);width:min(42vw,620px);border-radius:26px;overflow:hidden;
+    border:1px solid var(--card-bdr);box-shadow:0 40px 90px -30px rgba(0,0,0,.55)}
+  .slide-media img{width:100%;height:100%;object-fit:cover;display:block}
+  .slide-media--ph{display:flex;align-items:center;justify-content:center;font-size:clamp(48px,7vw,96px);
+    background:linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.02));
+    color:var(--ink-2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+
+  /* bg: background-only — minimal caption pinned bottom-left */
+  .slide[data-layout="bg"]{align-items:flex-end}
+  .slide[data-layout="bg"] .slide-inner{width:min(680px,72vw);gap:.5rem}
+  .slide[data-layout="bg"]::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:linear-gradient(0deg, rgba(3,4,9,.72) 0%, rgba(3,4,9,.2) 24%, transparent 42%)}
+
+  /* agenda: numbered table of contents */
+  .agenda{list-style:none;display:flex;flex-direction:column;gap:.9rem;counter-reset:ag;width:100%}
+  .agenda li{counter-increment:ag;display:flex;gap:1.1rem;align-items:baseline;
+    font-size:clamp(20px,2.4vw,32px);font-weight:600;color:var(--ink);
+    padding-bottom:.7rem;border-bottom:1px solid rgba(255,255,255,.1)}
+  .agenda li::before{content:counter(ag,decimal-leading-zero);color:var(--accent);
+    font-variant-numeric:tabular-nums;font-size:.62em;font-weight:700;min-width:2.4em;letter-spacing:.04em}
+
+  .eyebrow{font-size:clamp(11px,1vw,14px);font-weight:600;letter-spacing:.22em;
+           text-transform:uppercase;color:var(--ink-3)}
+  .icon{font-size:clamp(40px,6vw,72px);line-height:1}
+  h1.headline{font-size:clamp(36px,5vw,68px);font-weight:700;letter-spacing:-.02em;line-height:1.04;
+              text-shadow:0 2px 40px rgba(0,0,0,.55)}
+  h2.headline{font-size:clamp(28px,3.8vw,52px);font-weight:700;letter-spacing:-.02em;line-height:1.07;
+              text-shadow:0 2px 40px rgba(0,0,0,.5)}
+  .sub{font-size:clamp(16px,2vw,24px);color:var(--ink-2);font-weight:400}
+  .bullets{list-style:none;display:flex;flex-direction:column;gap:.85rem;margin-top:.5rem}
+  .bullets li{font-size:clamp(17px,2.1vw,26px);color:var(--ink-2);padding-left:1.6rem;position:relative;line-height:1.35}
+  .bullets li::before{content:"";position:absolute;left:0;top:.16em;width:3px;height:1.15em;border-radius:2px;
+                      background:var(--accent);box-shadow:0 0 12px var(--accent)}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;width:100%}
+  .stat{background:var(--glass-bg);border:1px solid var(--glass-bdr);border-radius:20px;
+        padding:1.8rem 1.6rem;backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4)}
+  .stat .v{font-size:clamp(34px,4.5vw,58px);font-weight:700;letter-spacing:-.02em}
+  .stat .l{font-size:clamp(12px,1.2vw,15px);color:var(--ink-3);margin-top:.4rem;letter-spacing:.02em}
+  .stat .s{font-size:clamp(11px,1vw,13px);color:var(--accent);margin-top:.3rem}
+  blockquote{font-size:clamp(26px,4vw,52px);font-weight:600;line-height:1.18;letter-spacing:-.01em;max-width:18ch}
+  cite{display:block;margin-top:1.2rem;font-style:normal;font-size:clamp(14px,1.5vw,18px);color:var(--ink-3)}
+  .cta{font-size:clamp(18px,2.2vw,28px);color:var(--ink-2)}
+  .contact{font-size:clamp(14px,1.4vw,18px);color:var(--accent);margin-top:.4rem}
+
+  /* HUD */
+  #hud{position:fixed;left:0;right:0;bottom:0;z-index:200;display:flex;align-items:center;
+       justify-content:space-between;padding:14px 22px;pointer-events:none;
+       font-size:11px;letter-spacing:.06em;color:var(--ink-3)}
+  #hud .grp{display:flex;gap:6px;pointer-events:auto}
+  #hud button{font:inherit;color:var(--ink-2);background:var(--glass-bg);border:1px solid var(--glass-bdr);
+              border-radius:9px;padding:6px 10px;cursor:pointer;min-width:34px;min-height:34px;
+              backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  #hud button:hover{color:var(--ink);border-color:var(--accent)}
+  #counter{font-variant-numeric:tabular-nums}
+  #scene-tag{position:fixed;top:18px;left:22px;z-index:200;font-size:11px;letter-spacing:.18em;
+             text-transform:uppercase;color:var(--ink-3);pointer-events:none}
+  #scene-tag b{display:block;color:var(--ink);font-size:14px;letter-spacing:.02em;text-transform:none;margin-top:3px}
+  #progress{position:fixed;left:0;bottom:0;height:2px;background:var(--accent);z-index:201;width:0;
+            box-shadow:0 0 12px var(--accent);transition:width .5s cubic-bezier(.16,1,.3,1)}
+  #speed-ctl{position:fixed;top:16px;right:22px;z-index:200;display:flex;align-items:center;gap:10px;
+             font-size:11px;letter-spacing:.06em;color:var(--ink-3);background:var(--glass-bg);
+             border:1px solid var(--glass-bdr);border-radius:10px;padding:7px 12px;
+             backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  #speed-ctl b{color:var(--ink);font-variant-numeric:tabular-nums}
+  #speed-ctl input[type=range]{width:120px;accent-color:var(--accent);cursor:pointer}
+
+  @media (prefers-reduced-motion: reduce){
+    .slide{transition:none}
+    #progress{transition:none}
+  }
+</style>
+</head>
+<body>
+  <div id="bg"></div>
+  <canvas id="gpu"></canvas>
+
+  <div id="scene-tag">scene<b id="scene-name">Aurora Veil</b></div>
+  <div id="speed-ctl">speed <b id="speed-val">0.20×</b>
+    <input id="speed" type="range" min="0.1" max="1.5" step="0.05" value="0.2" aria-label="Animation speed">
+  </div>
+
+  <div id="deck">
+    <section class="slide active" data-scene="aurora" data-pal="aurora" data-layout="glass">
+      <div class="slide-inner center">
+        <p class="icon parallax" data-depth="2.2">✦</p>
+        <p class="eyebrow parallax" data-depth="1.4">sj-design · webgpu look book</p>
+        <h1 class="headline parallax" data-depth="2.8">Presentations that move</h1>
+        <p class="sub parallax" data-depth="1.0">Real GPU atmosphere behind every slide — not decoration.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="godrays" data-pal="amber" data-layout="hero">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.2">Volumetric depth</p>
+        <h2 class="headline parallax" data-depth="2.4">Rendered, not decorated</h2>
+        <ul class="bullets parallax" data-depth="0.8">
+          <li>Light shafts and height fog raymarched live on the GPU.</li>
+          <li>Content floats above with real parallax depth.</li>
+          <li>One shader owns the whole viewport.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="constellation" data-pal="cyan" data-layout="glass">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.2">A compute particle field</p>
+        <h2 class="headline parallax" data-depth="2.2">Thousands of points, on the GPU</h2>
+        <div class="stats parallax" data-depth="0.7">
+          <div class="stat"><div class="v" data-count="2200">0</div><div class="l">Particles simulated</div><div class="s">Compute shader, 60 fps</div></div>
+          <div class="stat"><div class="v" data-count="1">0</div><div class="l">Draw call</div><div class="s">Instanced, additive</div></div>
+          <div class="stat"><div class="v" data-count="0" data-suffix=" deps">0</div><div class="l">Dependencies</div><div class="s">Self-contained file</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="crystal" data-pal="violet" data-layout="center">
+      <div class="slide-inner center">
+        <blockquote class="parallax" data-depth="2.0">“The interface should feel like a material, not a slideshow.”</blockquote>
+        <cite class="parallax" data-depth="1.0">— crystalline refraction, chromatic dispersion</cite>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="silk" data-pal="silk" data-layout="hero">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.2">Calm by default</p>
+        <h2 class="headline parallax" data-depth="2.2">A backdrop that recedes</h2>
+        <ul class="bullets parallax" data-depth="0.8">
+          <li>Soft morphing gradient — for serious, content-heavy decks.</li>
+          <li>Motion you feel, not motion that distracts.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="chrome" data-pal="chrome" data-layout="center">
+      <div class="slide-inner center">
+        <p class="eyebrow parallax" data-depth="1.2">Liquid chrome</p>
+        <h1 class="headline parallax" data-depth="2.6">Molten, reflective, alive</h1>
+        <p class="sub parallax" data-depth="1.0">Procedural metal — normals and fresnel, no textures.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="ink" data-pal="ink" data-layout="hero">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.2">Ink diffusion</p>
+        <h2 class="headline parallax" data-depth="2.2">Turbulence, domain-warped</h2>
+        <ul class="bullets parallax" data-depth="0.8">
+          <li>Three-pass domain warp for fluid billows.</li>
+          <li>Monochrome body, accent veins.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="water" data-pal="water" data-layout="glass">
+      <div class="slide-inner center">
+        <p class="eyebrow parallax" data-depth="1.2">Caustic water</p>
+        <h1 class="headline parallax" data-depth="2.4">Light through moving water</h1>
+        <p class="sub parallax" data-depth="1.0">Iterated phase distortion — the classic caustic kernel.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="flow" data-pal="flow" data-layout="glass">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.2">Nebula flow-field</p>
+        <h2 class="headline parallax" data-depth="2.2">Drift along the field</h2>
+        <ul class="bullets parallax" data-depth="0.8">
+          <li>Particles of light advected through an fbm angle field.</li>
+          <li>Twinkling stars layered behind the gas.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="halftone" data-pal="halftone" data-layout="center">
+      <div class="slide-inner center">
+        <p class="eyebrow parallax" data-depth="1.2">Halftone riso</p>
+        <h1 class="headline parallax" data-depth="2.4">Print, misregistered</h1>
+        <p class="sub parallax" data-depth="1.0">Two offset dot channels — the risograph registration error.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="crt" data-pal="crt" data-layout="glass">
+      <div class="slide-inner center">
+        <p class="eyebrow parallax" data-depth="1.2">Scanline CRT</p>
+        <h1 class="headline parallax" data-depth="2.4">Barrel, scanlines, phosphor</h1>
+        <p class="sub parallax" data-depth="1.0">Chroma split, subpixel mask, vignette, flicker.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="topo" data-pal="topo" data-layout="hero">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.2">Topographic</p>
+        <h2 class="headline parallax" data-depth="2.2">Contours of a living map</h2>
+        <ul class="bullets parallax" data-depth="0.8">
+          <li>Level lines of an fbm heightfield, slowly drifting.</li>
+          <li>Elevation tinted from the theme palette.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="shatter" data-pal="shatter" data-layout="center">
+      <div class="slide-inner center">
+        <p class="eyebrow parallax" data-depth="1.2">Voronoi shatter</p>
+        <h1 class="headline parallax" data-depth="2.4">Glass, on the edge of breaking</h1>
+        <p class="sub parallax" data-depth="1.0">Shards displaced by the beat — cracks glint on the pulse.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="topo" data-pal="topo" data-layout="agenda">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.0">Agenda</p>
+        <h2 class="headline parallax" data-depth="1.6">What we'll cover</h2>
+        <ul class="agenda parallax" data-depth="0.6">
+          <li>The problem worth solving</li>
+          <li>How the system works</li>
+          <li>Results, and what's next</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="chrome" data-pal="chrome" data-layout="split">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="1.0">Split layout</p>
+        <h2 class="headline parallax" data-depth="1.8">Pair copy with a product shot</h2>
+        <ul class="bullets parallax" data-depth="0.6">
+          <li>Text on one side, your image on the other.</li>
+          <li>Drop in a render, photo, or screenshot.</li>
+        </ul>
+      </div>
+      <div class="slide-media slide-media--ph">🖼️</div>
+    </section>
+
+    <section class="slide" data-scene="ink" data-pal="ink" data-layout="bg">
+      <div class="slide-inner">
+        <p class="eyebrow parallax" data-depth="0.8">Background tells the story</p>
+        <h2 class="headline parallax" data-depth="1.2">Let it breathe</h2>
+      </div>
+    </section>
+
+    <section class="slide" data-scene="warp" data-pal="aurora" data-layout="center">
+      <div class="slide-inner center">
+        <p class="icon parallax" data-depth="2.0">🚀</p>
+        <h1 class="headline parallax" data-depth="2.6">Let's build the new engine</h1>
+        <p class="cta parallax" data-depth="1.0">Pick the looks you love — I'll wire them into the deck pipeline.</p>
+        <p class="contact parallax" data-depth="0.8">sj-design · WebGPU presentation system</p>
+      </div>
+    </section>
+  </div>
+
+  <div id="scene-tag-spacer"></div>
+  <div id="progress"></div>
+  <div id="hud">
+    <div class="grp">
+      <button id="prev" aria-label="Previous slide">←</button>
+      <button id="next" aria-label="Next slide">→</button>
+    </div>
+    <span id="counter">1 / 17</span>
+    <div class="grp">
+      <button id="full" aria-label="Fullscreen">⛶</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+  (function(){
+    'use strict';
+    const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const canvas = document.getElementById('gpu');
+
+    // ── Palettes (RGB 0..1) — fed to shader uniforms (colA,colB,colC,bg). ──
+    const PAL = {
+      aurora: { a:[0.36,0.55,1.0], b:[0.55,0.30,0.95], c:[0.30,0.95,0.80], bg:[0.02,0.03,0.07] },
+      amber:  { a:[1.0,0.74,0.36], b:[1.0,0.45,0.25], c:[0.98,0.90,0.62], bg:[0.05,0.03,0.02] },
+      cyan:   { a:[0.30,0.90,1.0], b:[0.40,0.55,1.0], c:[0.75,0.95,1.0], bg:[0.01,0.04,0.07] },
+      violet: { a:[0.62,0.45,1.0], b:[0.95,0.45,0.85], c:[0.55,0.85,1.0], bg:[0.04,0.02,0.07] },
+      silk:   { a:[0.55,0.72,1.0], b:[0.85,0.70,0.95], c:[0.70,0.92,0.86], bg:[0.04,0.05,0.10] },
+      chrome: { a:[0.60,0.66,0.78], b:[0.88,0.91,0.98], c:[0.45,0.60,0.98], bg:[0.03,0.035,0.05] },
+      ink:    { a:[0.40,0.50,0.72], b:[0.78,0.30,0.52], c:[0.50,0.82,0.96], bg:[0.02,0.02,0.04] },
+      water:  { a:[0.20,0.70,0.92], b:[0.40,0.92,0.82], c:[0.85,0.98,1.0], bg:[0.01,0.06,0.11] },
+      flow:   { a:[0.52,0.40,0.96], b:[0.96,0.42,0.72], c:[0.62,0.82,1.0], bg:[0.02,0.01,0.05] },
+      halftone:{a:[1.0,0.34,0.46], b:[0.26,0.78,1.0], c:[1.0,0.96,0.92], bg:[0.05,0.04,0.06] },
+      crt:    { a:[0.22,1.0,0.62], b:[1.0,0.32,0.34], c:[0.42,0.82,1.0], bg:[0.01,0.025,0.02] },
+      topo:   { a:[0.28,0.66,0.60], b:[0.94,0.82,0.42], c:[0.74,0.96,0.90], bg:[0.02,0.05,0.07] },
+      shatter:{ a:[0.50,0.55,0.96], b:[0.96,0.50,0.82], c:[0.82,0.92,1.0], bg:[0.02,0.02,0.05] },
+    };
+
+    // ── Inline SJGpu bootstrap (self-contained; no external deps). ──
+    function showUnavailable(reason){
+      const el=document.createElement('div');
+      Object.assign(el.style,{position:'fixed',inset:'0',zIndex:'5',display:'flex',
+        flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'10px',
+        textAlign:'center',padding:'32px',pointerEvents:'none',
+        font:'600 14px var(--font)',color:'#8a8d99'});
+      el.innerHTML='<div style="font-size:30px;opacity:.5">⚡</div>'+
+        '<div style="color:#f5f5f7;font-size:15px">WebGPU unavailable</div>'+
+        '<div style="max-width:340px;line-height:1.55">'+reason+
+        ' Showing the CSS fallback. Try recent Chrome, Edge, or Safari.</div>';
+      document.body.appendChild(el);
+    }
+    function sizeCanvas(maxDPR,scale){
+      const dpr=Math.min(window.devicePixelRatio||1,maxDPR)*scale;
+      canvas.width=Math.max(1,Math.round(innerWidth*dpr));
+      canvas.height=Math.max(1,Math.round(innerHeight*dpr));
+      canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';
+      return dpr;
+    }
+
+    // ── Shared WGSL prelude: uniform contract + noise helpers + tonemap. ──
+    const PRELUDE = /* wgsl */`
+struct U {
+  elapsed:f32, reveal:f32, mouseX:f32, mouseY:f32,
+  res:vec2<f32>, pulse:f32, beat:f32,
+  colA:vec4<f32>, colB:vec4<f32>, colC:vec4<f32>, colBg:vec4<f32>,
+};
+@group(0) @binding(0) var<uniform> u: U;
+
+struct VSOut { @builtin(position) pos:vec4<f32>, @location(0) uv:vec2<f32> };
+@vertex fn vs_main(@builtin(vertex_index) vid:u32)->VSOut {
+  var p=array<vec2<f32>,3>(vec2<f32>(-1.,-1.),vec2<f32>(3.,-1.),vec2<f32>(-1.,3.));
+  var uv=array<vec2<f32>,3>(vec2<f32>(0.,0.),vec2<f32>(2.,0.),vec2<f32>(0.,2.));
+  var o:VSOut; o.pos=vec4<f32>(p[vid],0.,1.); o.uv=uv[vid]; return o;
+}
+fn hash21(p:vec2<f32>)->f32{ var q=fract(p*vec2<f32>(127.1,311.7)); q+=dot(q,q+19.19); return fract(q.x*q.y); }
+fn vnoise(p:vec2<f32>)->f32{
+  let i=floor(p); let f=fract(p); let w=f*f*(3.-2.*f);
+  return mix(mix(hash21(i),hash21(i+vec2<f32>(1.,0.)),w.x),
+             mix(hash21(i+vec2<f32>(0.,1.)),hash21(i+vec2<f32>(1.,1.)),w.x),w.y);
+}
+fn fbm(p0:vec2<f32>)->f32{ var p=p0; var v=0.; var a=0.5;
+  for(var i=0;i<5;i++){ v+=a*vnoise(p); p=p*2.02+vec2<f32>(3.14,1.59); a*=0.5; } return v; }
+fn aces(x:vec3<f32>)->vec3<f32>{
+  let a=2.51; let b=0.03; let c=2.43; let d=0.59; let e=0.14;
+  return clamp((x*(a*x+b))/(x*(c*x+d)+e),vec3<f32>(0.),vec3<f32>(1.)); }
+fn dither(fc:vec2<f32>)->f32{ return fract(52.9829189*fract(dot(fc,vec2<f32>(0.06711056,0.00583715))))/255.; }
+fn centered(uv:vec2<f32>)->vec2<f32>{ return (uv-0.5)*vec2<f32>(u.res.x/u.res.y,1.0); }
+`;
+
+    // ── Scene fragment shaders (share the prelude). ──
+    const SCENES = {
+      aurora: { name:'Aurora Veil', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var p=centered(in.uv);
+  p+=vec2<f32>(u.mouseX,u.mouseY)*0.06;
+  let t=u.elapsed*0.18;
+  // domain warp
+  let q=vec2<f32>(fbm(p*1.6+vec2<f32>(0.,t)), fbm(p*1.6+vec2<f32>(5.2,-t)));
+  let r=vec2<f32>(fbm(p*1.6+q*2.4+vec2<f32>(1.7,9.2)+t*0.5),
+                  fbm(p*1.6+q*2.4+vec2<f32>(8.3,2.8)-t*0.3));
+  let f=fbm(p*1.4+r*2.6);
+  // vertical curtain falloff
+  let curtain=smoothstep(0.0,1.0,f)*pow(1.0-abs(p.y*0.9),1.5);
+  var col=mix(u.colBg.rgb, u.colA.rgb, clamp(curtain*1.4,0.,1.));
+  col=mix(col,u.colB.rgb, clamp(r.x*curtain*1.3,0.,1.));
+  col=mix(col,u.colC.rgb, clamp(pow(f,3.0)*1.5+u.pulse*0.15,0.,1.));
+  col+=u.colC.rgb*u.beat*0.12;
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      godrays: { name:'Volumetric God-Rays', frag:/* wgsl */`
+fn hfog(uv:vec2<f32>,t:f32)->f32{ return fbm(uv*3.0+vec2<f32>(t*0.15,t*0.05)); }
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  let uv=in.uv;
+  let lp=vec2<f32>(0.72+u.mouseX*0.04,0.20+u.mouseY*0.03); // light source
+  let t=u.elapsed;
+  let dir=uv-lp;
+  let dist=length(dir);
+  let ang=atan2(dir.y,dir.x);
+  // radial god-ray march toward the light, with angular shaft modulation so
+  // the volume reads as discrete light beams rather than a soft fog blob.
+  var illum=0.0; var w=1.0;
+  let steps=56;
+  for(var i=0;i<steps;i++){
+    let fi=f32(i)/f32(steps);
+    let sp=uv-dir*fi;
+    let d=hfog(sp,t);
+    // shafts radiating from the source — angle stripes broken up by noise
+    let shaft=0.45+0.55*sin(ang*34.0+hfog(sp*2.0,t)*7.0+t*0.3);
+    let beam=smoothstep(0.42,0.92,d)*shaft;
+    illum+=beam*w; w*=0.975;
+  }
+  illum=pow(clamp(illum/f32(steps)*1.7,0.0,1.5),1.4);
+  let core=exp(-dist*3.0);
+  var col=u.colBg.rgb;
+  col+=u.colA.rgb*illum*2.1;
+  col+=u.colC.rgb*core*1.4;
+  col=mix(col,u.colB.rgb,illum*core*0.7);
+  col+=u.colA.rgb*pow(uv.y,2.5)*0.08; // faint ground haze
+  col*=0.75+u.pulse*0.25+u.beat*0.2;
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      crystal: { name:'Crystalline Refraction', frag:/* wgsl */`
+fn vor(p:vec2<f32>)->vec3<f32>{ // returns (edgeDist, cellId, dist2)
+  let n=floor(p); let f=fract(p);
+  var md=8.0; var mid=0.0; var mr=vec2<f32>(0.);
+  for(var j=-1;j<=1;j++){ for(var i=-1;i<=1;i++){
+    let g=vec2<f32>(f32(i),f32(j));
+    let o=vec2<f32>(hash21(n+g),hash21(n+g+vec2<f32>(31.4,7.7)));
+    let op=o*0.5+0.5;
+    let r=g+op-f; let d=dot(r,r);
+    if(d<md){ md=d; mid=hash21(n+g); mr=r; }
+  }}
+  // second pass for edge distance
+  var edge=8.0;
+  for(var j=-1;j<=1;j++){ for(var i=-1;i<=1;i++){
+    let g=vec2<f32>(f32(i),f32(j));
+    let o=vec2<f32>(hash21(n+g),hash21(n+g+vec2<f32>(31.4,7.7)));
+    let op=o*0.5+0.5; let r=g+op-f;
+    let dr=r-mr;
+    if(dot(dr,dr)>0.0001){ edge=min(edge,dot(0.5*(mr+r),normalize(dr))); }
+  }}
+  return vec3<f32>(edge,mid,md);
+}
+fn facet(uv:vec2<f32>,sc:f32,t:f32)->vec3<f32>{
+  let p=uv*sc+vec2<f32>(t*0.05,t*0.03);
+  return vor(p);
+}
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var uv=centered(in.uv);
+  uv+=vec2<f32>(u.mouseX,u.mouseY)*0.05;
+  let t=u.elapsed*0.5;
+  // chromatic dispersion: sample facets at rgb-shifted scales
+  let disp=0.06+u.pulse*0.03;
+  let vr=facet(uv,4.0+disp,t);
+  let vg=facet(uv,4.0,t+0.3);
+  let vb=facet(uv,4.0-disp,t+0.6);
+  let er=smoothstep(0.02,0.0,vr.x);
+  let eg=smoothstep(0.02,0.0,vg.x);
+  let eb=smoothstep(0.02,0.0,vb.x);
+  var col=u.colBg.rgb;
+  // facet fills from cell id
+  col+=u.colA.rgb*(0.25+0.55*vg.y);
+  col=mix(col,u.colB.rgb,vr.y*0.4);
+  // glowing chromatic edges
+  col+=vec3<f32>(er,eg,eb)*1.4;
+  col+=u.colC.rgb*pow(max(er,max(eg,eb)),2.0)*0.6;
+  col*=0.6+0.5*(1.0-vg.z); // brighten cell centers
+  col+=u.colC.rgb*u.beat*0.1;
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      warp: { name:'Hyperspace Warp', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var p=centered(in.uv);
+  p+=vec2<f32>(u.mouseX,u.mouseY)*0.05;
+  let ang=atan2(p.y,p.x);
+  let rad=length(p);
+  let t=u.elapsed;
+  var col=u.colBg.rgb;
+  // radial streaks
+  let a=ang/6.2831+0.5;
+  for(var k=0;k<3;k++){
+    let off=f32(k)*0.33;
+    let streak=fract(a*60.0+off+vnoise(vec2<f32>(a*60.0,off))*0.5);
+    let s=smoothstep(0.85,1.0,streak);
+    let speed=t*(0.5+f32(k)*0.22)+u.pulse*0.4;
+    let pull=fract(rad*1.5 - speed);
+    let glow=s*pow(pull,3.0)*smoothstep(0.05,0.6,rad);
+    let cc=mix(u.colA.rgb,u.colC.rgb,f32(k)*0.5);
+    col+=cc*glow*2.2;
+  }
+  // bright core
+  col+=u.colB.rgb*exp(-rad*4.0)*(0.6+u.beat*0.8);
+  col*=0.8+u.pulse*0.3;
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // background for the constellation scene (particles drawn on top)
+      nebula: { name:'Constellation Field', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var p=centered(in.uv);
+  let t=u.elapsed*0.06;
+  let neb=fbm(p*1.2+vec2<f32>(t,t*0.5))*fbm(p*2.4-vec2<f32>(t*0.3,t));
+  var col=u.colBg.rgb;
+  col+=u.colB.rgb*pow(neb,2.0)*0.5;
+  col+=u.colA.rgb*pow(neb,3.5)*0.4;
+  col+=u.colA.rgb*exp(-length(p)*1.5)*0.06;
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // Calm/minimal — a backdrop that recedes for serious, content-heavy decks.
+      silk: { name:'Silk Gradient', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var p=centered(in.uv); p+=vec2<f32>(u.mouseX,u.mouseY)*0.04;
+  let t=u.elapsed*0.3;
+  let w=fbm(p*0.8+vec2<f32>(t*0.1,t*0.07))*0.7;
+  let g=0.5+0.5*sin(p.x*1.4+p.y*0.7+w*3.0+t);
+  let g2=0.5+0.5*sin(p.y*1.1-p.x*0.5+w*2.0-t*0.6);
+  var col=mix(u.colBg.rgb,u.colA.rgb,g);
+  col=mix(col,u.colB.rgb,g2*0.55);
+  col=mix(col,u.colC.rgb,smoothstep(0.4,0.9,w)*0.35);
+  col+=u.colC.rgb*u.beat*0.04; // barely-there breath
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // Procedural liquid metal — fbm heightfield → normals + fresnel sheen.
+      chrome: { name:'Liquid Chrome', frag:/* wgsl */`
+fn hgt(uv:vec2<f32>,t:f32)->f32{
+  // smooth, low-frequency flowing surface — no high-freq speckle
+  let p=uv*1.05+vec2<f32>(sin(t*0.25)*0.3,t*0.12);
+  return fbm(p)*0.7+0.3*sin(uv.x*1.2+uv.y*0.9+t*0.6);
+}
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var uv=centered(in.uv); uv+=vec2<f32>(u.mouseX,u.mouseY)*0.03;
+  let t=u.elapsed*0.4; let e=0.02;
+  let c=hgt(uv,t);
+  let nx=hgt(uv+vec2<f32>(e,0.),t)-c;
+  let ny=hgt(uv+vec2<f32>(0.,e),t)-c;
+  let n=normalize(vec3<f32>(-nx,-ny,e*1.6)); // broad, smooth normal
+  let r=reflect(vec3<f32>(0.,0.,-1.),n);       // reflect head-on view
+  let envT=clamp(r.y*0.5+0.5,0.0,1.0);
+  // metallic vertical environment: dark trough, bright band, hot rim
+  let metal=smoothstep(0.18,0.5,envT)*(1.0-smoothstep(0.72,1.0,envT))+pow(envT,3.0)*0.55;
+  var col=mix(u.colBg.rgb,u.colA.rgb,metal);
+  col=mix(col,u.colB.rgb,pow(envT,4.0));        // tinted highlights
+  let fres=pow(1.0-abs(n.z),4.0);
+  col=mix(col,u.colC.rgb,fres*0.5);
+  let sweep=pow(max(0.0,sin(r.x*3.0+t)*0.5+0.5),8.0); // moving specular sweep
+  col+=vec3<f32>(1.0)*sweep*(0.35+u.beat*0.25);
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // Turbulent fluid billows — iterated domain warp, monochrome + accent veins.
+      ink: { name:'Ink Diffusion', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var p=centered(in.uv)*1.4; p+=vec2<f32>(u.mouseX,u.mouseY)*0.04;
+  let t=u.elapsed*0.2;
+  var q=p;
+  for(var i=0;i<3;i++){
+    q+=vec2<f32>(fbm(q*1.5+vec2<f32>(t,0.)),fbm(q*1.5+vec2<f32>(5.2,-t)))*0.6;
+  }
+  let d=fbm(q*1.2);
+  let veins=smoothstep(0.45,0.56,fbm(q*2.5+d));
+  var col=mix(u.colBg.rgb,u.colA.rgb,pow(d,1.5));
+  col=mix(col,u.colB.rgb,veins*0.5);
+  col+=u.colC.rgb*pow(d,4.0)*0.6+u.colC.rgb*u.beat*0.06;
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // Underwater caustics — iterated phase distortion (classic caustic kernel).
+      water: { name:'Caustic Water', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  let TAU=6.283185;
+  var uvp=in.uv*vec2<f32>(u.res.x/u.res.y,1.0);  // aspect-correct
+  // tile into a large coordinate range (~ -250) — the kernel needs big coords
+  var p=(uvp*TAU*1.6)%vec2<f32>(TAU)-vec2<f32>(250.0);
+  p+=vec2<f32>(u.mouseX,u.mouseY)*0.25;
+  let t=u.elapsed*0.6+23.0;
+  var i=p; var c=1.0; let inten=0.005;
+  for(var n=0;n<5;n++){
+    let tt=t*(1.0-(3.5/f32(n+1)));
+    i=p+vec2<f32>(cos(tt-i.x)+sin(tt+i.y), sin(tt-i.y)+cos(tt+i.x));
+    c+=1.0/(length(vec2<f32>(p.x/(sin(i.x+tt)/inten), p.y/(cos(i.y+tt)/inten)))+0.0001);
+  }
+  c/=5.0; c=1.17-pow(c,1.4);
+  let bright=pow(abs(c),8.0);
+  var col=u.colBg.rgb;
+  col+=u.colA.rgb*bright;
+  col=mix(col,u.colC.rgb,clamp(bright*0.8,0.,1.));
+  col+=u.colB.rgb*pow(bright,2.0)*0.5;
+  col+=u.colA.rgb*pow(1.0-in.uv.y,2.0)*0.06; // surface light from above
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // Cosmic flow-field — advect along an fbm angle field + twinkling stars.
+      flow: { name:'Nebula Flow-Field', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var p=centered(in.uv)*1.6; p+=vec2<f32>(u.mouseX,u.mouseY)*0.05;
+  let t=u.elapsed*0.15;
+  var pos=p; var dens=0.0;
+  for(var i=0;i<6;i++){
+    let ang=fbm(pos*0.8+vec2<f32>(t,0.0))*6.2831;
+    pos+=vec2<f32>(cos(ang),sin(ang))*0.12;
+    dens+=fbm(pos*1.5)*0.18;
+  }
+  let neb=pow(dens,1.6);
+  var col=u.colBg.rgb;
+  col+=u.colA.rgb*neb;
+  col=mix(col,u.colB.rgb,clamp(neb*0.7,0.,1.));
+  col+=u.colC.rgb*pow(neb,3.0)*0.6;
+  // star grid + twinkle
+  let sp=floor(in.uv*u.res/3.0);
+  let sh=hash21(sp);
+  let twk=0.5+0.5*sin(u.elapsed*6.0+sh*30.0);
+  col+=vec3<f32>(1.0)*step(0.992,sh)*twk*0.9;
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // Risograph halftone — two offset CMY-ish dot channels (misregistration).
+      halftone: { name:'Halftone Riso', frag:/* wgsl */`
+fn dots(uv:vec2<f32>,cell:f32,tone:f32)->f32{
+  let g=fract(uv*u.res/cell)-0.5;
+  let d=length(g)*2.0;
+  let radius=sqrt(clamp(tone,0.0,1.0));
+  return smoothstep(radius+0.12,radius-0.12,d);
+}
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  let t=u.elapsed*0.2;
+  let p=centered(in.uv);
+  let offA=vec2<f32>(0.004,0.0025)*(1.0+u.pulse*0.5);
+  let offB=vec2<f32>(-0.004,-0.0015)*(1.0+u.pulse*0.5);
+  let tA=fbm((p+offA)*1.6+vec2<f32>(t,t*0.5));
+  let tB=fbm((p+offB)*1.6+vec2<f32>(t+5.0,t*0.5));
+  let dA=dots(in.uv+offA,16.0,tA);
+  let dB=dots(in.uv+offB,16.0,tB);
+  var col=u.colBg.rgb;
+  col+=u.colA.rgb*dA;          // channel A
+  col+=u.colB.rgb*dB;          // channel B, offset → riso registration error
+  col+=u.colC.rgb*dA*dB*0.6;   // overlap highlight
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // CRT — barrel distortion, scanlines, RGB subpixel, chroma split, vignette.
+      crt: { name:'Scanline CRT', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var c=in.uv*2.0-1.0;
+  c+=c*dot(c,c)*0.10;          // barrel
+  let cuv=c*0.5+0.5;
+  if(cuv.x<0.0||cuv.x>1.0||cuv.y<0.0||cuv.y>1.0){ return vec4<f32>(0.0,0.0,0.0,1.0); }
+  let t=u.elapsed;
+  let p=centered(cuv);
+  let ca=0.005;
+  let g=0.5+0.5*sin(p.x*4.0+fbm(p*2.0+vec2<f32>(t,0.0))*4.0+t);
+  let r=0.5+0.5*sin((p.x+ca)*4.0+fbm((p+vec2<f32>(ca,0.0))*2.0+vec2<f32>(t,0.0))*4.0+t);
+  let b=0.5+0.5*sin((p.x-ca)*4.0+fbm((p-vec2<f32>(ca,0.0))*2.0+vec2<f32>(t,0.0))*4.0+t);
+  var col=u.colA.rgb*g;
+  col.r=mix(col.r,u.colA.r*r,0.7);
+  col.b=mix(col.b,u.colA.b*b,0.7);
+  col+=u.colC.rgb*pow(g,3.0)*0.4;
+  col*=0.82+0.18*sin(cuv.y*u.res.y*0.65);   // scanlines
+  col*=0.9+0.1*sin(cuv.x*u.res.x*1.5);      // subpixel mask
+  col*=1.0-dot(c,c)*0.28;                    // vignette
+  col*=0.95+0.05*sin(t*30.0);               // flicker
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // Topographic contour map — level lines of an fbm heightfield.
+      topo: { name:'Topographic', frag:/* wgsl */`
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var p=centered(in.uv)*2.0; p+=vec2<f32>(u.mouseX,u.mouseY)*0.06;
+  let t=u.elapsed*0.1;
+  let h=fbm(p*1.2+vec2<f32>(t,t*0.6));
+  let N=14.0;
+  let cc=fract(h*N);
+  let between=smoothstep(0.0,0.07,cc)*smoothstep(0.0,0.07,1.0-cc);
+  let contour=1.0-between;     // bright at each level crossing
+  var col=mix(u.colBg.rgb,u.colA.rgb,h);
+  col=mix(col,u.colC.rgb,smoothstep(0.6,1.0,h));
+  col+=u.colB.rgb*contour*0.85;
+  col+=u.colC.rgb*contour*pow(h,2.0)*0.5;
+  col+=u.colB.rgb*u.beat*0.05;
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+      // Shattered glass — voronoi shards displaced by a pulse-driven crack.
+      shatter: { name:'Voronoi Shatter', frag:/* wgsl */`
+fn vshat(p:vec2<f32>)->vec4<f32>{
+  let n=floor(p); let f=fract(p);
+  var md=8.0; var mid=0.0; var mr=vec2<f32>(0.0);
+  for(var j=-1;j<=1;j++){ for(var i=-1;i<=1;i++){
+    let g=vec2<f32>(f32(i),f32(j));
+    let o=vec2<f32>(hash21(n+g),hash21(n+g+vec2<f32>(31.4,7.7)));
+    let r=g+(o*0.5+0.5)-f; let d=dot(r,r);
+    if(d<md){ md=d; mid=hash21(n+g); mr=r; }
+  }}
+  var edge=8.0;
+  for(var j=-1;j<=1;j++){ for(var i=-1;i<=1;i++){
+    let g=vec2<f32>(f32(i),f32(j));
+    let o=vec2<f32>(hash21(n+g),hash21(n+g+vec2<f32>(31.4,7.7)));
+    let r=g+(o*0.5+0.5)-f; let dr=r-mr;
+    if(dot(dr,dr)>0.0001){ edge=min(edge,dot(0.5*(mr+r),normalize(dr))); }
+  }}
+  return vec4<f32>(edge,mid,mr);
+}
+@fragment fn fs_main(in:VSOut)->@location(0) vec4<f32>{
+  var p=centered(in.uv)*5.0; p+=vec2<f32>(u.mouseX,u.mouseY)*0.06;
+  let shat=0.12+u.pulse*0.45+u.beat*0.35;
+  let base=vshat(p);
+  let dir=vec2<f32>(hash21(vec2<f32>(base.y,1.0)),hash21(vec2<f32>(base.y,2.0)))*2.0-1.0;
+  let v=vshat(p+dir*shat);
+  let crack=smoothstep(0.045,0.0,v.x);
+  var col=u.colBg.rgb;
+  col+=u.colA.rgb*(0.18+0.6*v.y);
+  col=mix(col,u.colB.rgb,hash21(vec2<f32>(v.y,7.0))*0.5);
+  col+=vec3<f32>(1.0)*crack*0.85;
+  col+=u.colC.rgb*pow(crack,2.0)*0.6;
+  col*=0.5+0.6*(1.0-v.x);
+  col=mix(u.colBg.rgb,col,u.reveal);
+  col=aces(col); col+=dither(in.pos.xy);
+  return vec4<f32>(col,1.0);
+}`},
+    };
+
+    // ── Particle compute + render WGSL (constellation scene). ──
+    const PARTICLE_WGSL = /* wgsl */`
+struct P { data0:vec4<f32>, data1:vec4<f32> }; // pos.xy,vel.xy ; seed,depth,size,hue
+struct PUni { dt:f32, time:f32, mouseX:f32, mouseY:f32, res:vec2<f32>, count:f32, _p:f32 };
+@group(0) @binding(0) var<storage,read_write> parts: array<P>;
+@group(0) @binding(1) var<uniform> pc: PUni;
+fn h21(p:vec2<f32>)->f32{ var q=fract(p*vec2<f32>(127.1,311.7)); q+=dot(q,q+19.19); return fract(q.x*q.y); }
+fn n2(p:vec2<f32>)->f32{ let i=floor(p); let f=fract(p); let w=f*f*(3.-2.*f);
+  return mix(mix(h21(i),h21(i+vec2<f32>(1.,0.)),w.x),mix(h21(i+vec2<f32>(0.,1.)),h21(i+vec2<f32>(1.,1.)),w.x),w.y); }
+@compute @workgroup_size(64) fn cs_main(@builtin(global_invocation_id) gid:vec3<u32>){
+  let i=gid.x; if(i>=u32(pc.count)){ return; }
+  var p=parts[i];
+  var pos=p.data0.xy; var vel=p.data0.zw;
+  let seed=p.data1.x; let depth=p.data1.y;
+  let t=pc.time*0.1;
+  let ang=n2(pos*0.0016+vec2<f32>(t,seed*10.0))*6.2831;
+  let force=vec2<f32>(cos(ang),sin(ang))*(6.0+depth*22.0);
+  vel=vel*0.95+force*pc.dt*0.6;
+  pos+=vel*pc.dt;
+  if(pos.x<0.){pos.x+=pc.res.x;} if(pos.x>pc.res.x){pos.x-=pc.res.x;}
+  if(pos.y<0.){pos.y+=pc.res.y;} if(pos.y>pc.res.y){pos.y-=pc.res.y;}
+  p.data0=vec4<f32>(pos,vel);
+  parts[i]=p;
+}`;
+    const PARTICLE_RENDER_WGSL = /* wgsl */`
+struct P { data0:vec4<f32>, data1:vec4<f32> };
+struct U {
+  elapsed:f32, reveal:f32, mouseX:f32, mouseY:f32,
+  res:vec2<f32>, pulse:f32, beat:f32,
+  colA:vec4<f32>, colB:vec4<f32>, colC:vec4<f32>, colBg:vec4<f32>,
+};
+@group(0) @binding(0) var<uniform> u: U;
+@group(0) @binding(1) var<storage,read> parts: array<P>;
+struct VOut{ @builtin(position) pos:vec4<f32>, @location(0) uv:vec2<f32>,
+             @location(1) col:vec3<f32>, @location(2) a:f32 };
+@vertex fn vs_main(@builtin(vertex_index) vid:u32,@builtin(instance_index) iid:u32)->VOut{
+  let p=parts[iid];
+  let depth=p.data1.y; let hue=p.data1.w;
+  let size=p.data1.z*(0.5+depth*1.5)+depth*1.0;
+  var c=array<vec2<f32>,6>(vec2<f32>(-1.,-1.),vec2<f32>(1.,-1.),vec2<f32>(-1.,1.),
+                           vec2<f32>(-1.,1.),vec2<f32>(1.,-1.),vec2<f32>(1.,1.));
+  let corner=c[vid];
+  // parallax: shift by mouse scaled by depth
+  let par=vec2<f32>(u.mouseX,u.mouseY)*depth*40.0;
+  let px=p.data0.xy+par+corner*size;
+  let clip=vec2<f32>(px.x/u.res.x*2.-1., 1.-px.y/u.res.y*2.);
+  var o:VOut; o.pos=vec4<f32>(clip,0.,1.); o.uv=corner;
+  o.col=mix(u.colA.rgb,u.colC.rgb,hue);
+  o.a=(0.25+depth*0.75)*u.reveal;
+  return o;
+}
+@fragment fn fs_main(in:VOut)->@location(0) vec4<f32>{
+  let d=length(in.uv);
+  let glow=smoothstep(1.0,0.0,d);
+  let core=pow(glow,3.0);
+  let a=glow*in.a;
+  return vec4<f32>((in.col*glow+vec3<f32>(core)*0.4)*a, a); // premultiplied (additive)
+}`;
+
+    // ── Build & run. ──
+    (async function(){
+      if(!navigator.gpu){ showUnavailable('This browser has no navigator.gpu.'); wireNavOnly(); return; }
+      const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'}).catch(()=>null);
+      if(!adapter){ showUnavailable('No GPU adapter available.'); wireNavOnly(); return; }
+      const device=await adapter.requestDevice();
+      const dpr=sizeCanvas(2,1);
+      const ctx=canvas.getContext('webgpu');
+      const format=navigator.gpu.getPreferredCanvasFormat();
+      ctx.configure({device,format,alphaMode:'opaque'});
+      window.addEventListener('resize',()=>sizeCanvas(2,1));
+
+      device.onuncapturederror=e=>console.error('[webgpu]',e.error&&e.error.message||e);
+
+      async function makeModule(label,code){
+        const m=device.createShaderModule({label,code});
+        if(m.getCompilationInfo){
+          const info=await m.getCompilationInfo();
+          for(const msg of info.messages){
+            if(msg.type==='error') console.error('[WGSL '+label+'] '+msg.lineNum+':'+msg.linePos+' '+msg.message);
+          }
+        }
+        return m;
+      }
+
+      // Shared uniform buffer (96 bytes / 24 f32).
+      const U_F32=new Float32Array(24);
+      const uBuf=device.createBuffer({size:96,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+      const bgl=device.createBindGroupLayout({entries:[{binding:0,
+        visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,buffer:{type:'uniform'}}]});
+      const uBindGroup=device.createBindGroup({layout:bgl,entries:[{binding:0,resource:{buffer:uBuf}}]});
+      const pipeLayout=device.createPipelineLayout({bindGroupLayouts:[bgl]});
+
+      // Build a fullscreen pipeline per scene.
+      const pipelines={};
+      for(const key of Object.keys(SCENES)){
+        const mod=await makeModule(key,PRELUDE+SCENES[key].frag);
+        pipelines[key]=device.createRenderPipeline({
+          label:key, layout:pipeLayout,
+          vertex:{module:mod,entryPoint:'vs_main'},
+          fragment:{module:mod,entryPoint:'fs_main',targets:[{format}]},
+          primitive:{topology:'triangle-list'},
+        });
+      }
+
+      // ── Particle system ──
+      const PCOUNT=2200;
+      const pInit=new Float32Array(PCOUNT*8);
+      for(let i=0;i<PCOUNT;i++){
+        const o=i*8;
+        pInit[o+0]=Math.random()*canvas.width;
+        pInit[o+1]=Math.random()*canvas.height;
+        pInit[o+2]=(Math.random()-0.5)*20;
+        pInit[o+3]=(Math.random()-0.5)*20;
+        pInit[o+4]=Math.random();            // seed
+        pInit[o+5]=Math.random();            // depth
+        pInit[o+6]=2.0+Math.random()*4.0;    // size (px @ dpr)
+        pInit[o+7]=Math.random();            // hue mix
+      }
+      const pBuf=device.createBuffer({size:pInit.byteLength,
+        usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+      device.queue.writeBuffer(pBuf,0,pInit);
+
+      const pcF32=new Float32Array(8);
+      const pcBuf=device.createBuffer({size:32,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+
+      const computeBGL=device.createBindGroupLayout({entries:[
+        {binding:0,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
+        {binding:1,visibility:GPUShaderStage.COMPUTE,buffer:{type:'uniform'}},
+      ]});
+      const computeBG=device.createBindGroup({layout:computeBGL,entries:[
+        {binding:0,resource:{buffer:pBuf}},{binding:1,resource:{buffer:pcBuf}}]});
+      const computeMod=await makeModule('particle-cs',PARTICLE_WGSL);
+      const computePipe=device.createComputePipeline({
+        layout:device.createPipelineLayout({bindGroupLayouts:[computeBGL]}),
+        compute:{module:computeMod,entryPoint:'cs_main'}});
+
+      const prBGL=device.createBindGroupLayout({entries:[
+        {binding:0,visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,buffer:{type:'uniform'}},
+        {binding:1,visibility:GPUShaderStage.VERTEX,buffer:{type:'read-only-storage'}},
+      ]});
+      const prBG=device.createBindGroup({layout:prBGL,entries:[
+        {binding:0,resource:{buffer:uBuf}},{binding:1,resource:{buffer:pBuf}}]});
+      const prMod=await makeModule('particle-render',PARTICLE_RENDER_WGSL);
+      const prPipe=device.createRenderPipeline({
+        layout:device.createPipelineLayout({bindGroupLayouts:[prBGL]}),
+        vertex:{module:prMod,entryPoint:'vs_main'},
+        fragment:{module:prMod,entryPoint:'fs_main',targets:[{format,blend:{
+          color:{srcFactor:'one',dstFactor:'one',operation:'add'},
+          alpha:{srcFactor:'one',dstFactor:'one',operation:'add'}}}]},
+        primitive:{topology:'triangle-list'}});
+
+      // ── Slide / scene state ──
+      const slides=Array.from(document.querySelectorAll('.slide'));
+      let cur=0;
+      let activeScene=slides[0].dataset.scene;
+      let pal=PAL[slides[0].dataset.pal];
+      // reveal state machine: phase 'in' | 'idle' | 'out'
+      let reveal=0, phase='in', pending=-1;
+
+      function setPalette(p){
+        U_F32[8]=p.a[0];U_F32[9]=p.a[1];U_F32[10]=p.a[2];U_F32[11]=1;
+        U_F32[12]=p.b[0];U_F32[13]=p.b[1];U_F32[14]=p.b[2];U_F32[15]=1;
+        U_F32[16]=p.c[0];U_F32[17]=p.c[1];U_F32[18]=p.c[2];U_F32[19]=1;
+        U_F32[20]=p.bg[0];U_F32[21]=p.bg[1];U_F32[22]=p.bg[2];U_F32[23]=1;
+        // sync CSS accent for HUD/bullets
+        document.documentElement.style.setProperty('--accent',
+          'rgb('+Math.round(p.a[0]*255)+','+Math.round(p.a[1]*255)+','+Math.round(p.a[2]*255)+')');
+      }
+      setPalette(pal);
+
+      function fragSceneKey(s){ return s==='constellation'?'nebula':s; }
+
+      function enterContent(slide){
+        const items=slide.querySelectorAll('.parallax');
+        if(window.gsap && !REDUCE){
+          gsap.killTweensOf(items);
+          gsap.fromTo(items,{y:26,opacity:0,filter:'blur(8px)'},
+            {y:0,opacity:1,filter:'blur(0px)',duration:0.9,stagger:0.08,
+             ease:'expo.out',clearProps:'filter'});
+        }else{ items.forEach(el=>{el.style.opacity=1;el.style.transform='none';}); }
+        // count-up
+        slide.querySelectorAll('[data-count]').forEach(el=>{
+          const end=parseFloat(el.dataset.count), suf=el.dataset.suffix||'';
+          if(REDUCE||!window.gsap){ el.textContent=end+suf; return; }
+          const o={v:0}; gsap.to(o,{v:end,duration:1.2,ease:'power2.out',
+            onUpdate:()=>{el.textContent=Math.round(o.v)+suf;}});
+        });
+      }
+
+      function go(dir){
+        const ni=Math.min(slides.length-1,Math.max(0,cur+dir));
+        if(ni===cur||phase!=='idle') return;
+        pending=ni; phase='out';
+      }
+      function commit(ni){
+        slides[cur].classList.remove('active');
+        cur=ni;
+        slides[cur].classList.add('active');
+        activeScene=slides[cur].dataset.scene;
+        pal=PAL[slides[cur].dataset.pal]; setPalette(pal);
+        document.getElementById('counter').textContent=(cur+1)+' / '+slides.length;
+        document.getElementById('scene-name').textContent=SCENES[fragSceneKey(activeScene)].name;
+        document.getElementById('progress').style.width=((cur+1)/slides.length*100)+'%';
+        enterContent(slides[cur]);
+      }
+
+      // nav wiring
+      document.getElementById('next').onclick=()=>go(1);
+      document.getElementById('prev').onclick=()=>go(-1);
+      document.getElementById('full').onclick=()=>{
+        if(!document.fullscreenElement) document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();
+        else document.exitFullscreen&&document.exitFullscreen();
+      };
+      window.addEventListener('keydown',e=>{
+        if(e.key==='ArrowRight'||e.key===' '){go(1);} else if(e.key==='ArrowLeft'){go(-1);}
+        else if(e.key==='f'||e.key==='F'){document.getElementById('full').click();}
+      });
+      document.getElementById('deck').addEventListener('click',e=>{
+        if(e.target.closest('button'))return;
+        go(e.clientX>innerWidth*0.5?1:-1);
+      });
+
+      // parallax (mouse) — smoothed
+      let tmx=0,tmy=0,mx=0,my=0;
+      if(!REDUCE){
+        window.addEventListener('pointermove',e=>{
+          tmx=(e.clientX/innerWidth-0.5)*2; tmy=(e.clientY/innerHeight-0.5)*2;
+        });
+      }
+
+      // ── Live speed control (sliders-first; bake the chosen value after). ──
+      let SPEED=0.2, simTime=0;
+      const speedEl=document.getElementById('speed');
+      if(speedEl) speedEl.addEventListener('input',()=>{
+        SPEED=parseFloat(speedEl.value);
+        document.getElementById('speed-val').textContent=SPEED.toFixed(2)+'×';
+      });
+
+      document.getElementById('progress').style.width=(1/slides.length*100)+'%';
+      enterContent(slides[0]);
+
+      let t0,last=0;
+      function frame(ts){
+        if(t0===undefined){t0=ts;last=ts;}
+        let dt=Math.min(0.05,(ts-last)/1000); last=ts;
+        if(REDUCE) dt=0;
+        simTime+=dt*SPEED;   // scaled sim clock — slider changes pace with no time jump
+
+        // reveal state machine
+        const rate=dt>0?dt/0.55:0;
+        if(phase==='out'){ reveal-=rate*2.0; if(reveal<=0){reveal=0;commit(pending);phase='in';} }
+        else if(phase==='in'){ reveal+=rate; if(reveal>=1){reveal=1;phase='idle';} }
+        // smoothstep the reveal for nicer fades
+        const sr=reveal*reveal*(3-2*reveal);
+
+        // smooth mouse
+        mx+=(tmx-mx)*0.08; my+=(tmy-my)*0.08;
+        // parallax on DOM layers
+        if(!REDUCE){
+          slides[cur].querySelectorAll('.parallax').forEach(el=>{
+            const d=parseFloat(el.dataset.depth||1);
+            el.style.transform='translate3d('+(-mx*d*6)+'px,'+(-my*d*5)+'px,0)';
+          });
+        }
+
+        // synthetic pulse (stand-in for audio)
+        const k=Math.max(0,Math.sin(simTime*1.8));
+        const pulse=Math.min(1,k*k*0.8+Math.abs(Math.sin(simTime*3.3))*0.25);
+        const beat=Math.max(0,Math.sin(simTime*1.1));
+
+        U_F32[0]=simTime;
+        U_F32[1]=sr;
+        U_F32[2]=mx; U_F32[3]=my;
+        U_F32[4]=canvas.width; U_F32[5]=canvas.height;
+        U_F32[6]=REDUCE?0.2:pulse; U_F32[7]=REDUCE?0:beat;
+        device.queue.writeBuffer(uBuf,0,U_F32);
+
+        const isParticles=(activeScene==='constellation');
+        if(isParticles){
+          pcF32[0]=dt*SPEED; pcF32[1]=simTime; pcF32[2]=mx; pcF32[3]=my;
+          pcF32[4]=canvas.width; pcF32[5]=canvas.height; pcF32[6]=PCOUNT; pcF32[7]=0;
+          device.queue.writeBuffer(pcBuf,0,pcF32);
+        }
+
+        const enc=device.createCommandEncoder();
+        if(isParticles && dt>0){
+          const cp=enc.beginComputePass();
+          cp.setPipeline(computePipe); cp.setBindGroup(0,computeBG);
+          cp.dispatchWorkgroups(Math.ceil(PCOUNT/64)); cp.end();
+        }
+        const view=ctx.getCurrentTexture().createView();
+        const rp=enc.beginRenderPass({colorAttachments:[{view,loadOp:'clear',storeOp:'store',
+          clearValue:{r:pal.bg[0],g:pal.bg[1],b:pal.bg[2],a:1}}]});
+        rp.setPipeline(pipelines[fragSceneKey(activeScene)]);
+        rp.setBindGroup(0,uBindGroup); rp.draw(3);
+        if(isParticles){ rp.setPipeline(prPipe); rp.setBindGroup(0,prBG); rp.draw(6,PCOUNT); }
+        rp.end();
+        device.queue.submit([enc.finish()]);
+
+        // In reduced-motion we still need particles/scene to paint once; keep looping
+        // but time is frozen so nothing animates.
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+
+    // Fallback nav when WebGPU is unavailable (CSS bg still shows).
+    function wireNavOnly(){
+      const slides=Array.from(document.querySelectorAll('.slide'));
+      let cur=0;
+      function commit(ni){ slides[cur].classList.remove('active'); cur=ni;
+        slides[cur].classList.add('active');
+        document.getElementById('counter').textContent=(cur+1)+' / '+slides.length;
+        document.getElementById('progress').style.width=((cur+1)/slides.length*100)+'%';
+        slides[cur].querySelectorAll('.parallax').forEach(el=>el.style.opacity=1);
+      }
+      function go(d){const ni=Math.min(slides.length-1,Math.max(0,cur+d));if(ni!==cur)commit(ni);}
+      document.getElementById('next').onclick=()=>go(1);
+      document.getElementById('prev').onclick=()=>go(-1);
+      window.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')go(1);else if(e.key==='ArrowLeft')go(-1);});
+      slides[0].querySelectorAll('.parallax').forEach(el=>el.style.opacity=1);
+    }
+  })();
+  </script>
+</body>
+</html>
