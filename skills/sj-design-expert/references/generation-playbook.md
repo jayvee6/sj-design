@@ -48,17 +48,64 @@ frame). Per-layout legibility: edgeless frosted-blur + directional darken
 `<img>`, `<video>`, or a YouTube `<iframe>` wrapped in 3D glass frames
 (YouTube embeds need an http(s) origin — Error 153 on `file://`).
 
-**Authoring:** a web-based builder (client-side, Vercel-hosted, exports a
-self-contained `.html`) is **in progress** — pick a backdrop + layout per slide,
-edit content live, download the finished deck. Until it ships, author by editing
-the look-book directly, or via the JSON pipeline below.
+**Authoring — JSON pipeline (implemented 2026-06-19).** The same
+`scripts/build_presentation.py` now generates WebGPU decks. Add `"engine":
+"webgpu"` at the deck level; slides carry `layout` + `scene` + content. The
+engine shell lives in `assets/webgpu-template.html` (extracted from the proven
+look-book; tokenized — do **not** hand-edit the WGSL/JS there expecting it to
+diverge from the showcase). Verified end-to-end in real Chrome from
+`evals/webgpu-lookbook.json` (the whole look-book as JSON; console clean,
+compute-particle slide + count-up + all layouts render).
 
-**Roadmap:** Light/Dark variant per scene (Keynote-parity; dark-only today) ·
-WebXR/OpenXR immersive mode (scene → 360 environment, glass panels → world-space;
-ties to the FrameCast project).
+```jsonc
+{
+  "title": "My Deck",
+  "engine": "webgpu",          // ← selects the WebGPU path
+  "backdrop": "aurora",        // default scene when a slide omits `scene`
+  "speed": 0.2,                // sim-time multiplier (0.1–1.5)
+  "slides": [
+    { "layout": "glass", "scene": "aurora", "icon": "✦",
+      "eyebrow": "…", "heading": "…", "sub": "…" },
+    { "layout": "hero", "scene": "godrays", "heading": "…",
+      "bullets": ["…", "…"] },
+    { "layout": "glass", "scene": "constellation", "heading": "…",
+      "stats": [ { "count": "2200", "label": "…", "sublabel": "…" } ] },
+    { "layout": "center", "scene": "crystal",
+      "quote": "…", "cite": "— …" },
+    { "layout": "agenda", "scene": "topo", "heading": "…",
+      "items": ["…", "…"] },
+    { "layout": "split", "scene": "chrome", "heading": "…",
+      "bullets": ["…"], "media": { "src": "shot.png" } },
+    { "layout": "section",   "kicker": "Part 02", "heading": "…" },
+    { "layout": "statement", "heading": "One big line." },
+    { "layout": "bigfact",   "fact": "100%", "label": "…" },
+    { "layout": "gallery", "scene": "silk", "heading": "…",
+      "items": ["🖼️", { "src": "clip.mp4" }] },   // 3 items → cols-3, 4+ → cols-4
+    { "layout": "media", "scene": "ink", "heading": "…",
+      "src": "https://www.youtube.com/watch?v=…" }  // youtube/video/image auto-detected
+  ]
+}
+```
 
-The older JSON → `build_presentation.py` → `template.html` pipeline (§2–5) still
-works and stays documented, but **new decks target the WebGPU engine.**
+- **Scenes** (`scene` / deck `backdrop`): `aurora · godrays · constellation ·
+  crystal · warp · silk · chrome · ink · water · flow · halftone · crt · topo ·
+  shatter`. Invalid → falls back to `aurora`.
+- **Palette** auto-pairs to the scene; override per slide with `pal` (keys:
+  `aurora amber cyan violet silk chrome ink water flow halftone crt topo
+  shatter`).
+- **Content fields by layout:** `eyebrow heading sub icon bullets[] note` (hero/
+  glass/center) · `stats[]` with `value` **or** `count` (+`suffix`) for count-up
+  (glass) · `quote`+`cite` (center) · `items[]` (agenda, gallery) · `media`/
+  `emoji` (split) · `kicker` (section) · `fact`+`label` (bigfact) · `src`
+  (media). Local media paths are base64-embedded; YouTube needs an http(s)
+  origin (Error 153 on `file://`).
+
+A web-based builder (client-side, Vercel-hosted) is still planned on top of this
+same engine. **Roadmap:** Light/Dark variant per scene (Keynote-parity; dark-only
+today) · WebXR/OpenXR immersive mode (scene → 360 environment; ties to FrameCast).
+
+The older GSAP JSON → `template.html` pipeline (§2–5) still works (omit `engine`
+or set `"engine":"gsap"`), but **new decks target the WebGPU engine.**
 
 ---
 

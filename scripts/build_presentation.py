@@ -451,9 +451,335 @@ def _render_family(slide: dict) -> str:
   </div>"""
 
 
+# ── WebGPU engine renderers (engine: "webgpu") ──────────────────────────────────
+#
+# The WebGPU deck engine (proven in showcase/webgpu-lookbook.html) renders a live
+# GPU atmosphere behind every slide. Unlike the GSAP path above, slides carry
+# data-scene / data-pal / data-layout and the runtime owns all motion. These
+# renderers emit that markup from JSON so a deck can be generated, not hand-authored.
+
+WEBGPU_TEMPLATE_PATH = SCRIPT_DIR.parent / "assets" / "webgpu-template.html"
+
+# Valid scene keys (SCENES object + the special 'constellation' particle scene).
+VALID_SCENES = {
+    "aurora", "godrays", "constellation", "crystal", "warp", "nebula",
+    "silk", "chrome", "ink", "water", "flow", "halftone", "crt", "topo", "shatter",
+}
+# Valid palette keys (PAL map in the engine).
+VALID_PALS = {
+    "aurora", "amber", "cyan", "violet", "silk", "chrome", "ink",
+    "water", "flow", "halftone", "crt", "topo", "shatter",
+}
+# Sensible default palette per scene (matches the showcase pairings).
+SCENE_DEFAULT_PAL = {
+    "aurora": "aurora", "godrays": "amber", "constellation": "cyan",
+    "crystal": "violet", "warp": "aurora", "nebula": "cyan", "silk": "silk",
+    "chrome": "chrome", "ink": "ink", "water": "water", "flow": "flow",
+    "halftone": "halftone", "crt": "crt", "topo": "topo", "shatter": "shatter",
+}
+# Display names — must match SCENES[...].name so slide 0's scene tag is correct.
+SCENE_DISPLAY = {
+    "aurora": "Aurora Veil", "godrays": "Volumetric God-Rays",
+    "constellation": "Constellation Field", "crystal": "Crystalline Refraction",
+    "warp": "Hyperspace Warp", "nebula": "Constellation Field",
+    "silk": "Silk Gradient", "chrome": "Liquid Chrome", "ink": "Ink Diffusion",
+    "water": "Caustic Water", "flow": "Nebula Flow-Field", "halftone": "Halftone Riso",
+    "crt": "Scanline CRT", "topo": "Topographic", "shatter": "Voronoi Shatter",
+}
+
+
+def _wg_scene_pal(slide: dict, deck_backdrop: str) -> tuple:
+    scene = slide.get("scene") or deck_backdrop or "aurora"
+    if scene not in VALID_SCENES:
+        scene = "aurora"
+    pal = slide.get("pal") or SCENE_DEFAULT_PAL.get(scene, "aurora")
+    if pal not in VALID_PALS:
+        pal = "aurora"
+    return scene, pal
+
+
+def _wg_eyebrow(slide: dict, depth: str = "1.2", cls: str = "eyebrow") -> str:
+    v = slide.get("eyebrow", "")
+    return f'<p class="{cls} parallax" data-depth="{depth}">{_esc(v)}</p>' if v else ""
+
+
+def _wg_heading(slide: dict, level: str = "h2", depth: str = "2.4") -> str:
+    v = slide.get("heading", "")
+    return f'<{level} class="headline parallax" data-depth="{depth}">{_esc(v)}</{level}>' if v else ""
+
+
+def _wg_sub(slide: dict, depth: str = "1.0") -> str:
+    v = slide.get("sub", slide.get("subheading", ""))
+    return f'<p class="sub parallax" data-depth="{depth}">{_esc(v)}</p>' if v else ""
+
+
+def _wg_icon(slide: dict, depth: str = "2.0") -> str:
+    v = slide.get("icon", "")
+    return f'<p class="icon parallax" data-depth="{depth}">{_esc(v)}</p>' if v else ""
+
+
+def _wg_bullets(slide: dict, depth: str = "0.8") -> str:
+    b = slide.get("bullets", [])
+    if not b:
+        return ""
+    items = "".join(f"<li>{_esc(x)}</li>" for x in b)
+    return f'<ul class="bullets parallax" data-depth="{depth}">{items}</ul>'
+
+
+def _wg_note(slide: dict) -> str:
+    v = slide.get("note", "")
+    return f'<p class="sub parallax" data-depth="0.7">{_esc(v)}</p>' if v else ""
+
+
+def _wg_stats(slide: dict, depth: str = "0.7") -> str:
+    """Bento stats row. Each stat: {value|count, label, sublabel, suffix}.
+
+    `count` triggers the engine's count-up animation (data-count); `value` is
+    rendered statically. Provide one or the other.
+    """
+    stats = slide.get("stats", [])
+    if not stats:
+        return ""
+    cards = ""
+    for st in stats:
+        label = _esc(st.get("label", ""))
+        sub = _esc(st.get("sublabel", ""))
+        sub_html = f'<div class="s">{sub}</div>' if sub else ""
+        if "count" in st:
+            suffix = st.get("suffix", "")
+            suf_attr = f' data-suffix="{_esc(suffix)}"' if suffix else ""
+            v_html = f'<div class="v" data-count="{_esc(st["count"])}"{suf_attr}>0</div>'
+        else:
+            v_html = f'<div class="v">{_esc(st.get("value", ""))}</div>'
+        cards += f'<div class="stat">{v_html}<div class="l">{label}</div>{sub_html}</div>'
+    return f'<div class="stats parallax" data-depth="{depth}">{cards}</div>'
+
+
+def _wg_media_html(src: str, media_type: str = "auto", frame: bool = False) -> str:
+    """Render an <iframe>/<video>/<img> for a single media source.
+
+    frame=True → fill the parent frame (autoplay-muted-loop video for ambient
+    gallery tiles). frame=False (media layout) → a watchable player with controls.
+    """
+    raw = src
+    if src and not src.startswith(("http://", "https://", "data:")):
+        src = _local_to_data_uri(src)
+    if media_type == "auto":
+        media_type = detect_media_type(raw)
+    if media_type == "youtube":
+        embed = youtube_to_embed(raw)
+        return (
+            f'<iframe src="{_esc(embed)}" title="Embedded video" loading="lazy" '
+            f'allow="accelerometer; autoplay; clipboard-write; encrypted-media; '
+            f'gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>'
+        )
+    if media_type == "video":
+        attrs = "autoplay muted loop playsinline" if frame else "controls playsinline"
+        return f'<video src="{_esc(src)}" {attrs}></video>'
+    return f'<img src="{_esc(src)}" alt="" loading="lazy">'
+
+
+def _wg_frame_inner(item) -> str:
+    """A single gallery/split frame: emoji placeholder (str) or media (dict)."""
+    if isinstance(item, str):
+        return _esc(item)
+    if not isinstance(item, dict):
+        return "🖼️"
+    src = item.get("src", "")
+    if not src:
+        return _esc(item.get("emoji", "🖼️"))
+    return _wg_media_html(src, item.get("type", "auto"), frame=True)
+
+
+# ── Per-layout renderers (return the inner .slide-inner block) ──
+
+def _wg_hero(slide: dict) -> str:
+    body = _wg_bullets(slide, "0.8") or _wg_sub(slide, "1.0")
+    return (
+        '<div class="slide-inner">'
+        f'{_wg_eyebrow(slide)}{_wg_heading(slide, "h2", "2.4")}{body}{_wg_note(slide)}'
+        '</div>'
+    )
+
+
+def _wg_glass(slide: dict) -> str:
+    has_list = bool(slide.get("bullets") or slide.get("stats"))
+    inner_cls = "slide-inner" if has_list else "slide-inner center"
+    level = "h2" if has_list else "h1"
+    parts = (
+        _wg_icon(slide, "2.2") + _wg_eyebrow(slide) + _wg_heading(slide, level, "2.4")
+        + _wg_sub(slide) + _wg_bullets(slide) + _wg_stats(slide)
+    )
+    return f'<div class="{inner_cls}">{parts}</div>'
+
+
+def _wg_center(slide: dict) -> str:
+    if slide.get("quote"):
+        cite = slide.get("cite", slide.get("attribution", ""))
+        cite_html = f'<cite class="parallax" data-depth="1.0">{_esc(cite)}</cite>' if cite else ""
+        return (
+            '<div class="slide-inner center">'
+            f'<blockquote class="parallax" data-depth="2.0">{_esc(slide["quote"])}</blockquote>'
+            f'{cite_html}</div>'
+        )
+    parts = _wg_icon(slide, "2.0") + _wg_eyebrow(slide) + _wg_heading(slide, "h1", "2.6") + _wg_sub(slide)
+    return f'<div class="slide-inner center">{parts}</div>'
+
+
+def _wg_split(slide: dict) -> str:
+    inner = (
+        '<div class="slide-inner">'
+        f'{_wg_eyebrow(slide, "1.0")}{_wg_heading(slide, "h2", "1.8")}{_wg_bullets(slide, "0.6")}'
+        '</div>'
+    )
+    media = slide.get("media")
+    if isinstance(media, dict) and media.get("src"):
+        side = f'<div class="slide-media">{_wg_media_html(media["src"], media.get("type", "auto"), frame=True)}</div>'
+    else:
+        emoji = media.get("emoji", "🖼️") if isinstance(media, dict) else (media if isinstance(media, str) else "🖼️")
+        side = f'<div class="slide-media slide-media--ph">{_esc(emoji)}</div>'
+    return inner + side
+
+
+def _wg_agenda(slide: dict) -> str:
+    items = slide.get("items", slide.get("bullets", []))
+    lis = "".join(f"<li>{_esc(x)}</li>" for x in items)
+    return (
+        '<div class="slide-inner">'
+        f'{_wg_eyebrow(slide, "1.0")}{_wg_heading(slide, "h2", "1.6")}'
+        f'<ul class="agenda parallax" data-depth="0.6">{lis}</ul>'
+        '</div>'
+    )
+
+
+def _wg_bg(slide: dict) -> str:
+    return (
+        '<div class="slide-inner">'
+        f'{_wg_eyebrow(slide, "0.8")}{_wg_heading(slide, "h2", "1.2")}'
+        '</div>'
+    )
+
+
+def _wg_section(slide: dict) -> str:
+    kicker = slide.get("kicker", slide.get("eyebrow", ""))
+    kicker_html = f'<p class="kicker parallax" data-depth="1.0">{_esc(kicker)}</p>' if kicker else ""
+    return (
+        '<div class="slide-inner">'
+        f'{kicker_html}{_wg_heading(slide, "h1", "1.8")}'
+        '</div>'
+    )
+
+
+def _wg_statement(slide: dict) -> str:
+    heading = slide.get("heading", slide.get("statement", ""))
+    return (
+        '<div class="slide-inner">'
+        f'<h1 class="headline parallax" data-depth="1.6">{_esc(heading)}</h1>'
+        '</div>'
+    )
+
+
+def _wg_bigfact(slide: dict) -> str:
+    fact = _esc(slide.get("fact", slide.get("value", "")))
+    label = slide.get("label", "")
+    label_html = f'<p class="bigfact-label parallax" data-depth="1.0">{_esc(label)}</p>' if label else ""
+    return (
+        '<div class="slide-inner">'
+        f'<p class="bigfact parallax" data-depth="2.2">{fact}</p>{label_html}'
+        '</div>'
+    )
+
+
+def _wg_gallery(slide: dict) -> str:
+    items = slide.get("items", [])
+    cols = 4 if len(items) >= 4 else 3
+    frames = "".join(f'<div class="frame">{_wg_frame_inner(it)}</div>' for it in items)
+    return (
+        '<div class="slide-inner">'
+        f'{_wg_eyebrow(slide, "1.0")}{_wg_heading(slide, "h2", "1.4")}'
+        f'<div class="gallery-grid cols-{cols} parallax" data-depth="0.6">{frames}</div>'
+        '</div>'
+    )
+
+
+def _wg_media(slide: dict) -> str:
+    src = slide.get("src", "")
+    media = _wg_media_html(src, slide.get("media_type", "auto"), frame=False) if src else ""
+    return (
+        '<div class="slide-inner">'
+        f'{_wg_eyebrow(slide, "1.0")}{_wg_heading(slide, "h2", "1.4")}'
+        f'<div class="media-frame parallax" data-depth="0.5">{media}</div>'
+        '</div>'
+    )
+
+
+WG_LAYOUTS = {
+    "hero": _wg_hero, "glass": _wg_glass, "center": _wg_center, "split": _wg_split,
+    "agenda": _wg_agenda, "bg": _wg_bg, "section": _wg_section,
+    "statement": _wg_statement, "bigfact": _wg_bigfact, "gallery": _wg_gallery,
+    "media": _wg_media,
+}
+
+
+def render_webgpu_slide(slide: dict, index: int, deck_backdrop: str) -> str:
+    layout = slide.get("layout", "center")
+    scene, pal = _wg_scene_pal(slide, deck_backdrop)
+    renderer = WG_LAYOUTS.get(layout, _wg_center)
+    inner = renderer(slide)
+    active = " active" if index == 0 else ""
+    return (
+        f'    <section class="slide{active}" data-scene="{scene}" '
+        f'data-pal="{pal}" data-layout="{layout}">\n      {inner}\n    </section>'
+    )
+
+
+def build_webgpu(spec: dict, output_path: str) -> None:
+    if not WEBGPU_TEMPLATE_PATH.exists():
+        raise FileNotFoundError(
+            f"WebGPU template not found: {WEBGPU_TEMPLATE_PATH}\n"
+            f"Make sure assets/webgpu-template.html is present."
+        )
+    template = WEBGPU_TEMPLATE_PATH.read_text(encoding="utf-8")
+    slides = spec.get("slides", [])
+    if not slides:
+        raise ValueError("Spec has no slides.")
+
+    deck_backdrop = spec.get("backdrop", "aurora")
+    slides_html = "\n".join(
+        render_webgpu_slide(s, i, deck_backdrop) for i, s in enumerate(slides)
+    )
+
+    # First slide's scene drives the initial scene-tag text. 'constellation'
+    # maps to the nebula fragment's display name (matches the runtime).
+    first_scene, _ = _wg_scene_pal(slides[0], deck_backdrop)
+    first_name = SCENE_DISPLAY.get(first_scene, "Aurora Veil")
+
+    try:
+        speed = float(spec.get("speed", 0.2))
+    except (TypeError, ValueError):
+        speed = 0.2
+    speed = min(1.5, max(0.1, speed))
+
+    html = template
+    html = html.replace("{{TITLE}}", _esc(spec.get("title", "Presentation")))
+    html = html.replace("{{SLIDES}}", slides_html)
+    html = html.replace("{{SLIDE_COUNT}}", str(len(slides)))
+    html = html.replace("{{FIRST_SCENE_NAME}}", _esc(first_name))
+    html = html.replace("{{SPEED}}", f"{speed:g}")
+    html = html.replace("{{SPEED_LABEL}}", f"{speed:.2f}×")
+
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(html, encoding="utf-8")
+    print(f"✓ Generated (WebGPU engine): {out.resolve()}")
+
+
 # ── Builder ────────────────────────────────────────────────────────────────────
 
 def build(spec: dict, output_path: str) -> None:
+    if spec.get("engine") == "webgpu":
+        build_webgpu(spec, output_path)
+        return
     if not TEMPLATE_PATH.exists():
         raise FileNotFoundError(
             f"Template not found: {TEMPLATE_PATH}\n"

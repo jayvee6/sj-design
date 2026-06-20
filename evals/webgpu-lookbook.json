@@ -1,0 +1,193 @@
+{
+  "title": "WebGPU Look Book — sj-design",
+  "engine": "webgpu",
+  "backdrop": "aurora",
+  "speed": 0.2,
+  "slides": [
+    {
+      "layout": "glass",
+      "scene": "aurora",
+      "icon": "✦",
+      "eyebrow": "sj-design · webgpu look book",
+      "heading": "Presentations that move",
+      "sub": "Real GPU atmosphere behind every slide — not decoration."
+    },
+    {
+      "layout": "hero",
+      "scene": "godrays",
+      "eyebrow": "Volumetric depth",
+      "heading": "Rendered, not decorated",
+      "bullets": [
+        "Light shafts and height fog raymarched live on the GPU.",
+        "Content floats above with real parallax depth.",
+        "One shader owns the whole viewport."
+      ]
+    },
+    {
+      "layout": "glass",
+      "scene": "constellation",
+      "eyebrow": "A compute particle field",
+      "heading": "Thousands of points, on the GPU",
+      "stats": [
+        { "count": "2200", "label": "Particles simulated", "sublabel": "Compute shader, 60 fps" },
+        { "count": "1", "label": "Draw call", "sublabel": "Instanced, additive" },
+        { "count": "0", "suffix": " deps", "label": "Dependencies", "sublabel": "Self-contained file" }
+      ]
+    },
+    {
+      "layout": "center",
+      "scene": "crystal",
+      "quote": "The interface should feel like a material, not a slideshow.",
+      "cite": "— crystalline refraction, chromatic dispersion"
+    },
+    {
+      "layout": "hero",
+      "scene": "silk",
+      "eyebrow": "Calm by default",
+      "heading": "A backdrop that recedes",
+      "bullets": [
+        "Soft morphing gradient — for serious, content-heavy decks.",
+        "Motion you feel, not motion that distracts."
+      ]
+    },
+    {
+      "layout": "center",
+      "scene": "chrome",
+      "eyebrow": "Liquid chrome",
+      "heading": "Molten, reflective, alive",
+      "sub": "Procedural metal — normals and fresnel, no textures."
+    },
+    {
+      "layout": "hero",
+      "scene": "ink",
+      "eyebrow": "Ink diffusion",
+      "heading": "Turbulence, domain-warped",
+      "bullets": [
+        "Three-pass domain warp for fluid billows.",
+        "Monochrome body, accent veins."
+      ]
+    },
+    {
+      "layout": "glass",
+      "scene": "water",
+      "eyebrow": "Caustic water",
+      "heading": "Light through moving water",
+      "sub": "Iterated phase distortion — the classic caustic kernel."
+    },
+    {
+      "layout": "glass",
+      "scene": "flow",
+      "eyebrow": "Nebula flow-field",
+      "heading": "Drift along the field",
+      "bullets": [
+        "Particles of light advected through an fbm angle field.",
+        "Twinkling stars layered behind the gas."
+      ]
+    },
+    {
+      "layout": "center",
+      "scene": "halftone",
+      "eyebrow": "Halftone riso",
+      "heading": "Print, misregistered",
+      "sub": "Two offset dot channels — the risograph registration error."
+    },
+    {
+      "layout": "glass",
+      "scene": "crt",
+      "eyebrow": "Scanline CRT",
+      "heading": "Barrel, scanlines, phosphor",
+      "sub": "Chroma split, subpixel mask, vignette, flicker."
+    },
+    {
+      "layout": "hero",
+      "scene": "topo",
+      "eyebrow": "Topographic",
+      "heading": "Contours of a living map",
+      "bullets": [
+        "Level lines of an fbm heightfield, slowly drifting.",
+        "Elevation tinted from the theme palette."
+      ]
+    },
+    {
+      "layout": "center",
+      "scene": "shatter",
+      "eyebrow": "Voronoi shatter",
+      "heading": "Glass, on the edge of breaking",
+      "sub": "Shards displaced by the beat — cracks glint on the pulse."
+    },
+    {
+      "layout": "agenda",
+      "scene": "topo",
+      "eyebrow": "Agenda",
+      "heading": "What we'll cover",
+      "items": [
+        "The problem worth solving",
+        "How the system works",
+        "Results, and what's next"
+      ]
+    },
+    {
+      "layout": "split",
+      "scene": "chrome",
+      "eyebrow": "Split layout",
+      "heading": "Pair copy with a product shot",
+      "bullets": [
+        "Text on one side, your image on the other.",
+        "Drop in a render, photo, or screenshot."
+      ],
+      "media": { "emoji": "🖼️" }
+    },
+    {
+      "layout": "bg",
+      "scene": "ink",
+      "eyebrow": "Background tells the story",
+      "heading": "Let it breathe"
+    },
+    {
+      "layout": "section",
+      "scene": "shatter",
+      "kicker": "Part 02",
+      "heading": "The hard part"
+    },
+    {
+      "layout": "statement",
+      "scene": "aurora",
+      "heading": "Design is how it works — not just how it looks."
+    },
+    {
+      "layout": "bigfact",
+      "scene": "godrays",
+      "fact": "100%",
+      "label": "On-device. No frames ever leave the GPU."
+    },
+    {
+      "layout": "gallery",
+      "scene": "silk",
+      "eyebrow": "Photo — 3 up",
+      "heading": "Show the work",
+      "items": ["🖼️", "📸", "🎞️"]
+    },
+    {
+      "layout": "gallery",
+      "scene": "flow",
+      "eyebrow": "Photo / video — 4 up",
+      "heading": "Stills and motion, framed in glass",
+      "items": ["🖼️", "🎬", "📸", "🎞️"]
+    },
+    {
+      "layout": "media",
+      "scene": "ink",
+      "eyebrow": "Watch",
+      "heading": "Video, framed in glass",
+      "src": "https://www.youtube.com/watch?v=njX2bu-_Vw4"
+    },
+    {
+      "layout": "center",
+      "scene": "warp",
+      "pal": "aurora",
+      "icon": "🚀",
+      "heading": "Let's build the new engine",
+      "sub": "Pick the looks you love — the deck pipeline wires them in."
+    }
+  ]
+}
