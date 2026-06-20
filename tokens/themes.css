@@ -1,0 +1,300 @@
+/* Studio Joe design tokens — GENERATED from tokens/design-tokens.json
+   by scripts/tokens_to_css.py. Do not hand-edit. Source of truth:
+   assets/template.html. This is the round-trip proof + a consume example. */
+
+/* Dark — Blue Hour: deep indigo night sky */
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-chicago: "ChicagoKare", system-ui, sans-serif;
+  --font-geneva: "Geneva-12", system-ui, sans-serif;
+  --font-lucida: "Inter", system-ui, sans-serif;
+  --font-garamond: "EB Garamond", Georgia, serif;
+  --font-monaco: "JetBrains Mono", "Menlo", monospace;
+
+  --bg: #060618;
+  --bg-gradient: radial-gradient(ellipse at 35% 15%, #1A237E 0%, #191970 28%, #0d0d3a 58%, #050510 100%);
+  --label-1: #ffffff;
+  --label-2: rgba(255,255,255,0.55);
+  --label-3: rgba(255,255,255,0.25);
+  --accent: #0A84FF;
+  --accent-glow: rgba(10,132,255,0.35);
+  --fill-1: rgba(255,255,255,0.04);
+  --fill-2: rgba(255,255,255,0.08);
+  --sep: rgba(255,255,255,0.10);
+  --glass-bg: rgba(255,255,255,0.09);
+  --glass-bdr: rgba(255,255,255,0.18);
+  --glass-shd: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18), inset 1px 0 0 rgba(10,132,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Crissy Field — California bright, fog-free afternoon at the Golden Gate */
+[data-theme="light"] {
+  --bg: #E8F4FF;
+  --bg-gradient: linear-gradient(175deg, #0096FF 0%, #1E90FF 28%, #5BB8FF 52%, #C8E8FF 72%, #EEF7FF 100%);
+  --label-1: #001E3C;
+  --label-2: rgba(0,30,60,0.55);
+  --label-3: rgba(0,30,60,0.28);
+  --accent: #E8450A;
+  --accent-glow: rgba(232,69,10,0.28);
+  --fill-1: rgba(0,100,200,0.05);
+  --fill-2: rgba(0,100,200,0.09);
+  --sep: rgba(0,80,180,0.12);
+  --glass-bg: rgba(200,230,255,0.68);
+  --glass-bdr: rgba(0,100,200,0.14);
+  --glass-shd: 0 8px 40px rgba(0,50,120,0.12), inset 0 1px 0 rgba(255,255,255,0.90), inset 1px 0 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,50,120,0.10), inset -1px 0 0 rgba(0,50,120,0.07);
+}
+
+/* Obsidian — matte charcoal, tech and finance, terminal green accent */
+[data-theme="obsidian"] {
+  --bg: #0C0C0C;
+  --bg-gradient: radial-gradient(ellipse at 42% 12%, #1A1A1A 0%, #111111 35%, #080808 70%, #050505 100%);
+  --label-1: #F5F5F7;
+  --label-2: rgba(245,245,247,0.52);
+  --label-3: rgba(245,245,247,0.22);
+  --accent: #34C759;
+  --accent-glow: rgba(52,199,89,0.32);
+  --fill-1: rgba(255,255,255,0.03);
+  --fill-2: rgba(255,255,255,0.06);
+  --sep: rgba(255,255,255,0.08);
+  --glass-bg: rgba(255,255,255,0.05);
+  --glass-bdr: rgba(52,199,89,0.18);
+  --glass-shd: 0 8px 40px rgba(0,0,0,0.70), inset 0 1px 0 rgba(255,255,255,0.08), inset 1px 0 0 rgba(52,199,89,0.08), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Deep Space — near-black with teal nebulae, sci-fi and data viz */
+[data-theme="deep-space"] {
+  --bg: #050B0F;
+  --bg-gradient: radial-gradient(ellipse at 28% 8%, #003D52 0%, #011824 32%, #030D12 62%, #030A0D 100%);
+  --label-1: #E8F8FF;
+  --label-2: rgba(232,248,255,0.52);
+  --label-3: rgba(232,248,255,0.22);
+  --accent: #32D2F2;
+  --accent-glow: rgba(50,210,242,0.32);
+  --fill-1: rgba(50,210,242,0.04);
+  --fill-2: rgba(50,210,242,0.08);
+  --sep: rgba(50,210,242,0.12);
+  --glass-bg: rgba(50,210,242,0.07);
+  --glass-bdr: rgba(50,210,242,0.22);
+  --glass-shd: 0 8px 40px rgba(0,10,20,0.65), inset 0 1px 0 rgba(50,210,242,0.16), inset 1px 0 0 rgba(50,210,242,0.08), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Noir — pure black, crimson bloom, editorial and cinematic */
+[data-theme="noir"] {
+  --bg: #080406;
+  --bg-gradient: radial-gradient(ellipse at 62% 8%, #3B0A14 0%, #1A0408 30%, #0A0204 60%, #050103 100%);
+  --label-1: #FFF0F3;
+  --label-2: rgba(255,240,243,0.52);
+  --label-3: rgba(255,240,243,0.22);
+  --accent: #FF3B5C;
+  --accent-glow: rgba(255,59,92,0.35);
+  --fill-1: rgba(255,59,92,0.04);
+  --fill-2: rgba(255,59,92,0.08);
+  --sep: rgba(255,59,92,0.10);
+  --glass-bg: rgba(60,0,15,0.55);
+  --glass-bdr: rgba(255,59,92,0.20);
+  --glass-shd: 0 8px 40px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,59,92,0.12), inset 1px 0 0 rgba(255,59,92,0.06), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Golden Hour — warm dusk light, amber to cream, hospitality and lifestyle */
+[data-theme="golden-hour"] {
+  --bg: #FFF8F0;
+  --bg-gradient: linear-gradient(172deg, #FF9500 0%, #FFAE34 22%, #FFD080 48%, #FFE8B8 68%, #FFF8F0 100%);
+  --label-1: #1C0800;
+  --label-2: rgba(28,8,0,0.58);
+  --label-3: rgba(28,8,0,0.28);
+  --accent: #C43A00;
+  --accent-glow: rgba(196,58,0,0.28);
+  --fill-1: rgba(180,80,0,0.05);
+  --fill-2: rgba(180,80,0,0.09);
+  --sep: rgba(120,50,0,0.12);
+  --glass-bg: rgba(255,220,150,0.55);
+  --glass-bdr: rgba(180,80,0,0.16);
+  --glass-shd: 0 8px 40px rgba(80,20,0,0.14), inset 0 1px 0 rgba(255,255,220,0.90), inset 1px 0 0 rgba(255,255,200,0.55), inset 0 -1px 0 rgba(80,20,0,0.10), inset -1px 0 0 rgba(80,20,0,0.07);
+}
+
+/* Twin Peaks — city lights glow from below, dark summit above the fog */
+[data-theme="twin-peaks"] {
+  --bg: #050303;
+  --bg-gradient: radial-gradient(ellipse at 50% 115%, #3A1800 0%, #1E0C00 22%, #0A0504 50%, #040202 100%);
+  --label-1: #FFF5E8;
+  --label-2: rgba(255,245,232,0.52);
+  --label-3: rgba(255,245,232,0.22);
+  --accent: #FF9F0A;
+  --accent-glow: rgba(255,159,10,0.35);
+  --fill-1: rgba(255,159,10,0.04);
+  --fill-2: rgba(255,159,10,0.08);
+  --sep: rgba(255,159,10,0.10);
+  --glass-bg: rgba(40,15,0,0.60);
+  --glass-bdr: rgba(255,159,10,0.20);
+  --glass-shd: 0 8px 40px rgba(0,0,0,0.80), inset 0 1px 0 rgba(255,159,10,0.14), inset 1px 0 0 rgba(255,159,10,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Embarcadero — pre-dawn bay water, Ferry Building silhouette */
+[data-theme="embarcadero"] {
+  --bg: #020810;
+  --bg-gradient: radial-gradient(ellipse at 18% 85%, #001E38 0%, #000E1C 28%, #020810 62%, #010508 100%);
+  --label-1: #E0F0FF;
+  --label-2: rgba(224,240,255,0.52);
+  --label-3: rgba(224,240,255,0.22);
+  --accent: #5AC8FA;
+  --accent-glow: rgba(90,200,250,0.30);
+  --fill-1: rgba(90,200,250,0.04);
+  --fill-2: rgba(90,200,250,0.08);
+  --sep: rgba(90,200,250,0.10);
+  --glass-bg: rgba(0,20,50,0.60);
+  --glass-bdr: rgba(90,200,250,0.20);
+  --glass-shd: 0 8px 40px rgba(0,5,20,0.72), inset 0 1px 0 rgba(90,200,250,0.14), inset 1px 0 0 rgba(90,200,250,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Muir Woods — old-growth canopy, cathedral of redwood, fireflies at dusk */
+[data-theme="muir-woods"] {
+  --bg: #020A04;
+  --bg-gradient: radial-gradient(ellipse at 30% 12%, #0C2412 0%, #061508 32%, #020A04 65%, #010502 100%);
+  --label-1: #EDFBEE;
+  --label-2: rgba(237,251,238,0.52);
+  --label-3: rgba(237,251,238,0.22);
+  --accent: #30D158;
+  --accent-glow: rgba(48,209,88,0.30);
+  --fill-1: rgba(48,209,88,0.04);
+  --fill-2: rgba(48,209,88,0.08);
+  --sep: rgba(48,209,88,0.10);
+  --glass-bg: rgba(5,25,8,0.65);
+  --glass-bdr: rgba(48,209,88,0.20);
+  --glass-shd: 0 8px 40px rgba(0,5,2,0.75), inset 0 1px 0 rgba(48,209,88,0.14), inset 1px 0 0 rgba(48,209,88,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* The Mission — mural purple, gold, hot magenta, Latin arts energy */
+[data-theme="the-mission"] {
+  --bg: #090112;
+  --bg-gradient: radial-gradient(ellipse at 62% 5%, #320A58 0%, #1C0438 25%, #0C0120 58%, #060010 100%);
+  --label-1: #FEF0FF;
+  --label-2: rgba(254,240,255,0.52);
+  --label-3: rgba(254,240,255,0.22);
+  --accent: #FF2D78;
+  --accent-glow: rgba(255,45,120,0.35);
+  --fill-1: rgba(255,45,120,0.04);
+  --fill-2: rgba(255,45,120,0.08);
+  --sep: rgba(255,45,120,0.10);
+  --glass-bg: rgba(40,0,60,0.60);
+  --glass-bdr: rgba(255,45,120,0.22);
+  --glass-shd: 0 8px 40px rgba(0,0,10,0.75), inset 0 1px 0 rgba(255,45,120,0.14), inset 1px 0 0 rgba(255,45,120,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Santa Cruz — warm Pacific surf, ocean teal, coral boardwalk */
+[data-theme="santa-cruz"] {
+  --bg: #E0F8FF;
+  --bg-gradient: linear-gradient(168deg, #00B4D8 0%, #48CAE4 28%, #90E0EF 54%, #CAF0F8 74%, #EEF9FF 100%);
+  --label-1: #001520;
+  --label-2: rgba(0,21,32,0.58);
+  --label-3: rgba(0,21,32,0.28);
+  --accent: #FF6B35;
+  --accent-glow: rgba(255,107,53,0.28);
+  --fill-1: rgba(0,180,216,0.06);
+  --fill-2: rgba(0,180,216,0.10);
+  --sep: rgba(0,120,160,0.12);
+  --glass-bg: rgba(180,240,255,0.65);
+  --glass-bdr: rgba(0,150,200,0.18);
+  --glass-shd: 0 8px 40px rgba(0,30,50,0.12), inset 0 1px 0 rgba(255,255,255,0.90), inset 1px 0 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,80,120,0.10), inset -1px 0 0 rgba(0,80,120,0.07);
+}
+
+/* Sausalito — Mediterranean bay calm, boats on blue water, warm afternoon */
+[data-theme="sausalito"] {
+  --bg: #EEF6FF;
+  --bg-gradient: linear-gradient(175deg, #2E86AB 0%, #5BA8CB 25%, #A8D4E8 52%, #D6EEF8 72%, #EEF6FF 100%);
+  --label-1: #0A1828;
+  --label-2: rgba(10,24,40,0.58);
+  --label-3: rgba(10,24,40,0.28);
+  --accent: #F4A261;
+  --accent-glow: rgba(244,162,97,0.28);
+  --fill-1: rgba(46,134,171,0.06);
+  --fill-2: rgba(46,134,171,0.10);
+  --sep: rgba(20,80,130,0.12);
+  --glass-bg: rgba(200,230,250,0.68);
+  --glass-bdr: rgba(30,100,160,0.14);
+  --glass-shd: 0 8px 40px rgba(0,20,60,0.12), inset 0 1px 0 rgba(255,255,255,0.90), inset 1px 0 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,40,80,0.10), inset -1px 0 0 rgba(0,40,80,0.07);
+}
+
+/* Half Moon Bay — moody coastal gray, sea glass, perpetual mist */
+[data-theme="half-moon-bay"] {
+  --bg: #080C10;
+  --bg-gradient: radial-gradient(ellipse at 50% 0%, #182030 0%, #0E1620 32%, #080C10 62%, #050709 100%);
+  --label-1: #DDE8F2;
+  --label-2: rgba(221,232,242,0.50);
+  --label-3: rgba(221,232,242,0.22);
+  --accent: #5B9BBF;
+  --accent-glow: rgba(91,155,191,0.28);
+  --fill-1: rgba(91,155,191,0.04);
+  --fill-2: rgba(91,155,191,0.08);
+  --sep: rgba(91,155,191,0.10);
+  --glass-bg: rgba(15,30,50,0.65);
+  --glass-bdr: rgba(91,155,191,0.18);
+  --glass-shd: 0 8px 40px rgba(0,5,15,0.72), inset 0 1px 0 rgba(91,155,191,0.14), inset 1px 0 0 rgba(91,155,191,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Redwood — old-growth forest dark, amber canopy light, warm fireflies */
+[data-theme="redwood"] {
+  --bg: #050803;
+  --bg-gradient: radial-gradient(ellipse at 35% 0%, #2A1800 0%, #160C02 18%, #0A1805 40%, #050803 70%, #030502 100%);
+  --label-1: #F8F0E8;
+  --label-2: rgba(248,240,232,0.52);
+  --label-3: rgba(248,240,232,0.22);
+  --accent: #D4845A;
+  --accent-glow: rgba(212,132,90,0.32);
+  --fill-1: rgba(212,132,90,0.04);
+  --fill-2: rgba(212,132,90,0.08);
+  --sep: rgba(212,132,90,0.10);
+  --glass-bg: rgba(30,15,5,0.65);
+  --glass-bdr: rgba(212,132,90,0.20);
+  --glass-shd: 0 8px 40px rgba(0,0,0,0.78), inset 0 1px 0 rgba(212,132,90,0.14), inset 1px 0 0 rgba(212,132,90,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* The Richmond — the foggiest block in the foggiest city, quiet and muted */
+[data-theme="the-richmond"] {
+  --bg: #07080C;
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #101520 0%, #0A0E18 30%, #07080C 62%, #050608 100%);
+  --label-1: #D8E0EA;
+  --label-2: rgba(216,224,234,0.48);
+  --label-3: rgba(216,224,234,0.20);
+  --accent: #5E82A4;
+  --accent-glow: rgba(94,130,164,0.25);
+  --fill-1: rgba(94,130,164,0.04);
+  --fill-2: rgba(94,130,164,0.07);
+  --sep: rgba(94,130,164,0.08);
+  --glass-bg: rgba(10,15,25,0.70);
+  --glass-bdr: rgba(94,130,164,0.14);
+  --glass-shd: 0 8px 40px rgba(0,0,0,0.72), inset 0 1px 0 rgba(94,130,164,0.12), inset 1px 0 0 rgba(94,130,164,0.06), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Nob Hill — Victorian opulence, gold and deep burgundy, cable car brass */
+[data-theme="nob-hill"] {
+  --bg: #080405;
+  --bg-gradient: radial-gradient(ellipse at 45% 5%, #2A1200 0%, #180A00 22%, #0C0608 52%, #060304 100%);
+  --label-1: #FFF8EC;
+  --label-2: rgba(255,248,236,0.52);
+  --label-3: rgba(255,248,236,0.22);
+  --accent: #D4AF37;
+  --accent-glow: rgba(212,175,55,0.32);
+  --fill-1: rgba(212,175,55,0.04);
+  --fill-2: rgba(212,175,55,0.08);
+  --sep: rgba(212,175,55,0.10);
+  --glass-bg: rgba(30,10,0,0.65);
+  --glass-bdr: rgba(212,175,55,0.22);
+  --glass-shd: 0 8px 40px rgba(0,0,0,0.78), inset 0 1px 0 rgba(212,175,55,0.16), inset 1px 0 0 rgba(212,175,55,0.08), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}
+
+/* Haight — Haight-Ashbury psychedelic rainbow, pure joy, emoji everywhere */
+[data-theme="haight"] {
+  --bg: #0A0218;
+  --bg-gradient: radial-gradient(ellipse at 30% 20%, #4A0082 0%, #1E0060 28%, #0C0030 55%, #060118 100%);
+  --label-1: #FFF8FF;
+  --label-2: rgba(255,248,255,0.55);
+  --label-3: rgba(255,248,255,0.25);
+  --accent: #FF6FD8;
+  --accent-glow: rgba(255,111,216,0.38);
+  --fill-1: rgba(255,111,216,0.05);
+  --fill-2: rgba(255,111,216,0.10);
+  --sep: rgba(255,111,216,0.12);
+  --glass-bg: rgba(50,0,80,0.55);
+  --glass-bdr: rgba(255,111,216,0.25);
+  --glass-shd: 0 8px 40px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,111,216,0.17), inset 1px 0 0 rgba(255,111,216,0.09), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06);
+}

@@ -5,18 +5,29 @@ Machine-readable design tokens for the Studio Joe system, in **W3C DTCG** format
 ## Files
 - **`design-tokens.json`** — all 17 themes × the 13-name color contract, plus 7
   font families. **Generated, do not hand-edit.**
+- **`themes.css`** — the JSON rendered back into `:root` + `[data-theme]` CSS
+  blocks. Two jobs: (1) **proof** the tokens reconstruct the contract exactly,
+  and (2) a ready-made consume example. **Generated, do not hand-edit.**
 
 ## Source of truth & regeneration
 `assets/template.html` is the source of truth — its `:root` (the `dark` default)
 and `[data-theme="…"]` blocks are the live token values used by every generated
-deck. This JSON is extracted from them:
+deck. The artifacts here are derived from it:
 
 ```bash
-python3 scripts/extract_tokens.py            # → tokens/design-tokens.json
+python3 scripts/extract_tokens.py     # template.html  → design-tokens.json
+python3 scripts/tokens_to_css.py      # design-tokens.json → themes.css
+python3 scripts/verify_tokens.py      # assert the round-trip is exact (CI gate)
 ```
 
-Re-run after editing any theme block. Editing the JSON by hand will be
-overwritten and won't affect the decks (which read the CSS), so don't.
+Re-run after editing any theme block. Editing the JSON/CSS by hand will be
+overwritten and won't affect the decks (which read `template.html`), so don't.
+
+## Round-trip guarantee
+`verify_tokens.py` regenerates JSON→CSS and asserts every reconstructed token
+declaration matches `template.html` (228 declarations across 17 themes), exiting
+non-zero on any drift. Wire it into CI / pre-commit to keep the published tokens
+from ever diverging from the live CSS.
 
 ## Structure
 ```jsonc
