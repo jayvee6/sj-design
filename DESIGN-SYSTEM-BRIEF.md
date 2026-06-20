@@ -160,9 +160,11 @@ character. Type scale, weights, and the retro-Apple WOFF2 wiring are in
 ## Suggested deliverables (a starting frame — adapt freely)
 
 If "make a design system" is open-ended, a high-value shape is:
-1. **`tokens/`** — the 13-token contract + all 17 themes as structured tokens
-   (W3C DTCG `design-tokens.json`, or CSS `@theme`/custom-properties), generated
-   from `template.html` so they stay the single source of truth.
+1. **`tokens/`** — *a starter already exists:* `tokens/design-tokens.json` (W3C
+   DTCG) holds all 17 themes × the 13-name contract + 7 font families, generated
+   from `template.html` via `scripts/extract_tokens.py` (re-run to regenerate;
+   `tokens/README.md` explains the custom `cssGradient`/`cssShadow` types). Build
+   your pipeline on this rather than re-parsing CSS.
 2. **Component specs** — glass surface, typography scale, slide layouts (the 10
    WebGPU layouts + 6 GSAP slide types), atmosphere layers, buttons/HUD.
 3. **Foundations doc** — color (Apple system mapping), type, spacing, elevation

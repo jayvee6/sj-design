@@ -1,0 +1,964 @@
+{
+  "$description": "Studio Joe design tokens (W3C DTCG format). Source of truth: assets/template.html — regenerate with scripts/extract_tokens.py, do not hand-edit. Every theme implements the same 13-name color contract. Custom $types: 'cssGradient' and 'cssShadow' hold raw CSS strings (radial/linear gradients and multi-layer inset box-shadows) verbatim, because they are not losslessly representable as structured DTCG gradient/shadow tokens. 'color' values are raw CSS color strings (hex or rgba()). Font families are 'fontFamily'.",
+  "font": {
+    "$type": "fontFamily",
+    "sans": {
+      "$value": "-apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", \"Helvetica Neue\", Arial, sans-serif"
+    },
+    "serif": {
+      "$value": "Georgia, \"Times New Roman\", serif"
+    },
+    "chicago": {
+      "$value": "\"ChicagoKare\", system-ui, sans-serif"
+    },
+    "geneva": {
+      "$value": "\"Geneva-12\", system-ui, sans-serif"
+    },
+    "lucida": {
+      "$value": "\"Inter\", system-ui, sans-serif"
+    },
+    "garamond": {
+      "$value": "\"EB Garamond\", Georgia, serif"
+    },
+    "monaco": {
+      "$value": "\"JetBrains Mono\", \"Menlo\", monospace"
+    }
+  },
+  "theme": {
+    "dark": {
+      "$description": "Dark — Blue Hour: deep indigo night sky",
+      "bg": {
+        "$type": "color",
+        "$value": "#060618"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 35% 15%, #1A237E 0%, #191970 28%, #0d0d3a 58%, #050510 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#ffffff"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.55)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.25)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#0A84FF"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(10,132,255,0.35)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.09)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.18)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18), inset 1px 0 0 rgba(10,132,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "light": {
+      "$description": "Crissy Field — California bright, fog-free afternoon at the Golden Gate",
+      "bg": {
+        "$type": "color",
+        "$value": "#E8F4FF"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "linear-gradient(175deg, #0096FF 0%, #1E90FF 28%, #5BB8FF 52%, #C8E8FF 72%, #EEF7FF 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#001E3C"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(0,30,60,0.55)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(0,30,60,0.28)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#E8450A"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(232,69,10,0.28)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(0,100,200,0.05)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(0,100,200,0.09)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(0,80,180,0.12)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(200,230,255,0.68)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(0,100,200,0.14)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,50,120,0.12), inset 0 1px 0 rgba(255,255,255,0.90), inset 1px 0 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,50,120,0.10), inset -1px 0 0 rgba(0,50,120,0.07)"
+      }
+    },
+    "obsidian": {
+      "$description": "Obsidian — matte charcoal, tech and finance, terminal green accent",
+      "bg": {
+        "$type": "color",
+        "$value": "#0C0C0C"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 42% 12%, #1A1A1A 0%, #111111 35%, #080808 70%, #050505 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#F5F5F7"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(245,245,247,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(245,245,247,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#34C759"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(52,199,89,0.32)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.03)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.06)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.08)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(255,255,255,0.05)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(52,199,89,0.18)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,0,0.70), inset 0 1px 0 rgba(255,255,255,0.08), inset 1px 0 0 rgba(52,199,89,0.08), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "deep-space": {
+      "$description": "Deep Space — near-black with teal nebulae, sci-fi and data viz",
+      "bg": {
+        "$type": "color",
+        "$value": "#050B0F"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 28% 8%, #003D52 0%, #011824 32%, #030D12 62%, #030A0D 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#E8F8FF"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(232,248,255,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(232,248,255,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#32D2F2"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(50,210,242,0.32)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(50,210,242,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(50,210,242,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(50,210,242,0.12)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(50,210,242,0.07)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(50,210,242,0.22)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,10,20,0.65), inset 0 1px 0 rgba(50,210,242,0.16), inset 1px 0 0 rgba(50,210,242,0.08), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "noir": {
+      "$description": "Noir — pure black, crimson bloom, editorial and cinematic",
+      "bg": {
+        "$type": "color",
+        "$value": "#080406"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 62% 8%, #3B0A14 0%, #1A0408 30%, #0A0204 60%, #050103 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#FFF0F3"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(255,240,243,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(255,240,243,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#FF3B5C"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(255,59,92,0.35)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(255,59,92,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(255,59,92,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(255,59,92,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(60,0,15,0.55)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(255,59,92,0.20)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,59,92,0.12), inset 1px 0 0 rgba(255,59,92,0.06), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "golden-hour": {
+      "$description": "Golden Hour — warm dusk light, amber to cream, hospitality and lifestyle",
+      "bg": {
+        "$type": "color",
+        "$value": "#FFF8F0"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "linear-gradient(172deg, #FF9500 0%, #FFAE34 22%, #FFD080 48%, #FFE8B8 68%, #FFF8F0 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#1C0800"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(28,8,0,0.58)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(28,8,0,0.28)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#C43A00"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(196,58,0,0.28)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(180,80,0,0.05)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(180,80,0,0.09)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(120,50,0,0.12)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(255,220,150,0.55)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(180,80,0,0.16)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(80,20,0,0.14), inset 0 1px 0 rgba(255,255,220,0.90), inset 1px 0 0 rgba(255,255,200,0.55), inset 0 -1px 0 rgba(80,20,0,0.10), inset -1px 0 0 rgba(80,20,0,0.07)"
+      }
+    },
+    "twin-peaks": {
+      "$description": "Twin Peaks — city lights glow from below, dark summit above the fog",
+      "bg": {
+        "$type": "color",
+        "$value": "#050303"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 50% 115%, #3A1800 0%, #1E0C00 22%, #0A0504 50%, #040202 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#FFF5E8"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(255,245,232,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(255,245,232,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#FF9F0A"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(255,159,10,0.35)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(255,159,10,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(255,159,10,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(255,159,10,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(40,15,0,0.60)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(255,159,10,0.20)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,0,0.80), inset 0 1px 0 rgba(255,159,10,0.14), inset 1px 0 0 rgba(255,159,10,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "embarcadero": {
+      "$description": "Embarcadero — pre-dawn bay water, Ferry Building silhouette",
+      "bg": {
+        "$type": "color",
+        "$value": "#020810"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 18% 85%, #001E38 0%, #000E1C 28%, #020810 62%, #010508 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#E0F0FF"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(224,240,255,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(224,240,255,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#5AC8FA"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(90,200,250,0.30)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(90,200,250,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(90,200,250,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(90,200,250,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(0,20,50,0.60)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(90,200,250,0.20)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,5,20,0.72), inset 0 1px 0 rgba(90,200,250,0.14), inset 1px 0 0 rgba(90,200,250,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "muir-woods": {
+      "$description": "Muir Woods — old-growth canopy, cathedral of redwood, fireflies at dusk",
+      "bg": {
+        "$type": "color",
+        "$value": "#020A04"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 30% 12%, #0C2412 0%, #061508 32%, #020A04 65%, #010502 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#EDFBEE"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(237,251,238,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(237,251,238,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#30D158"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(48,209,88,0.30)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(48,209,88,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(48,209,88,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(48,209,88,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(5,25,8,0.65)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(48,209,88,0.20)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,5,2,0.75), inset 0 1px 0 rgba(48,209,88,0.14), inset 1px 0 0 rgba(48,209,88,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "the-mission": {
+      "$description": "The Mission — mural purple, gold, hot magenta, Latin arts energy",
+      "bg": {
+        "$type": "color",
+        "$value": "#090112"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 62% 5%, #320A58 0%, #1C0438 25%, #0C0120 58%, #060010 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#FEF0FF"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(254,240,255,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(254,240,255,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#FF2D78"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(255,45,120,0.35)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(255,45,120,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(255,45,120,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(255,45,120,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(40,0,60,0.60)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(255,45,120,0.22)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,10,0.75), inset 0 1px 0 rgba(255,45,120,0.14), inset 1px 0 0 rgba(255,45,120,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "santa-cruz": {
+      "$description": "Santa Cruz — warm Pacific surf, ocean teal, coral boardwalk",
+      "bg": {
+        "$type": "color",
+        "$value": "#E0F8FF"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "linear-gradient(168deg, #00B4D8 0%, #48CAE4 28%, #90E0EF 54%, #CAF0F8 74%, #EEF9FF 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#001520"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(0,21,32,0.58)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(0,21,32,0.28)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#FF6B35"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(255,107,53,0.28)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(0,180,216,0.06)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(0,180,216,0.10)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(0,120,160,0.12)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(180,240,255,0.65)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(0,150,200,0.18)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,30,50,0.12), inset 0 1px 0 rgba(255,255,255,0.90), inset 1px 0 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,80,120,0.10), inset -1px 0 0 rgba(0,80,120,0.07)"
+      }
+    },
+    "sausalito": {
+      "$description": "Sausalito — Mediterranean bay calm, boats on blue water, warm afternoon",
+      "bg": {
+        "$type": "color",
+        "$value": "#EEF6FF"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "linear-gradient(175deg, #2E86AB 0%, #5BA8CB 25%, #A8D4E8 52%, #D6EEF8 72%, #EEF6FF 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#0A1828"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(10,24,40,0.58)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(10,24,40,0.28)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#F4A261"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(244,162,97,0.28)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(46,134,171,0.06)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(46,134,171,0.10)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(20,80,130,0.12)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(200,230,250,0.68)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(30,100,160,0.14)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,20,60,0.12), inset 0 1px 0 rgba(255,255,255,0.90), inset 1px 0 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,40,80,0.10), inset -1px 0 0 rgba(0,40,80,0.07)"
+      }
+    },
+    "half-moon-bay": {
+      "$description": "Half Moon Bay — moody coastal gray, sea glass, perpetual mist",
+      "bg": {
+        "$type": "color",
+        "$value": "#080C10"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 50% 0%, #182030 0%, #0E1620 32%, #080C10 62%, #050709 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#DDE8F2"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(221,232,242,0.50)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(221,232,242,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#5B9BBF"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(91,155,191,0.28)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(91,155,191,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(91,155,191,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(91,155,191,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(15,30,50,0.65)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(91,155,191,0.18)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,5,15,0.72), inset 0 1px 0 rgba(91,155,191,0.14), inset 1px 0 0 rgba(91,155,191,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "redwood": {
+      "$description": "Redwood — old-growth forest dark, amber canopy light, warm fireflies",
+      "bg": {
+        "$type": "color",
+        "$value": "#050803"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 35% 0%, #2A1800 0%, #160C02 18%, #0A1805 40%, #050803 70%, #030502 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#F8F0E8"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(248,240,232,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(248,240,232,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#D4845A"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(212,132,90,0.32)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(212,132,90,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(212,132,90,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(212,132,90,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(30,15,5,0.65)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(212,132,90,0.20)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,0,0.78), inset 0 1px 0 rgba(212,132,90,0.14), inset 1px 0 0 rgba(212,132,90,0.07), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "the-richmond": {
+      "$description": "The Richmond — the foggiest block in the foggiest city, quiet and muted",
+      "bg": {
+        "$type": "color",
+        "$value": "#07080C"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 50% -10%, #101520 0%, #0A0E18 30%, #07080C 62%, #050608 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#D8E0EA"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(216,224,234,0.48)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(216,224,234,0.20)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#5E82A4"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(94,130,164,0.25)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(94,130,164,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(94,130,164,0.07)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(94,130,164,0.08)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(10,15,25,0.70)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(94,130,164,0.14)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,0,0.72), inset 0 1px 0 rgba(94,130,164,0.12), inset 1px 0 0 rgba(94,130,164,0.06), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "nob-hill": {
+      "$description": "Nob Hill — Victorian opulence, gold and deep burgundy, cable car brass",
+      "bg": {
+        "$type": "color",
+        "$value": "#080405"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 45% 5%, #2A1200 0%, #180A00 22%, #0C0608 52%, #060304 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#FFF8EC"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(255,248,236,0.52)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(255,248,236,0.22)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#D4AF37"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(212,175,55,0.32)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(212,175,55,0.04)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(212,175,55,0.08)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(212,175,55,0.10)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(30,10,0,0.65)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(212,175,55,0.22)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,0,0.78), inset 0 1px 0 rgba(212,175,55,0.16), inset 1px 0 0 rgba(212,175,55,0.08), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    },
+    "haight": {
+      "$description": "Haight — Haight-Ashbury psychedelic rainbow, pure joy, emoji everywhere",
+      "bg": {
+        "$type": "color",
+        "$value": "#0A0218"
+      },
+      "bg-gradient": {
+        "$type": "cssGradient",
+        "$value": "radial-gradient(ellipse at 30% 20%, #4A0082 0%, #1E0060 28%, #0C0030 55%, #060118 100%)"
+      },
+      "label-1": {
+        "$type": "color",
+        "$value": "#FFF8FF"
+      },
+      "label-2": {
+        "$type": "color",
+        "$value": "rgba(255,248,255,0.55)"
+      },
+      "label-3": {
+        "$type": "color",
+        "$value": "rgba(255,248,255,0.25)"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#FF6FD8"
+      },
+      "accent-glow": {
+        "$type": "color",
+        "$value": "rgba(255,111,216,0.38)"
+      },
+      "fill-1": {
+        "$type": "color",
+        "$value": "rgba(255,111,216,0.05)"
+      },
+      "fill-2": {
+        "$type": "color",
+        "$value": "rgba(255,111,216,0.10)"
+      },
+      "sep": {
+        "$type": "color",
+        "$value": "rgba(255,111,216,0.12)"
+      },
+      "glass-bg": {
+        "$type": "color",
+        "$value": "rgba(50,0,80,0.55)"
+      },
+      "glass-bdr": {
+        "$type": "color",
+        "$value": "rgba(255,111,216,0.25)"
+      },
+      "glass-shd": {
+        "$type": "cssShadow",
+        "$value": "0 8px 40px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,111,216,0.17), inset 1px 0 0 rgba(255,111,216,0.09), inset 0 -1px 0 rgba(0,0,0,0.08), inset -1px 0 0 rgba(0,0,0,0.06)"
+      }
+    }
+  }
+}
