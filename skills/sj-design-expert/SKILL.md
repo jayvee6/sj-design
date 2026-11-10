@@ -25,16 +25,23 @@ description: >
   "design system", "design review", "polish pass", "make it feel like
   slopes/the arcade/studiojoe", "glass card", "design tokens", "theme",
   "motion language", "juice", "game feel", "touch UX", "safe-area", "reduced
-  motion", "does this look right", "review this UI/page/deck/viz". For
-  GPU/WGSL/Metal internals use `graphics-api-expert`.
+  motion", "does this look right", "review this UI/page/deck/viz" — and on
+  UI-chrome motion and feel: "should this animate", "easing", "popover/
+  tooltip/toast/drawer feels off", "stagger", "swipe to dismiss", "spring",
+  "jank", "remove animations", "stress test / worst case this UI", "overflow",
+  "prototype variants", "which UI library". For GPU/WGSL/Metal internals use
+  `graphics-api-expert`.
 ---
 
 # sj-design-expert
 
-The Studio Joe principal design engineer. Everything in `references/` is
+The Studio Joe principal design engineer. The core `references/` are
 distilled from **first-party shipped code** — when this skill states a pattern,
-it cites the project that proved it. Honor each reference's `## UNVERIFIED`
-section: those items are suspicions, not facts.
+it cites the project that proved it. The `emil-*` references are the one
+**external** layer (Emil Kowalski's MIT skills, ingested 2026-11-10): outside
+taste, not proof, and `emil-kowalski-index.md` rules where it collides with
+house conventions. Honor each reference's `## UNVERIFIED` section: those items
+are suspicions, not facts.
 
 **Repo layout:** this skill lives at `skills/sj-design-expert/` in the
 sj-design repo. Shared assets (`assets/template.html`, `lib/`, `showcase/`,
@@ -81,7 +88,9 @@ are what Builder assembles from.
 
 ---
 
-## References (all first-party distillations)
+## References
+
+### First-party distillations
 
 | File | Covers | Distilled from |
 |---|---|---|
@@ -91,6 +100,20 @@ are what Builder assembles from.
 | `references/viz-motion-craft.md` | Post-processing stack order, audio-reactive choreography language, idle states, palette lessons (OKLCh collapse), perf-as-design (resolution governor), live-tuning workflow, wellness/breathing motion | musicplayer-viz (156 viz), ripple, ripple-zen-garden, three-particle-lab, tree-shatter-sandbox |
 | `references/apple-native-design.md` | SwiftUI glass hierarchy (Liquid Glass → SJGlass fallback), StudioJoe token enums, chrome auto-hide, state-management eras, macOS conventions, native accessibility | StudioJoeMusic, TranscriptStudio, LinguaFranca, ripple-apple, StudioJoeSavers |
 | `references/review-verification-playbook.md` | How to verify visual work on this setup: chrome-devtools MCP first, WebGPU black-canvas probes, Metal-is-the-bar, cross-machine rig (sja_*), Vercel deploy verification, two-auditor review structure | vault wiki + memory + shipped QA passes |
+
+### External — Emil Kowalski (taste, not proof)
+Start at `references/emil-kowalski-index.md`: file map, MIT notice, and the
+**divergence register** (ruling R0: Emil governs interactive UI chrome; house
+conventions govern decks, ambient, celebration and game-juice surfaces; four
+rows are left OPEN for the human).
+
+| File | Covers |
+|---|---|
+| `references/emil-design-eng-principles.md` | Animate-or-not frequency gate, canonical easing/duration tokens, feel micro-rules, UI cheatsheet, motion vocabulary, curated library picks (React projects), Sonner |
+| `references/emil-web-motion-recipes.md` | Component recipes, choreography casting + stagger budget, clip-path tricks, gesture two-phase model, springs |
+| `references/emil-motion-review-audit.md` | Review standards split into Critic/Pedant, removal gate tree, compositor tiers, jank diagnosis order, whole-project audit |
+| `references/emil-native-mobile-motion.md` | Touch feel laws, Apple spring table, projection/rubber-band math, haptics budget, mobile-web fix table |
+| `references/emil-break-ui-prototype.md` | Worst-case fixtures, failure-signature table, truncate/wrap rubric, stress gates G1–G3, variant-picker method |
 
 Root-level references (shared assets, repo root):
 `../../references/{emoji-visualizations,image-fx,slide-animations,webgpu-viz-patterns}.md`,
@@ -153,6 +176,28 @@ Root-level references (shared assets, repo root):
 | Image FX output — akella attribution present? | `studio-design-system.md` §14 |
 | Slide copy quality (Apple Style Guide) | `studio-design-system.md` §16 |
 
+### UI-chrome motion, gestures & stress tests (external — Emil)
+Check `emil-kowalski-index.md` R0 first: these rules are for interactive UI, not decks or game juice.
+| Task | Go to |
+|---|---|
+| Should this animate at all? / "make it feel alive" | `emil-design-eng-principles.md` §A + `emil-web-motion-recipes.md` §1 |
+| Easing + duration for a button, popover, tooltip, modal, drawer | `emil-design-eng-principles.md` §B–C, §F + `emil-web-motion-recipes.md` §5 |
+| Toasts / rapidly re-triggered UI | `emil-web-motion-recipes.md` §6 + `emil-design-eng-principles.md` §O (Sonner is React-only) |
+| Stagger a list / multi-element entrance / view swap inside a container | `emil-web-motion-recipes.md` §7–8 |
+| Reveal, wipe, hold-to-confirm, before/after slider (clip-path) | `emil-design-eng-principles.md` §G |
+| Drag, swipe-to-dismiss, sheet, rubber-band, fling (web) | `emil-web-motion-recipes.md` §9–10 |
+| Touch feel, springs, projection, haptics (native SwiftUI) | `emil-native-mobile-motion.md` N1–N3, N8 |
+| Web page/game feels like a website on a phone | `emil-native-mobile-motion.md` N11 |
+| Animation janks / which property is safe / CSS vs WAAPI vs GSAP | `emil-motion-review-audit.md` §6–8 |
+| "Too much motion" — remove or tone down | `emil-motion-review-audit.md` §3 |
+| Motion review of a diff (Critic + Pedant) / whole-project motion audit | `emil-motion-review-audit.md` §10–11 |
+| Stress-test a component with worst-case data; overflow, plurals, `Intl` | `emil-break-ui-prototype.md` A1–A6 + gate G1 |
+| Dark / RTL / 200% zoom / 320px sweep | `emil-break-ui-prototype.md` gate G2 |
+| Compare design directions with a variant picker (then sliders) | `emil-break-ui-prototype.md` B2–B5 |
+| Which UI library for X? (React projects only) | `emil-design-eng-principles.md` §P |
+| Name a motion effect / write a motion brief | `emil-design-eng-principles.md` §M |
+| Emil's rule contradicts ours | `emil-kowalski-index.md` divergence register |
+
 ### Out of scope — hand off
 | Topic | Skill |
 |---|---|
@@ -166,7 +211,10 @@ Root-level references (shared assets, repo root):
 
 ## Operating rules
 
-1. **Cite the proving project.** Every recommendation traces to a reference §
+1. **Cite the proving project.** (`emil-*` material is cited as "Emil
+   (external)", never as a proving project; the index's divergence register
+   decides collisions, and its OPEN rows go to the human.)
+   Every recommendation traces to a reference §
    and the shipped project behind it. If no reference covers it, say so — do
    not improvise a "Studio Joe convention" that doesn't exist.
 2. **Verify before claiming.** Builder artifacts and visual claims require the
